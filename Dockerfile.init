@@ -1,0 +1,16 @@
+FROM alpine:latest
+
+ENV DHCP_DBNAME=dhcp
+ENV DHCP_DBUSER=dhcpdsuser
+ENV DHCP_DBPORT=5432
+ENV DHCP_DBOPTS="sslmode=disable"
+ENV DHCP_DBHOST="cray-dhcp-postgres"
+ENV DHCP_DBPASS="dhcpdsuser"
+
+RUN apk --no-cache add \
+  postgresql-client \
+  bash
+
+ADD ./postgres/dhcpdb_create.sql /
+
+CMD ["/bin/sh","-c","PGPASSWORD=$DHCP_DBPASS /usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"]
