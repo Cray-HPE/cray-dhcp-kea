@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  kea:
+    #build: .
+    image: cray-dhcp:latest
+    volumes:
+      - ./kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+    network_mode: host
+    #    ports:
+    #      - 67:67/udp
+    #      - 67:67/tcp
+    #      - 68:68/udp
+    #      - 68:68/tcp
+    depends_on:
+      - kea-db
+    restart: always
+    #    entrypoint: "tail -f"
+  kea-db:
+    image: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: dhcpdb
+      POSTGRES_PASSWORD: dhcpdb
+    restart: always

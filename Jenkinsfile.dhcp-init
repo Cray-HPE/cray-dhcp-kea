@@ -1,0 +1,10 @@
+@Library('dst-shared@master') _
+
+dockerBuildPipeline {
+    repository = "cray"
+    imagePrefix = "cray"
+    app = "dhcp-init"
+    name = "dhcp-init"
+    description = "Cray service cray-dhcp-init"
+    product = "shasta-premium,shasta-standard"
+}
