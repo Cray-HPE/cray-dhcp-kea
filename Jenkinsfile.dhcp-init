@@ -6,5 +6,6 @@ dockerBuildPipeline {
     app = "dhcp-init"
     name = "dhcp-init"
     description = "Cray service cray-dhcp-init"
+    dockerfile = "Dockerfile.dhcp-init"
     product = "shasta-premium,shasta-standard"
 }
