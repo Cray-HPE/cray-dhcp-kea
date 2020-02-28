@@ -1,0 +1,12 @@
+---
+apiVersion: "networking.istio.io/v1alpha3"
+kind: "DestinationRule"
+metadata:
+  name: "cray-dhcp-service"
+  labels:
+    app.kubernetes.io/name: cray-hms-dhcp
+spec:
+  host: "cray-dhcp"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL

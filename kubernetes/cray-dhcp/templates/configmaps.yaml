@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cray-dhcp-kea-dhcp4-conf
+  namespace: services
+data:
+  kea-dhcp4.conf: |-
+{{ tpl (.Files.Get "files/kea-dhcp4.conf") . | indent 4 }}
