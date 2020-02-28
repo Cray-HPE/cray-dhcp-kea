@@ -1,1 +1,15 @@
-hello
+Early phase of repo.
+Helm chart does not work yet.
+
+Local dev setup can be done by:
+
+Bring up virtualbox vm with: <br/>
+  ```vagrant up``` <br/>
+SSH to virtualbox vm with: <br/>
+ ```vagrant ssh``` <br/>
+Once you have a session inside the vm.  Move to cray-dhcp folder <br/>
+  ```cd /home/vagrant/cray-dhcp``` <br/>
+Build container and launch docker-compose <br/>
+  ```./build_container_run_docker_compose.sh``` <br/>
+To stop docker-compose <br/>
+  ```docker-compose down``` <br/>
