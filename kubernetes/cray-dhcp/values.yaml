@@ -77,22 +77,6 @@ cray-service:
     enabled: true
 keaConfig:
   dhcp4:
-    valid_lifetime: 4000
-    subnet: 192.168.10.0/24
-    pool: 192.168.10.10 - 192.168.10.100
-    option_data:
-      -  name: routers
-         data: 192.168.10.1
-      -  name: domain-name-servers
-         data: 1.1.1.1
-    Logging:
-      loggers:
-      - name: kea-dhcp4
-        output_options:
-        - output: stdout
-        severity: INFO
-keaConfig2:
-  dhcp4:
     interfaces-config:
       interfaces:
       - "*"
