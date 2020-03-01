@@ -4,6 +4,7 @@ services:
   kea:
     #build: .
     image: cray-dhcp:latest
+    container_name: kea
     volumes:
       - ./kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
     network_mode: host
@@ -18,6 +19,7 @@ services:
     #    entrypoint: "tail -f"
   kea-db:
     image: postgres
+    container_name: kea-db
     ports:
       - 5432:5432
     volumes:
