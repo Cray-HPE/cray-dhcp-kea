@@ -1,3 +1,19 @@
+require 'getoptlong'
+
+opts = GetoptLong.new(
+  [ '--vm-name',        GetoptLong::OPTIONAL_ARGUMENT ],
+)
+vm_name        = ENV['VM_NAME'] || 'cray-dhcp'
+
+begin
+  opts.each do |opt, arg|
+    case opt
+      when '--vm-name'
+        vm_name = arg
+    end
+  end
+  rescue
+end
 
 Vagrant.configure("2") do |config|
   config.vagrant.plugins = ["vagrant-vbguest"]
@@ -11,4 +27,6 @@ Vagrant.configure("2") do |config|
     v.cpus = 6
   end
   config.vm.provision :shell, path: "bootstrap.sh"
+  config.vm.define vm_name
+  config.vm.hostname = vm_name
 end
