@@ -6,13 +6,19 @@ services:
     image: cray-dhcp:latest
     container_name: kea
     volumes:
-      - ./kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./kea-dhcp4.conf:/kea-dhcp4.conf
+      - ./kea-ctrl-agent.conf:/kea-ctrl-agent.conf
     network_mode: host
     #    ports:
     #      - 67:67/udp
     #      - 67:67/tcp
     #      - 68:68/udp
     #      - 68:68/tcp
+    environment:
+      DHCP_DBNAME: dhcpdb # keep in sync with POSTGRES_PASSWORD
+      DHCP_DBHOST: localhost
+      DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
+      DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
     depends_on:
       - kea-db
     restart: always
