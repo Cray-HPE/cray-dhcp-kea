@@ -19,6 +19,7 @@ sed -i 's/EOF//g' /etc/kea/kea-dhcp4.conf
 sed -i 's/EOF//g' /etc/kea/kea-ctrl-agent.conf
 #  helpful for future debugging
 cat /etc/kea/kea-dhcp4.conf
+cat /etc/kea/kea-ctrl-agent.conf
 # what we use to run isc kea
 /usr/sbin/kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
 /usr/sbin/kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf

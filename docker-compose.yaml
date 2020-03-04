@@ -15,7 +15,8 @@ services:
     #      - 68:68/udp
     #      - 68:68/tcp
     environment:
-      DHCP_DBNAME: dhcpdb # keep in sync with POSTGRES_PASSWORD
+      DHCP_CAHOST: 127.0.0.1 # KEA Control agent host
+      DHCP_CAPORT: 8000 # KEA Control agent port
       DHCP_DBHOST: localhost
       DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
       DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
