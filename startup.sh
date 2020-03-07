@@ -16,6 +16,6 @@ fi
 #  clean up
 sed -i 's/EOF//g' /usr/local/etc/kea/kea-dhcp4.conf
 #  helpful for future debugging
-cat /etc/local/kea-dhcp4.conf
+cat /usr/local/etc/kea/kea-dhcp4.conf
 # what we use to run isc kea
 /usr/local/sbin/kea-dhcp4 -c /usr/local/etc/kea/kea-dhcp4.conf
