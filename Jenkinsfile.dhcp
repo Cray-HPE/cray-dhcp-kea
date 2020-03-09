@@ -8,4 +8,5 @@ dockerBuildPipeline {
     description = "Cray service cray-dhcp"
     dockerfile = "Dockerfile.dhcp"
     product = "shasta-premium,shasta-standard"
+    slackNotification = ["", "", false, false, true, false]
 }
