@@ -6,8 +6,13 @@ services:
     image: cray-dhcp:latest
     container_name: kea
     volumes:
-      - ./kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./kea-dhcp4.conf:/kea-dhcp4.conf
     network_mode: host
+    environment:
+      DHCP_DBHOST: 127.0.0.1
+      DHCP_DBUSER: postgres
+      DHCP_DBNAME: dhcpdb
+      DHCP_DBPASS: dhcpdb
     #    ports:
     #      - 67:67/udp
     #      - 67:67/tcp

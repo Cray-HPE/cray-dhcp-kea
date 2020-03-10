@@ -12,10 +12,10 @@ fi
 
 #  since the username and password is dyanmic with the k8s postgres operator
 #  we output the config file and substitute the environment variables
-( echo "cat <<EOF" ; cat /kea-dhcp4.conf ; echo EOF ) | sh > /etc/kea/kea-dhcp4.conf
+( echo "cat <<EOF" ; cat /kea-dhcp4.conf ; echo EOF ) | sh > /usr/local/etc/kea/kea-dhcp4.conf
 #  clean up
-sed -i 's/EOF//g' /etc/kea/kea-dhcp4.conf
+sed -i 's/EOF//g' /usr/local/etc/kea/kea-dhcp4.conf
 #  helpful for future debugging
-cat /etc/kea/kea-dhcp4.conf
+cat /usr/local/etc/kea/kea-dhcp4.conf
 # what we use to run isc kea
-/usr/sbin/kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
+/usr/local/sbin/kea-dhcp4 -c /usr/local/etc/kea/kea-dhcp4.conf
