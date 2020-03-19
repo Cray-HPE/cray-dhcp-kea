@@ -3,7 +3,7 @@ version: '3'
 services:
   kea:
     #build: .
-    image: cray-dhcp:latest
+    image: cray-dhcp-kea:latest
     container_name: kea
     volumes:
       - ./kea-dhcp4.conf:/kea-dhcp4.conf

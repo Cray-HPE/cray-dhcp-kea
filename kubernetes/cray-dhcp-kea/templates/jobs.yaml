@@ -2,23 +2,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: cray-dhcp-init
+  name: cray-dhcp-kea-init
   labels:
-    app: cray-dhcp-init
+    app: cray-dhcp-kea-init
 spec:
   template:
     metadata:
       labels:
-        app: cray-dhcp-init
+        app: cray-dhcp-kea-init
     spec:
       restartPolicy: OnFailure
       serviceAccountName: "jobs-watcher"
       containers:
-        - name: cray-dhcp-init
-          image: {{ include "cray-dhcp.image-prefix" .Values }}cray-dhcp-init:latest
+        - name: cray-dhcp-kea-init
+          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray-dhcp-kea-init:latest
           env:
           - name: DHCP_DBHOST
-            value: cray-dhcp-postgres
+            value: cray-dhcp-kea-postgres
           - name: DHCP_DBPORT
             value: "5432"
           - name: DHCP_DBNAME
@@ -28,19 +28,19 @@ spec:
           - name: DHCP_DBUSER
             valueFrom:
               secretKeyRef:
-                name: dhcpdsuser.cray-dhcp-postgres.credentials
+                name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
                 key: username
           - name: DHCP_DBPASS
             valueFrom:
               secretKeyRef:
-                name: dhcpdsuser.cray-dhcp-postgres.credentials
+                name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
                 key: password 
           - name: DHCP_DBOPTS
             value: ""
       initContainers:
         - name: "wait-for-postgres-job-watcher"
-          image: {{ include "cray-dhcp.image-prefix" .Values }}loftsman/docker-kubectl:latest
+          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}loftsman/docker-kubectl:latest
           command:
             - /bin/sh
             - -c
-            - while [ "`kubectl get jobs -n services cray-dhcp-wait-for-postgres -o jsonpath='{.status.conditions[0].type}'`" != "Complete" ]; do echo "Waiting for cray-dhcp-wait-for-postgres to complete"; sleep 3 ; done; echo "Completed";
+            - while [ "`kubectl get jobs -n services cray-dhcp-kea-wait-for-postgres -o jsonpath='{.status.conditions[0].type}'`" != "Complete" ]; do echo "Waiting for cray-dhcp-kea-wait-for-postgres to complete"; sleep 3 ; done; echo "Completed";

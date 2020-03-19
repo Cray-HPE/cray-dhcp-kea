@@ -9,15 +9,15 @@
 
 cray-service:
   type: Deployment
-  nameOverride: cray-dhcp
+  nameOverride: cray-dhcp-kea
   containers:
-    - name: cray-dhcp
+    - name: cray-dhcp-kea
       image:
-        repository: cray-dhcp
+        repository: cray-dhcp-kea
         pullPolicy: Always
       env:
         - name: DHCP_DBHOST
-          value: cray-dhcp-postgres
+          value: cray-dhcp-kea-postgres
         - name: DHCP_DBPORT
           value: "5432"
         - name: DHCP_DBNAME
@@ -27,12 +27,12 @@ cray-service:
         - name: DHCP_DBUSER
           valueFrom:
             secretKeyRef:
-              name: dhcpdsuser.cray-dhcp-postgres.credentials
+              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
               key: username
         - name: DHCP_DBPASS
           valueFrom:
             secretKeyRef:
-              name: dhcpdsuser.cray-dhcp-postgres.credentials
+              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
               key: password            
       ports:
         - name: dhcp-server-udp

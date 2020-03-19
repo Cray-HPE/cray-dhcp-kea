@@ -1,5 +1,0 @@
-apiVersion: v1
-description: "Kubernetes resources for cray-dhcp"
-name: "cray-dhcp"
-home: "cloud/cray-dhcp"
-version: 1.0.0
