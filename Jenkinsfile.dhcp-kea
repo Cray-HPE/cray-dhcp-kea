@@ -6,7 +6,7 @@ dockerBuildPipeline {
     app = "dhcp-kea"
     name = "dhcp-kea"
     description = "Cray service cray-dhcp-kea"
-    dockerfile = "Dockerfile.dhcp"
+    dockerfile = "Dockerfile.dhcp-kea"
     product = "shasta-premium,shasta-standard"
     slackNotification = ["", "", false, false, true, false]
 }
