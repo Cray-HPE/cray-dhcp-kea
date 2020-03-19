@@ -1,4 +1,4 @@
 #/bin/bash
 
-docker build -t cray-dhcp -f Dockerfile.dhcp .
+docker build -t cray-dhcp-kea -f Dockerfile.dhcp .
 docker-compose up -d

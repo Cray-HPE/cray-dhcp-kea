@@ -4,7 +4,7 @@ ENV DHCP_DBNAME=dhcp
 ENV DHCP_DBUSER=dhcpdsuser
 ENV DHCP_DBPORT=5432
 ENV DHCP_DBOPTS="sslmode=disable"
-ENV DHCP_DBHOST="cray-dhcp-postgres"
+ENV DHCP_DBHOST="cray-dhcp-kea-postgres"
 ENV DHCP_DBPASS="dhcpdsuser"
 
 RUN apk --no-cache add \

@@ -3,10 +3,10 @@
 dockerBuildPipeline {
     repository = "cray"
     imagePrefix = "cray"
-    app = "dhcp-init"
-    name = "dhcp-init"
-    description = "Cray service cray-dhcp-init"
-    dockerfile = "Dockerfile.dhcp-init"
+    app = "dhcp-kea"
+    name = "dhcp-kea"
+    description = "Cray service cray-dhcp-kea"
+    dockerfile = "Dockerfile.dhcp"
     product = "shasta-premium,shasta-standard"
     slackNotification = ["", "", false, false, true, false]
 }
