@@ -1,30 +1,53 @@
 version: '3'
 
 services:
-  kea:
+  cray-dhcp-kea:
     #build: .
-    image: cray-dhcp:latest
-    container_name: kea
+    image: cray-dhcp-kea:latest
+    container_name: cray-dhcp-kea
     volumes:
-      - ./kea-dhcp4.conf:/kea-dhcp4.conf
+      - ./cray-dhcp-kea-dhcp4.conf:/cray-dhcp-kea-dhcp4.conf
+      - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
     network_mode: host
     environment:
-      DHCP_DBHOST: 127.0.0.1
-      DHCP_DBUSER: postgres
-      DHCP_DBNAME: dhcpdb
-      DHCP_DBPASS: dhcpdb
     #    ports:
     #      - 67:67/udp
     #      - 67:67/tcp
     #      - 68:68/udp
     #      - 68:68/tcp
+    environment:
+      DHCP_CAHOST: 127.0.0.1 # KEA Control agent host
+      DHCP_CAPORT: 8000 # KEA Control agent port
+      DHCP_DBHOST: localhost
+      DHCP_DBNAME: dhcpdb
+      DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
+      DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
     depends_on:
-      - kea-db
+      - cray-dhcp-kea-db
     restart: always
-    #    entrypoint: "tail -f"
-  kea-db:
+    #entrypoint: "tail -f"
+    environment:
+      DHCP_DBNAME: dhcpdb # keep in sync with POSTGRES_PASSWORD
+      DHCP_DBHOST: localhost
+      DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
+      DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
+  cray-dhcp-kea-ctrl-agent:
+    image: cray-dhcp-kea-ctrl-agent:latest
+    container_name: cray-dhcp-kea-ctrl-agent
+    privileged: true
+    volumes:
+      - ./cray-dhcp-kea-ctrl-agent.conf:/cray-dhcp-kea-ctrl-agent.conf
+      - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
+    ports:
+      - 8000:8000
+    restart: always
+    #entrypoint: "tail -f"
+    environment:
+      DHCP_CAHOST: 0.0.0.0 # KEA Control agent host
+      DHCP_CAPORT: 8000 # KEA Control agent port
+  cray-dhcp-kea-db:
     image: postgres
-    container_name: kea-db
+    container_name: cray-dhcp-kea-db
     ports:
       - 5432:5432
     volumes:
@@ -34,3 +57,5 @@ services:
       POSTGRES_DB: dhcpdb
       POSTGRES_PASSWORD: dhcpdb
     restart: always
+volumes:
+  cray-dhcp-kea-socket:

@@ -9,13 +9,13 @@ if [ -z "$DHCP_DBPASS" ]
 then
       DHCP_DBPASS=$(cat /secrets/postgres/dhcpdsuser/password)
 fi
-
+mkdir -p /usr/local/kea
 #  since the username and password is dyanmic with the k8s postgres operator
 #  we output the config file and substitute the environment variables
-( echo "cat <<EOF" ; cat /kea-dhcp4.conf ; echo EOF ) | sh > /usr/local/etc/kea/kea-dhcp4.conf
+( echo "cat <<EOF" ; cat /cray-dhcp-kea-dhcp4.conf ; echo EOF ) | sh > /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 #  clean up
-sed -i 's/EOF//g' /usr/local/etc/kea/kea-dhcp4.conf
-#  helpful for future debugging
-cat /usr/local/etc/kea/kea-dhcp4.conf
-# what we use to run isc kea
-/usr/local/sbin/kea-dhcp4 -c /usr/local/etc/kea/kea-dhcp4.conf
+sed -i 's/EOF//g' /usr/local/kea/cray-dhcp-kea-dhcp4.conf
+#  helpful for debugging
+cat /usr/local/kea/cray-dhcp-kea-dhcp4.conf
+# what we use to run Cray DHCP Kea
+/usr/local/sbin/kea-dhcp4 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf

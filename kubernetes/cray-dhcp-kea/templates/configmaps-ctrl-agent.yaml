@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cray-dhcp-kea-ctrl-agent-conf
+  namespace: services
+data:
+  cray-dhcp-kea-ctrl-agent.conf: |-
+{{ tpl (.Files.Get "files/cray-dhcp-kea-ctrl-agent.conf") . | indent 4 }}

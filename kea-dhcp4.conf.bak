@@ -9,6 +9,24 @@
       ],
       "dhcp-socket-type": "raw"
     },
+    
+    "control-socket": {
+       "socket-type": "unix",
+       "socket-name": "/tmp/cray-dhcp-kea-dhcp4-ctrl.sock"
+    },
+
+    "hooks-libraries": [
+     //  {
+     //     "library": "/usr/lib64/hooks/libdhcp_host_cmds.so"
+     //  },
+       {
+           "library": "/usr/lib64/kea/hooks/libdhcp_lease_cmds.so"
+        },
+        {
+           "library": "/usr/lib64/kea/hooks/libdhcp_stat_cmds.so"
+        }
+    ],
+
     "lease-database": {
       "type": "postgresql",
       "name": "$DHCP_DBNAME",
