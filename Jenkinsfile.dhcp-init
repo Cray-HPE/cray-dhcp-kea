@@ -3,9 +3,9 @@
 dockerBuildPipeline {
     repository = "cray"
     imagePrefix = "cray"
-    app = "dhcp-init"
-    name = "dhcp-init"
-    description = "Cray service cray-dhcp-init"
-    dockerfile = "Dockerfile.dhcp-init"
+    app = "dhcp-kea-init"
+    name = "dhcp-kea-init"
+    description = "Cray service cray-dhcp-kea-init"
+    dockerfile = "Dockerfile.dhcp-kea-init"
     product = "shasta-premium,shasta-standard"
 }

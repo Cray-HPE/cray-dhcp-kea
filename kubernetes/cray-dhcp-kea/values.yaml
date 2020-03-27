@@ -1,0 +1,168 @@
+# Please refer to https://stash.us.cray.com/projects/CLOUD/repos/cray-charts/browse/stable/cray-service/values.yaml?at=refs%2Fheads%2Fmaster
+# for more info on values you can set/override
+# Note that cray-service.containers[*].image and cray-service.initContainers[*].image map values are one of the only structures that
+# differ from the standard kubernetes container spec:
+# image:
+#   repository: ""
+#   tag: "" (default = "latest")
+#   pullPolicy: "" (default = "IfNotPresent")
+
+cray-service:
+  type: Deployment
+  nameOverride: cray-dhcp-kea
+  containers:
+    - name: "cray-dhcp-kea"
+      image:
+        repository: "cray/cray-dhcp-kea"
+        pullPolicy: Always
+      env:
+        - name: DHCP_DBHOST
+          value: cray-dhcp-kea-postgres
+        - name: DHCP_DBPORT
+          value: "5432"
+        - name: DHCP_DBNAME
+          value: "dhcp"
+        - name: DHCP_DBOPTS
+          value: ""
+        - name: DHCP_DBUSER
+          valueFrom:
+            secretKeyRef:
+              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
+              key: username
+        - name: DHCP_DBPASS
+          valueFrom:
+            secretKeyRef:
+              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
+              key: password
+      ports:
+        - name: kea-server-udp
+          containerPort: 67
+          protocol: UDP
+        - name: kea-server-tcp
+          containerPort: 67
+          protocol: TCP
+      livenessProbe:
+        tcpSocket:
+          port: 67
+        initialDelaySeconds: 5
+        periodSeconds: 3
+      readinessProbe:
+        tcpSocket:
+          port: 67
+        initialDelaySeconds: 5
+        periodSeconds: 3
+      volumeMounts:
+        - name: cray-dhcp-kea-dhcp4-conf
+          mountPath: /cray-dhcp-kea-dhcp4.conf
+          readOnly: false
+          subPath: cray-dhcp-kea-dhcp4.conf
+        - name: cray-dhcp-kea-socket
+          mountPath: /cray-dhcp-kea-socket
+          readOnly: false
+          subPath: cray-dhcp-kea-socket
+    - name: "cray-dhcp-kea-ctrl-agent"
+      image:
+        repository: "cray/cray-dhcp-kea-ctrl-agent"
+        pullPolicy: Always
+      env:
+        - name: DHCP_CAHOST
+          value: "0.0.0.0"
+        - name: DHCP_CAPORT
+          value: "8000"
+      ports:
+        - name: kea-ctrl-tcp
+          containerPort: 8000
+          protocol: TCP
+      livenessProbe:
+        tcpSocket:
+          port: 8000
+        initialDelaySeconds: 5
+        periodSeconds: 3
+      readinessProbe:
+        tcpSocket:
+          port: 8000
+        initialDelaySeconds: 5
+        periodSeconds: 3
+      volumeMounts:
+        - name: cray-dhcp-kea-ctrl-agent-conf
+          mountPath: /cray-dhcp-kea-ctrl-agent.conf
+          readOnly: false
+          subPath: cray-dhcp-kea-ctrl-agent.conf
+        - name: cray-dhcp-kea-socket
+          mountPath: /cray-dhcp-kea-socket
+          readOnly: false
+          subPath: cray-dhcp-kea-socket
+  volumes:
+    - name: cray-dhcp-kea-dhcp4-conf
+      configMap:
+        name: cray-dhcp-kea-dhcp4-conf
+    - name: cray-dhcp-kea-ctrl-agent-conf
+      configMap:
+        name: cray-dhcp-kea-ctrl-agent-conf
+    - name: cray-dhcp-kea-socket
+      emptyDir: {}
+  sqlCluster:
+    enabled: true
+    users:
+      dhcpdsuser: []
+    databases:
+      dhcp: dhcpdsuser
+    volumeSize: 10Gi
+  ingress:
+    enabled: true
+crayDhcpKeaDhcp4Config:
+  dhcp4:
+    interfaces-config:
+      interfaces:
+      - "eth0"
+      dhcp-socket-type: raw
+    control-socket:
+      socket-type: unix
+      socket-name: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
+    hooks-libraries:
+    - library: "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
+    - library: "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
+    lease-database:
+      type: postgresql
+      name: "$DHCP_DBNAME"
+      host: "$DHCP_DBHOST"
+      user: "$DHCP_DBUSER"
+      password: "$DHCP_DBPASS"
+    valid-lifetime: 4000
+    subnet4:
+    - subnet: 192.168.10.0/24
+      pools:
+      - pool: 192.168.10.10 - 192.168.10.100
+      option-data:
+      - name: routers
+        data: 192.168.10.1
+      - name: domain-name-servers
+        data: 1.1.1.1
+  Logging:
+    loggers:
+    - name: cray-dchp-kea-dhcp4
+      output_options:
+      - output: stdout
+      severity: DEBUG
+crayDhcpKeaCtrlAgentConfig :
+  Control-agent:
+    control-sockets:
+      dhcp4:
+        socket-name: /cray-dhcp-kea-socket/cray-dhcp-kea.socket
+        socket-type: unix
+    http-host: 0.0.0.0
+    http-port: 8000
+    loggers:
+      -
+        debuglevel: 99
+        name: cray-dhcp-kea-ctrl-agent
+        output_options:
+          -
+            output: stdout
+          -
+            flush: true
+            maxsize: 204800
+            maxver: 8
+            output: /var/log/cray-dhcp-kea-ctrl-agent.log
+            pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
+        severity: DEBUG

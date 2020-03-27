@@ -7,8 +7,8 @@ Bring up virtualbox vm with: <br/>
   ```vagrant up``` <br/>
 SSH to virtualbox vm with: <br/>
  ```vagrant ssh``` <br/>
-Once you have a session inside the vm.  Move to cray-dhcp folder <br/>
-  ```cd /home/vagrant/cray-dhcp``` <br/>
+Once you have a session inside the vm.  Move to cray-dhcp-kea folder <br/>
+  ```cd /home/vagrant/cray-dhcp-kea``` <br/>
 Build container and launch docker-compose <br/>
   ```./build_container_run_docker_compose.sh``` <br/>
 To stop docker-compose <br/>

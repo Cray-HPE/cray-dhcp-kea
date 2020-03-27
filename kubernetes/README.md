@@ -1,3 +1,3 @@
-# Kubernetes Resources for cray-dhcp
+# Kubernetes Resources for cray-dhcp-kea
 
 * Helm Chart(s)
