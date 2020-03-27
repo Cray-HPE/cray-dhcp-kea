@@ -43,7 +43,9 @@ COPY --from=builder /usr/local /usr/local/
 
 EXPOSE 67/udp
 EXPOSE 67/tcp
+EXPOSE 68/udp
+EXPOSE 68/tcp
 
-COPY startup-dhcp.sh /
+COPY startup.sh /
 ENTRYPOINT ["sh", "-c", "/startup-dhcp.sh"]
 

@@ -11,9 +11,9 @@ cray-service:
   type: Deployment
   nameOverride: cray-dhcp-kea
   containers:
-    - name: "cray-dhcp-kea"
+    - name: cray-dhcp-kea
       image:
-        repository: "cray/cray-dhcp-kea"
+        repository: cray-dhcp-kea
         pullPolicy: Always
       env:
         - name: DHCP_DBHOST
@@ -33,13 +33,19 @@ cray-service:
           valueFrom:
             secretKeyRef:
               name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
-              key: password
+              key: password            
       ports:
-        - name: kea-server-udp
+        - name: dhcp-server-udp
           containerPort: 67
           protocol: UDP
-        - name: kea-server-tcp
+        - name: dhcp-server-tcp
           containerPort: 67
+          protocol: TCP
+        - name: dhcp-client-udp
+          containerPort: 68
+          protocol: UDP
+        - name: dhcp-client-tcp
+          containerPort: 68
           protocol: TCP
       livenessProbe:
         tcpSocket:
@@ -53,54 +59,13 @@ cray-service:
         periodSeconds: 3
       volumeMounts:
         - name: cray-dhcp-kea-dhcp4-conf
-          mountPath: /cray-dhcp-kea-dhcp4.conf
+          mountPath: /kea-dhcp4.conf
           readOnly: false
-          subPath: cray-dhcp-kea-dhcp4.conf
-        - name: cray-dhcp-kea-socket
-          mountPath: /cray-dhcp-kea-socket
-          readOnly: false
-          subPath: cray-dhcp-kea-socket
-    - name: "cray-dhcp-kea-ctrl-agent"
-      image:
-        repository: "cray/cray-dhcp-kea-ctrl-agent"
-        pullPolicy: Always
-      env:
-        - name: DHCP_CAHOST
-          value: "0.0.0.0"
-        - name: DHCP_CAPORT
-          value: "8000"
-      ports:
-        - name: kea-ctrl-tcp
-          containerPort: 8000
-          protocol: TCP
-      livenessProbe:
-        tcpSocket:
-          port: 8000
-        initialDelaySeconds: 5
-        periodSeconds: 3
-      readinessProbe:
-        tcpSocket:
-          port: 8000
-        initialDelaySeconds: 5
-        periodSeconds: 3
-      volumeMounts:
-        - name: cray-dhcp-kea-ctrl-agent-conf
-          mountPath: /cray-dhcp-kea-ctrl-agent.conf
-          readOnly: false
-          subPath: cray-dhcp-kea-ctrl-agent.conf
-        - name: cray-dhcp-kea-socket
-          mountPath: /cray-dhcp-kea-socket
-          readOnly: false
-          subPath: cray-dhcp-kea-socket
+          subPath: kea-dhcp4.conf
   volumes:
     - name: cray-dhcp-kea-dhcp4-conf
       configMap:
         name: cray-dhcp-kea-dhcp4-conf
-    - name: cray-dhcp-kea-ctrl-agent-conf
-      configMap:
-        name: cray-dhcp-kea-ctrl-agent-conf
-    - name: cray-dhcp-kea-socket
-      emptyDir: {}
   sqlCluster:
     enabled: true
     users:
@@ -110,18 +75,12 @@ cray-service:
     volumeSize: 10Gi
   ingress:
     enabled: true
-crayDhcpKeaDhcp4Config:
+keaConfig:
   dhcp4:
     interfaces-config:
       interfaces:
-      - "eth0"
+      - "*"
       dhcp-socket-type: raw
-    control-socket:
-      socket-type: unix
-      socket-name: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
-    hooks-libraries:
-    - library: "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
-    - library: "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
     lease-database:
       type: postgresql
       name: "$DHCP_DBNAME"
@@ -140,29 +99,8 @@ crayDhcpKeaDhcp4Config:
         data: 1.1.1.1
   Logging:
     loggers:
-    - name: cray-dchp-kea-dhcp4
+    - name: kea-dhcp4
       output_options:
       - output: stdout
       severity: DEBUG
-crayDhcpKeaCtrlAgentConfig :
-  Control-agent:
-    control-sockets:
-      dhcp4:
-        socket-name: /cray-dhcp-kea-socket/cray-dhcp-kea.socket
-        socket-type: unix
-    http-host: 0.0.0.0
-    http-port: 8000
-    loggers:
-      -
-        debuglevel: 99
-        name: cray-dhcp-kea-ctrl-agent
-        output_options:
-          -
-            output: stdout
-          -
-            flush: true
-            maxsize: 204800
-            maxver: 8
-            output: /var/log/cray-dhcp-kea-ctrl-agent.log
-            pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
-        severity: DEBUG
+    
