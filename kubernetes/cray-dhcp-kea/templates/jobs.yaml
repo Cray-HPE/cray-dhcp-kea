@@ -15,7 +15,7 @@ spec:
       serviceAccountName: "jobs-watcher"
       containers:
         - name: cray-dhcp-kea-init
-          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray-dhcp-kea-init:latest
+          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray/cray-dhcp-kea-init:latest
           env:
           - name: DHCP_DBHOST
             value: cray-dhcp-kea-postgres
