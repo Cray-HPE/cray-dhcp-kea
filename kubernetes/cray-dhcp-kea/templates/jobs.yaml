@@ -15,7 +15,7 @@ spec:
       serviceAccountName: "jobs-watcher"
       containers:
         - name: cray-dhcp-kea-init
-          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray-dhcp-kea-init:latest
+          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray/cray-dhcp-kea-init:latest
           env:
           - name: DHCP_DBHOST
             value: cray-dhcp-kea-postgres
@@ -43,8 +43,4 @@ spec:
           command:
             - /bin/sh
             - -c
-<<<<<<< HEAD:kubernetes/cray-dhcp-kea/templates/jobs.yaml
-            - while [ "`kubectl get jobs -n services cray-dhcp-kea-wait-for-postgres -o jsonpath='{.status.conditions[0].type}'`" != "Complete" ]; do echo "Waiting for cray-dhcp-wait-for-postgres to complete"; sleep 3 ; done; echo "Completed";
-=======
             - while [ "`kubectl get jobs -n services cray-dhcp-kea-wait-for-postgres -o jsonpath='{.status.conditions[0].type}'`" != "Complete" ]; do echo "Waiting for cray-dhcp-kea-wait-for-postgres to complete"; sleep 3 ; done; echo "Completed";
->>>>>>> 16677dcdb6c5cb716dac12ebdbde0a5cf8778aa4:kubernetes/cray-dhcp-kea/templates/jobs.yaml

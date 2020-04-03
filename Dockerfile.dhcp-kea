@@ -46,6 +46,6 @@ EXPOSE 67/tcp
 EXPOSE 68/udp
 EXPOSE 68/tcp
 
-COPY startup.sh /
+COPY startup-dhcp.sh /
 ENTRYPOINT ["sh", "-c", "/startup-dhcp.sh"]
 
