@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM dtr.dev.cray.com/baseos/alpine
 
 ENV DHCP_DBNAME=dhcp
 ENV DHCP_DBUSER=dhcpdsuser
