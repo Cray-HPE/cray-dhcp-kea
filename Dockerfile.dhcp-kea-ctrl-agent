@@ -1,4 +1,4 @@
-FROM alpine:latest as builder
+FROM dtr.dev.cray.com/baseos/alpine as builder
 
 ARG KEA_DHCP_VERSION=1.6.1
 ARG LOG4_CPLUS_VERSION=2.0.5
