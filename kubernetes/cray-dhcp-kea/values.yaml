@@ -130,14 +130,15 @@ crayDhcpKeaDhcp4Config:
       password: "$DHCP_DBPASS"
     valid-lifetime: 4000
     subnet4:
-      - subnet: 192.168.10.0/24
+      - subnet: 10.252.0.0/17
         pools:
-          - pool: 192.168.10.10 - 192.168.10.100
+          - pool: 10.252.127.200 - 10.252.127.250
         option-data:
           - name: routers
-            data: 192.168.10.1
+            data: 10.252.0.2
           - name: domain-name-servers
-            data: 1.1.1.1
+            data: 10.252.0.4
+        reservations:
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4
