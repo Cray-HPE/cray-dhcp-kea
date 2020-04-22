@@ -138,7 +138,6 @@ crayDhcpKeaDhcp4Config:
             data: 10.252.0.2
           - name: domain-name-servers
             data: 10.252.0.4
-        reservations:
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4
