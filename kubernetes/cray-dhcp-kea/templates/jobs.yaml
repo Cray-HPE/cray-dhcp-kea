@@ -15,7 +15,11 @@ spec:
       serviceAccountName: "jobs-watcher"
       containers:
         - name: cray-dhcp-kea-init
-          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray/cray-dhcp-kea-init:latest
+          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}cray/cray-dhcp-kea:latest
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "PGPASSWORD=$DHCP_DBPASS /usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
           env:
           - name: DHCP_DBHOST
             value: cray-dhcp-kea-postgres
