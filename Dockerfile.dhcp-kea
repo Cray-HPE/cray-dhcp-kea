@@ -48,8 +48,7 @@ EXPOSE 68/udp
 EXPOSE 68/tcp
 EXPOSE 8000/tcp
 
-# db init script
-COPY ./postgres/dhcpdb_create.sql /
+
 # startup script for kea server
 COPY startup-dhcp.sh /
 # startup script for kea ctrl agent(api server)

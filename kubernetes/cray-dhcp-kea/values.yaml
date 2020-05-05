@@ -14,10 +14,10 @@ cray-service:
     - name: "cray-dhcp-kea"
       image:
         repository: "cray/cray-dhcp-kea"
-        entrypoint:
-          - "sh"
-          - "-c"
-          - "/startup-dhcp.sh"
+      command:
+        - "sh"
+        - "-c"
+        - "/startup-dhcp.sh"
       env:
         - name: DHCP_DBHOST
           value: cray-dhcp-kea-postgres
@@ -66,10 +66,10 @@ cray-service:
     - name: "cray-dhcp-kea-ctrl-agent"
       image:
         repository: "cray/cray-dhcp-kea"
-        entrypoint:
-          - "sh"
-          - "-c"
-          - "/startup-dhcp-ctrl-agent.sh"
+      command:
+        - "sh"
+        - "-c"
+        - "/startup-dhcp-ctrl-agent.sh"
       env:
         - name: DHCP_CAHOST
           value: "0.0.0.0"

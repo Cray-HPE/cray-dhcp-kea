@@ -41,6 +41,11 @@ spec:
                 key: password 
           - name: DHCP_DBOPTS
             value: ""
+          volumeMounts:
+            - name: cray-dhcp-kea-db-init
+              mountPath: /dhcpdb_create.sql
+              readOnly: false
+              subPath: cray-dhcp-kea-dhcp4.conf
       initContainers:
         - name: "wait-for-postgres-job-watcher"
           image: {{ include "cray-dhcp-kea.image-prefix" .Values }}loftsman/docker-kubectl:latest
