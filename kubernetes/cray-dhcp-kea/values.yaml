@@ -105,6 +105,9 @@ cray-service:
     - name: cray-dhcp-kea-ctrl-agent-conf
       configMap:
         name: cray-dhcp-kea-ctrl-agent-conf
+    - name: cray-dhcp-kea-db-init
+      configMap:
+        name: cray-dhcp-kea-db-init
     - name: cray-dhcp-kea-socket
       emptyDir: {}
   sqlCluster:

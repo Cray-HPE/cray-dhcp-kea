@@ -46,6 +46,10 @@ spec:
               mountPath: /dhcpdb_create.sql
               readOnly: false
               subPath: dhcpdb_create.sql
+      volumes:
+        - name: cray-dhcp-kea-db-init
+          configMap:
+            name: cray-dhcp-kea-db-init
       initContainers:
         - name: "wait-for-postgres-job-watcher"
           image: {{ include "cray-dhcp-kea.image-prefix" .Values }}loftsman/docker-kubectl:latest
