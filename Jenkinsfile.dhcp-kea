@@ -10,3 +10,9 @@ dockerBuildPipeline {
     product = "shasta-premium,shasta-standard"
     slackNotification = ["", "", false, false, true, false]
 }
+rpmBuild (
+    channel: "casm-cloud-alerts",
+    slack_notify: ['FAILURE'],
+    product: "shasta-premium",
+    target_node: "ncn"
+)
