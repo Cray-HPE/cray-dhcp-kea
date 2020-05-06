@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cray-dhcp-kea-dhcp4-conf
+  namespace: services
+data:
+  cray-dhcp-kea-dhcp4.conf: |-
+    {
+      "Dhcp4": {
+      "control-socket": {
+        "socket-name": "/cray-dhcp-kea-socket/cray-dhcp-kea.socket",
+        "socket-type": "unix"
+      },
+      "hooks-libraries": [
+        {
+          "library": "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
+        },
+        {
+          "library": "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
+        }
+      ],
+      "interfaces-config": {
+        "dhcp-socket-type": "raw",
+        "interfaces": [
+          "eth0"
+        ]
+      },
+      "lease-database": {
+        "host": "$DHCP_DBHOST",
+        "name": "$DHCP_DBNAME",
+        "password": "$DHCP_DBPASS",
+        "type": "postgresql",
+        "user": "$DHCP_DBUSER"
+      },
+      "subnet4": [
+        {
+          "option-data": [
+            {
+              "data": "{{ nmn_gateway }}",
+              "name": "routers"
+            },
+            {
+              "data": "{{ nmn_dns }}",
+              "name": "domain-name-servers"
+            }
+          ],
+          "pools": [
+            {
+              "pool": "{{ nmn_dhcp_start }} - {{ nmn_dhcp_end }}"
+            }
+          ],
+          "reservations": [
+          {%- include 'reservations.j2' -%}{{ '\n' }}
+          ],
+          "subnet": "{{ networks.node_management.blocks.ipv4[0].network }}"
+        }
+      ],
+      "valid-lifetime": 4000
+    }
+    }
