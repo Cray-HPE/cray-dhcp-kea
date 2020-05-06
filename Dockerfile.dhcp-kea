@@ -37,6 +37,7 @@ RUN apk --no-cache add \
         bzip2 \
         libressl \
         postgresql-dev \
+        postgresql-client \
         zlib
 
 COPY --from=builder /usr/local /usr/local/
@@ -45,7 +46,12 @@ EXPOSE 67/udp
 EXPOSE 67/tcp
 EXPOSE 68/udp
 EXPOSE 68/tcp
+EXPOSE 8000/tcp
 
+
+# startup script for kea server
 COPY startup-dhcp.sh /
-ENTRYPOINT ["sh", "-c", "/startup-dhcp.sh"]
+# startup script for kea ctrl agent(api server)
+COPY startup-dhcp-ctrl-agent.sh /
+
 

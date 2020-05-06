@@ -5,4 +5,4 @@ metadata:
   namespace: services
 data:
   cray-dhcp-kea-ctrl-agent.conf: |-
-{{ tpl (.Files.Get "files/cray-dhcp-kea-ctrl-agent.conf") . | indent 4 }}
+{{ toPrettyJson .Values.crayDhcpKeaCtrlAgentConfig | indent 4 }}

@@ -32,7 +32,7 @@ services:
       DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
       DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
   cray-dhcp-kea-ctrl-agent:
-    image: cray-dhcp-kea-ctrl-agent:latest
+    image: cray-dhcp-kea:latest
     container_name: cray-dhcp-kea-ctrl-agent
     privileged: true
     volumes:
