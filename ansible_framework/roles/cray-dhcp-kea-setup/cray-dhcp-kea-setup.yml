@@ -1,6 +1,0 @@
-- hosts: localhost
-  connection: local
-  vars_files:
-    - "/opt/cray/crayctl/files/group_vars/all/networks.yml"
-  roles:
-    - cray-dhcp-kea-setup
