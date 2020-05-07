@@ -7,10 +7,10 @@ data:
   cray-dhcp-kea-dhcp4.conf: |-
     {
       "Dhcp4": {
-      "control-socket": {
-        "socket-name": "/cray-dhcp-kea-socket/cray-dhcp-kea.socket",
-        "socket-type": "unix"
-      },
+        "control-socket": {
+          "socket-name": "/cray-dhcp-kea-socket/cray-dhcp-kea.socket",
+          "socket-type": "unix"
+        },
       "hooks-libraries": [
         {
           "library": "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
@@ -50,11 +50,11 @@ data:
             }
           ],
           "reservations": [
-          {%- include 'reservations.j2' -%}{{ '\n' }}
+            {%- include 'reservations.j2' -%}{{ '\n' }}
           ],
           "subnet": "{{ networks.node_management.blocks.ipv4[0].network }}"
         }
       ],
       "valid-lifetime": 4000
-    }
+      }
     }
