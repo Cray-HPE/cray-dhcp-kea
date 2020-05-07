@@ -30,4 +30,4 @@
   shell: kubectl apply -f configmap_dhcp4.yaml
 
 - name: resetart cray-dhcp-kea pod
-  shell: kubectl delete -n services po $(kubectl get pods -A|grep kea|grep -Ev "post|init"|cut -d ' ' -f11)
+  shell: kubectl delete pods -n services -l app.kubernetes.io/name=cray-dhcp-kea
