@@ -1,0 +1,33 @@
+#nmn network
+- set_fact:
+    cray_macs_file: "{{ lookup('file', '/etc/cray-macs', errors='ignore') }}"
+    nmn_dns: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dns }}"
+    reserved: "{{ networks.node_management.blocks.ipv4.0.subnets.0.reserved }}"
+    nmn_gateway: "{{ networks.node_management.blocks.ipv4.0.subnets.0.gateway }}"
+    nmn_dhcp_start: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dhcp.start }}"
+    nmn_dhcp_end: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dhcp.end }}"
+
+- name: Split cray_macs
+  set_fact:
+    cray_macs: "{{ cray_macs | default([]) + [dict(['label', 'mac'] | zip(item.split(' ')))] }}"
+  loop: "{{ cray_macs_file.splitlines() }}"
+  loop_control:
+    label: "{{ item.split(' ')[0] }}"
+
+- name: Add IP addresses to cray_macs list
+  set_fact:
+    reservations: "{{ reservations| default([]) + [item | combine(reserved | selectattr('label', 'equalto', item.label )  |list )] }}"
+  loop: "{{ cray_macs }}"
+  loop_control:
+    label: "{{ item.label }}"
+
+- name: create dhcp4 config map
+  template:
+    src: configmap_dhcp4.yaml.j2
+    dest: configmap_dhcp4.yaml
+
+- name: apply dhcp4 configmap
+  shell: kubectl apply -f configmap_dhcp4.yaml
+
+- name: resetart cray-dhcp-kea pod
+  shell: kubectl delete pods -n services -l app.kubernetes.io/name=cray-dhcp-kea
