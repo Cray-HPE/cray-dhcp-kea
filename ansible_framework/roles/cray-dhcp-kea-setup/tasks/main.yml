@@ -2,10 +2,12 @@
 - set_fact:
     cray_macs_file: "{{ lookup('file', '/etc/cray-macs', errors='ignore') }}"
     nmn_dns: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dns }}"
-    reserved: "{{ networks.node_management.blocks.ipv4.0.subnets.0.reserved }}"
+    nmn_reserved: "{{ networks.node_management.blocks.ipv4.0.subnets.0.reserved }}"
     nmn_gateway: "{{ networks.node_management.blocks.ipv4.0.subnets.0.gateway }}"
     nmn_dhcp_start: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dhcp.start }}"
     nmn_dhcp_end: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dhcp.end }}"
+    nmn_dhcp_filename: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dhcp.filename }}"
+    nmn_dhcp_next_server: "{{ networks.node_management.blocks.ipv4.0.subnets.0.dhcp.next }}"
 
 - name: Split cray_macs
   set_fact:
@@ -16,7 +18,7 @@
 
 - name: Add IP addresses to cray_macs list
   set_fact:
-    reservations: "{{ reservations| default([]) + [item | combine(reserved | selectattr('label', 'equalto', item.label )  |list )] }}"
+    nmn_reservations: "{{ nmn_reservations| default([]) + [item | combine(nmn_reserved | selectattr('label', 'equalto', item.label )  |list )] }}"
   loop: "{{ cray_macs }}"
   loop_control:
     label: "{{ item.label }}"

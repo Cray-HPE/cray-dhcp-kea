@@ -1,8 +1,8 @@
-{% for reservations in reservations %}
+{% for nmn_reservations in nmn_reservations %}
             {
-              "hostname": "{{ reservations.label | replace('-nmn', '') }}",
-              "mac": "{{ reservations.mac }}",
-              "ip": "{{ reservations.address }}"
+              "hostname": "{{ nmn_reservations.label | replace('-nmn', '') }}",
+              "hw-address": "{{ nmn_reservations.mac }}",
+              "ip-address": "{{ nmn_reservations.address }}"
 {% if not loop.last %}
             },
 {% else %}
