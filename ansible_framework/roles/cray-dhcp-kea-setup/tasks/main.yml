@@ -18,7 +18,7 @@
 
 - name: Add IP addresses to cray_macs list
   set_fact:
-    reservations: "{{ reservations| default([]) + [item | combine(reserved | selectattr('label', 'equalto', item.label )  |list )] }}"
+    nmn_reservations: "{{ nmn_reservations| default([]) + [item | combine(nmn_reserved | selectattr('label', 'equalto', item.label )  |list )] }}"
   loop: "{{ cray_macs }}"
   loop_control:
     label: "{{ item.label }}"
