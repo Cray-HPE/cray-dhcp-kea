@@ -179,3 +179,12 @@ crayDhcpKeaCtrlAgentConfig :
             output: /var/log/cray-dhcp-kea-ctrl-agent.log
             pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
         severity: DEBUG
+jobs:
+  helper:
+    # TODO: determine if this is the right schedule, currently running every 15 minutes
+    schedule:
+      minute: "*/15"
+      hour: "*"
+      dayOfMonth: "*"
+      month: "*"
+      dayOfWeek: "*"
