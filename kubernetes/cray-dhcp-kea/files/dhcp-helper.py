@@ -121,7 +121,17 @@ for smd_mac_address in smd_ethernet_interfaces:
         data['arguments']['hw-address'] = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
         data = {'command': 'lease4-update','service': 'dhcp4', 'arguments': {'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress'], 'hw-address': smd_mac_address, 'hostname':smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'force-create': 'true'}}
         print(data)
+        # submit dhcp reservation with hostname, mac and ip
         print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
+        try:
+            resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+            resp.raise_for_status()
+        except Exception as err:
+            raise SystemExit(err)
+        print(resp)
+    else:
+        # submit dhcp reservation with only hostname and mac
+        data = {'command': 'lease4-update','service': 'dhcp4', 'arguments': {'hw-address': smd_mac_address, 'hostname':smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'force-create': 'true'}}
         try:
             resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
             resp.raise_for_status()

@@ -142,7 +142,7 @@ crayDhcpKeaDhcp4Config:
       host: "$DHCP_DBHOST"
       user: "$DHCP_DBUSER"
       password: "$DHCP_DBPASS"
-    valid-lifetime: 4000
+    valid-lifetime: 120
     subnet4:
       - "$SUBNET4"
   Logging:
