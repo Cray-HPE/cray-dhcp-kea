@@ -31,9 +31,12 @@ done
 /bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
 
 # check to make sure env SUBNET4 is not null
-while ( -n "$SUBNET4"); do
+counter=0
+while ( -n "$SUBNET4" ) & ("$counter" -lt 10); do
   # hack to get network info json
-  python3 get_network_cidr.py
+  SUBNET4 = "$(python3 get_network_cidr.py)"
+  counter++
+  sleep 10
 done
 
 mkdir -p /usr/local/kea
