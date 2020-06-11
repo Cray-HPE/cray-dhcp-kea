@@ -144,7 +144,7 @@ crayDhcpKeaDhcp4Config:
       password: "$DHCP_DBPASS"
     valid-lifetime: 4000
     subnet4:
-      - SUBNET4
+      - "$SUBNET4"
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4
