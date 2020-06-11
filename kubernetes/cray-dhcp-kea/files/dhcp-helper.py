@@ -103,7 +103,6 @@ for item in resp.json():
 
 for smd_mac_address in smd_ethernet_interfaces:
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
-    # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and smd_mac_address not in kea_ipv4_leases:
         # check for alias
         sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID']) + 'n0'
