@@ -76,15 +76,6 @@ print (lease_database_info)
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
 cn_nmn_cidr = resp.json()[0]['ExtraProperties']['Networks']['cn']['NMN']['CIDR']
 
-#   b) TODO: use resp.json() to process the SLS results and pass to kea appropriately
-#            Kea should be updated with the subnet info served from SLS, but not sure
-#            how this translates
-
-#   c) TODO: enable kea dhcp pools?
-#            not sure what this means or how to do it
-
-# 2) ##############################################################################
-
 #   a) Query Kea for DHCP leases, we'll just query the api
 data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
 kea_headers = {'Content-Type': 'application/json'}
@@ -146,8 +137,3 @@ for smd_mac_address in smd_ethernet_interfaces:
             resp.raise_for_status()
         except Exception as err:
             raise SystemExit(err)
-for kea_mac_address in kea_ipv4_leases:
-    # go through the Kea records now and make sure we submit any MACs/IPs that weren't in SMD at all back for discovery to SMD
-    if kea_mac_address not in smd_ethernet_interfaces:
-        # TODO: Submit IP for discovery in SMD
-        print("ready to submit to smd")
