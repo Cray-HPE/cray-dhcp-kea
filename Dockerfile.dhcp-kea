@@ -40,6 +40,8 @@ RUN apk --no-cache add \
         postgresql-client \
         zlib \
         py-pip
+        curl
+        jq
 
 RUN pip install requests
 
@@ -56,3 +58,5 @@ EXPOSE 8000/tcp
 COPY startup-dhcp.sh /
 # startup script for kea ctrl agent(api server)
 COPY startup-dhcp-ctrl-agent.sh /
+# copy network cidr script
+COPY get_network_cidr.py

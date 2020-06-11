@@ -6,7 +6,8 @@
 #   repository: ""
 #   tag: "" (default = "latest")
 #   pullPolicy: "" (default = "IfNotPresent")
-
+nmnLoadBalancerIp: 10.92.100.222
+hmnLoadBalancerIp: 10.94.100.222
 cray-service:
   type: Deployment
   nameOverride: cray-dhcp-kea
@@ -143,22 +144,7 @@ crayDhcpKeaDhcp4Config:
       password: "$DHCP_DBPASS"
     valid-lifetime: 4000
     subnet4:
-      - subnet: 10.252.0.0/17
-        pools:
-          - pool: 10.252.0.26 - 10.252.3.205
-        option-data:
-          - name: routers
-            data: 10.252.0.1
-          - name: domain-name-servers
-            data: 10.252.0.4
-      - subnet: 10.254.0.0/17
-        pools:
-          - pool: 10.254.0.26 - 10.254.3.205
-        option-data:
-          - name: routers
-            data: 10.254.0.1
-          - name: domain-name-servers
-            data: 10.254.0.4
+      - SUBNET4
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4

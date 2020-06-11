@@ -30,6 +30,11 @@ done
 
 /bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
 
+# check to make sure env SUBNET4 is not null
+while ( -n "$SUBNET4"); do
+  # hack to get network info json
+  python3 get_network_cidr.py
+done
 
 mkdir -p /usr/local/kea
 #  since the username and password is dyanmic with the k8s postgres operator
