@@ -2,6 +2,7 @@
 
 import requests
 import json
+import ipaddress
 
 # dict of the current IPv4 leases managed by Kea, each item in the format:
 # '08:08:08:08:08:08': {
@@ -73,6 +74,7 @@ print (lease_database_info)
 
 #   a) Get network subnet and cabinet subnet info from SLS
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
+cn_nmn_cidr = resp.json()[0]['ExtraProperties']['Networks']['cn']['NMN']['CIDR']
 
 #   b) TODO: use resp.json() to process the SLS results and pass to kea appropriately
 #            Kea should be updated with the subnet info served from SLS, but not sure
@@ -112,7 +114,6 @@ for smd_mac_address in smd_ethernet_interfaces:
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and smd_mac_address not in kea_ipv4_leases:
-        data = {'command': 'lease4-update','service': 'dhcp4', 'arguments': {'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress'], 'hw-address': smd_mac_address, 'hostname':smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'force-create': 'true'}}
         # check for alias
         sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID']) + 'n0'
         print(sls_hardware_url)
@@ -122,19 +123,12 @@ for smd_mac_address in smd_ethernet_interfaces:
         except Exception as err:
             raise SystemExit(err)
         print(resp.json()['ExtraProperties']['Aliases'])
-        if resp.json()['ExtraProperties']['Aliases'] != '':
-#            option_data = {}
-            data['arguments']['option-data'] = []
-            for alias in resp.json()['ExtraProperties']['Aliases']:
-                alias_hostname = {}
-                alias_hostname['space'] = "dhcp4"
-                alias_hostname['name'] = "hostname"
-                alias_hostname['code'] = "12"
-                alias_hostname['data'] = alias
-                data['arguments']['option-data'].append(alias_hostname)
-#            data.append(option_data)
+        # checking to see if its nmn ip, we will need to switch the name to nid instad of xname
+        if resp.json()['ExtraProperties']['Aliases'] != '' and ipaddress.ip_address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.ip_network(cn_nmn_cidr):
+            smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
         # convert mac format
         data['arguments']['hw-address'] = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
+        data = {'command': 'lease4-update','service': 'dhcp4', 'arguments': {'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress'], 'hw-address': smd_mac_address, 'hostname':smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'force-create': 'true'}}
         print(data)
         print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         try:
@@ -145,9 +139,13 @@ for smd_mac_address in smd_ethernet_interfaces:
         print(resp)
     # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '' and smd_mac_address in kea_ipv4_leases and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
-        print("") # TODO: remove this print line, just here to ensure there's some code in the if block
-        # TODO: Update SMD with IP
-        # TODO: Initiate discovery of IP on SMD
+        update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
+        data = {'MACAddress': smd_mac_address,'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
+        try:
+            resp = requests.post(url=update_smd_url, json=data)
+            resp.raise_for_status()
+        except Exception as err:
+            raise SystemExit(err)
 for kea_mac_address in kea_ipv4_leases:
     # go through the Kea records now and make sure we submit any MACs/IPs that weren't in SMD at all back for discovery to SMD
     if kea_mac_address not in smd_ethernet_interfaces:
