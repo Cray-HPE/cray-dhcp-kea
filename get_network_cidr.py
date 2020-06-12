@@ -25,6 +25,4 @@ for i in resp.json():
         subnet4_subnet['option-data']['name'] = 'router'
         subnet4_subnet['option-data']['data'] = cn_gateway
         subnet4.append(subnet4_subnet)
-os.environ[SUBNET4] = json.dumps(subnet4)
-
-
+print (json.dumps(subnet4))

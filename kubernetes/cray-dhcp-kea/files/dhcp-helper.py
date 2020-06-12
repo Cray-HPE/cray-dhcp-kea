@@ -59,20 +59,38 @@ sls_hardware_entry = {}
 # }
 lease_database_info = {}
 
-# array for subnet4
-#[
-#  {
-#    "pools": {
-#      "pool": "10.254.0.26-10.254.3.205"
-#    },
-#    "option-data": {
-#      "name": "router",
-#      "data": "10.254.0.1"
-#    },
-#    "subnet": "10.254.0.0/22"
-#  }
-#]
+# array for subnet4 for cabinet subnets
+# [
+#   {
+#     "pools": {
+#       "pool": "10.254.0.26-10.254.3.205"
+#     },
+#     "option-data": {
+#       "name": "router",
+#       "data": "10.254.0.1"
+#     },
+#     "subnet": "10.254.0.0/22"
+#   }
+# ]
+
+# dhcp reservation array structure
+# there will be two types of reservations.
+# [
+#     {
+#         "hostname": "Joey-Jo-Jo-Junior-Shabadoo",
+#         "hw-address": "1a:1b:1c:1d:1e:1f",
+#         "ip-address": "192.0.2.201"
+#     },
+#     {
+#        "hw-address": "01:11:22:33:44:55:66",
+#        "hostname": "rodimus-prime"
+#     }
+# ]
+dhcp_reservations = []
+
+# query sls for cabinet subnets
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
+# parse the response from cray-sls
 subnet4 = []
 for item in resp.json()[0]['ExtraProperties']['Networks']['cn']:
     subnet4_subnet = {}
@@ -92,6 +110,7 @@ for item in resp.json()[0]['ExtraProperties']['Networks']['cn']:
     subnet4_subnet['option-data']['data'] = cn_gateway
     subnet4.append(subnet4_subnet)
 
+# query cray-dhcp-kea for lease db info
 data = {'command': 'config-get', 'service': ['dhcp4']}
 kea_headers = {'Content-Type': 'application/json'}
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
@@ -102,6 +121,7 @@ except Exception as err:
     raise SystemExit(err)
 lease_database_info = resp.json()[0]['arguments']['Dhcp4']['lease-database']
 print (lease_database_info)
+
 # 1) ##############################################################################
 
 #   a) Get network subnet and cabinet subnet info from SLS
@@ -145,7 +165,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         except Exception as err:
             raise SystemExit(err)
         print(resp.json()['ExtraProperties']['Aliases'])
-        # checking to see if its nmn ip, we will need to switch the name to nid instad of xname
+        # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
         if resp.json()['ExtraProperties']['Aliases'] != '' and ipaddress.ip_address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.ip_network(cn_nmn_cidr):
             smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
         # convert mac format
