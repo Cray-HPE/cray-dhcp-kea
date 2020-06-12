@@ -49,6 +49,26 @@ smd_ethernet_interfaces = {}
 # }
 sls_hardware_entry = {}
 
+# dict for lease database information
+# "lease-database": {
+#    "host": "cray-dhcp-kea-postgres",
+#    "name": "dhcp",
+#    "password": "xxxxxxxxxxx",
+#    "type": "postgresql",
+#    "user": "dhcpdsuser"
+# }
+lease_database_info = {}
+
+data = {'command': 'config-get', 'service': ['dhcp4']}
+kea_headers = {'Content-Type': 'application/json'}
+kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
+try:
+    resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+    resp.raise_for_status()
+except Exception as err:
+    raise SystemExit(err)
+lease_database_info = resp.json()[0]['arguments']['Dhcp4']['lease-database']
+print (lease_database_info)
 # 1) ##############################################################################
 
 #   a) Get network subnet and cabinet subnet info from SLS
