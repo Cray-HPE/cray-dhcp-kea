@@ -24,12 +24,11 @@ do
   sleep 60;
   if [ $count -gt 10 ]
   then
+    echo "timeout waiting for postgres and exiting"
     exit 1
   fi
 done
-
-/bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
-
+PGPASSWORD=$DHCP_DBPASS /bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
 
 mkdir -p /usr/local/kea
 #  since the username and password is dyanmic with the k8s postgres operator
