@@ -89,8 +89,11 @@ lease_database_info = {}
 dhcp_reservations = []
 
 # import config template
-with open('cray_dhcp_kea_dhcp4.conf') as file:
-    cray_dhcp_kea_dhcp4 = json.loads(file.read())
+#with open('cray_dhcp_kea_dhcp4.conf') as file:
+#    cray_dhcp_kea_dhcp4 = json.loads(file.read())
+#
+# temp work around for job load
+cray_dhcp_kea_dhcp4 = json.loads('{"command":"config-set","arguments":{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"reservation-mode":"global","reservations":[],"subnet4":[],"valid-lifetime":120}}}')
 # query sls for cabinet subnets
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
 # parse the response from cray-sls
