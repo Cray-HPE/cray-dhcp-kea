@@ -154,7 +154,7 @@ crayDhcpKeaDhcp4Config:
             data: 10.252.0.2
           - name: domain-name-servers
             data: 10.252.0.4
-      - subnet: 10.252.0.0/17
+      - subnet: 10.254.0.0/17
         pools:
           - pool: 10.254.127.200 - 10.254.127.250
         option-data:
