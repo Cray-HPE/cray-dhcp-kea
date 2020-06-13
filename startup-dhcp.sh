@@ -28,7 +28,7 @@ do
   fi
 done
 
-/bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
+PGPASSWORD=$DHCP_DBPASS /bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
 
 # check to make sure env SUBNET4 is not null
 counter=0
