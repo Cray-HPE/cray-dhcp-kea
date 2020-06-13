@@ -83,7 +83,7 @@ metadata:
     metallb.universe.tf/address-pool: node-management
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - name: kea-api
       port: 8000
