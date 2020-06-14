@@ -193,10 +193,10 @@ for smd_mac_address in smd_ethernet_interfaces:
         print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
-            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
+            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_address
             post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
             try:
-                resp = requests.post(url=update_smd_url, json=post_data)
+                resp = requests.patch(url=update_smd_url, json=post_data)
                 resp.raise_for_status()
             except Exception as err:
                 raise SystemExit(err)
