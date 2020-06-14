@@ -3,6 +3,7 @@
 import requests
 import json
 import ipaddress
+import time
 
 # dict of the current IPv4 leases managed by Kea, each item in the format:
 # '08:08:08:08:08:08': {
@@ -88,6 +89,8 @@ lease_database_info = {}
 # ]
 dhcp_reservations = []
 
+# making sure istio is ready
+time.sleep(30)
 # import config template
 #with open('cray_dhcp_kea_dhcp4.conf') as file:
 #    cray_dhcp_kea_dhcp4 = json.loads(file.read())
