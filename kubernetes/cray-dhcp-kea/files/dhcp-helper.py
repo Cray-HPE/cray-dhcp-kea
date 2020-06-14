@@ -165,12 +165,12 @@ for item in resp.json():
 for smd_mac_address in smd_ethernet_interfaces:
 #    print(smd_ethernet_interfaces[smd_mac_address])
     reservation = {}
+    kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and smd_mac_address not in kea_ipv4_leases:
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['ComponentID']:
             print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
-            # check for alias
             if 'n0' in smd_ethernet_interfaces[smd_mac_address]['ComponentID']:
                 sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
             else:
@@ -185,7 +185,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         if resp.json()['ExtraProperties']['Aliases'] != '' and ipaddress.ip_address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.ip_network(cn_nmn_cidr):
             smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
         # convert mac format
-        data['hw-address'] = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
+        data['hw-address'] = kea_mac_format
         data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
         data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': smd_mac_address, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
@@ -193,13 +193,6 @@ for smd_mac_address in smd_ethernet_interfaces:
         print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
-            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_address
-            post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
-            try:
-                resp = requests.patch(url=update_smd_url, json=post_data)
-                resp.raise_for_status()
-            except Exception as err:
-                raise SystemExit(err)
     if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] is None:
         data = {}
         # submit dhcp reservation with only hostname and mac
@@ -226,11 +219,11 @@ for smd_mac_address in smd_ethernet_interfaces:
             dhcp_reservations.append(data)
 
     # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
-    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '' and smd_mac_address in kea_ipv4_leases and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
-        update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
-        data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
+    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '' and smd_mac_address in kea_ipv4_leases and kea_ipv4_leases[kea_mac_format]['ip-address'] != '':
+        update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_address
+        post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
         try:
-            resp = requests.post(url=update_smd_url, json=data)
+            resp = requests.patch(url=update_smd_url, json=post_data)
             resp.raise_for_status()
         except Exception as err:
             raise SystemExit(err)
