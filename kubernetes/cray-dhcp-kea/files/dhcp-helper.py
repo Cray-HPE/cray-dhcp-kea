@@ -162,6 +162,33 @@ for item in resp.json():
 
 #   c) Resolve the results from both SMD and Kea to synchronize both
 
+# check to see if smd is aware of ips in kea
+# check to see if smd is aware of ips in kea
+print (kea_ipv4_leases)
+for mac_address, mac_details in kea_ipv4_leases.items():
+    print('checking mac_address', mac_address)
+    print('checking ip', mac_details['ip-address'])
+    kea_ip = mac_details['ip-address']
+    smd_mac_format = mac_address.replace(':','')
+    print (smd_mac_format)
+    update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress=' + kea_ip
+    print(update_smd_url)
+    try:
+        resp = requests.get(url=update_smd_url)
+        resp.raise_for_status()
+    except Exception as err:
+        raise SystemExit(err)
+    print(resp.json())
+    if resp.json() == []:
+        print('adding mac',mac_address,'adding ip address',kea_ip)
+        update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
+        post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
+        resp = requests.post(url=update_smd_url, json=post_data)
+        if "Error" in resp:
+            print('we got an error posting, trying to patch instead')
+            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
+            post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
+            resp = requests.patch(url=update_smd_url, json=post_data)
 for smd_mac_address in smd_ethernet_interfaces:
 #    print(smd_ethernet_interfaces[smd_mac_address])
     reservation = {}
