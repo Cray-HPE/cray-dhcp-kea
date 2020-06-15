@@ -146,7 +146,13 @@ crayDhcpKeaDhcp4Config:
       password: "$DHCP_DBPASS"
     valid-lifetime: 120
     subnet4:
+      # adding hmn basic network info for now
       - subnet: 10.254.0.0/17
+        id: 2
+        relay:
+          ip-addresses:
+          -
+            "{{ .Values.hmnLoadBalancerIp }}"
         pools:
           - pool: 10.254.127.200 - 10.254.127.250
         option-data:
