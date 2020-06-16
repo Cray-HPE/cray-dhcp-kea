@@ -214,7 +214,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         # convert mac format
         data['hw-address'] = kea_mac_format
         data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
-        data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': smd_mac_address, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
+        data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
         # submit dhcp reservation with hostname, mac and ip
 #        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
@@ -243,7 +243,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         else:
             data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         # convert mac format
-        data['hw-address'] = smd_mac_address
+        data['hw-address'] = kea_mac_format
         if data['hw-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
 
