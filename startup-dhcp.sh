@@ -49,4 +49,4 @@ sed -i 's/EOF//g' /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 #  helpful for debugging
 cat /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 # what we use to run Cray DHCP Kea server
-/usr/local/sbin/kea-dhcp4 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf && while true; do "python3 dhcp-helper.py"; sleep 900; done
+/usr/local/sbin/kea-dhcp4 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf && 'while true; do "python3 dhcp-helper.py"; sleep 900; done'
