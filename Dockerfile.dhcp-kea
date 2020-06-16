@@ -1,6 +1,6 @@
 FROM dtr.dev.cray.com/baseos/alpine:latest as builder
 
-ARG KEA_DHCP_VERSION=1.7.8
+ARG KEA_DHCP_VERSION=1.6.2
 ARG LOG4_CPLUS_VERSION=2.0.5
 
 RUN apk add --no-cache --virtual .build-deps \
