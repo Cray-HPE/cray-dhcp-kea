@@ -73,13 +73,13 @@ cray-service:
           readOnly: false
           subPath: dhcpdb_create.sql
         - name: cray-dhcp-kea-jobs
-          mountPath: /bin/dhcp-helper.py
+          mountPath: /dhcp-helper.py
           readOnly: true
           subPath: dhcp-helper.py
         - name: cray-dhcp-kea-jobs-template
-          mountPath: /bin/cray-dhcp-kea-dhcp4.conf
+          mountPath: /cray-dhcp-kea-dhcp4.conf.template
           readOnly: true
-          subPath: cray-dhcp-kea-dhcp4.conf
+          subPath: cray-dhcp-kea-dhcp4.conf.template
     - name: "cray-dhcp-kea-ctrl-agent"
       image:
         repository: "cray/cray-dhcp-kea"

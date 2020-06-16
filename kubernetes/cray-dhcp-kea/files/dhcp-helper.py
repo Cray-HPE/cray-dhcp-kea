@@ -91,7 +91,7 @@ dhcp_reservations = []
 
 # import config template
 # TODO fix job template load
-#with open('cray_dhcp_kea_dhcp4.conf') as file:
+#with open('cray_dhcp_kea_dhcp4.conf.template') as file:
 #    cray_dhcp_kea_dhcp4 = json.loads(file.read())
 #
 # temp work around for job template load
@@ -217,7 +217,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': smd_mac_address, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
         # submit dhcp reservation with hostname, mac and ip
-        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
+#        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
