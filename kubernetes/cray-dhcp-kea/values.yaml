@@ -72,6 +72,14 @@ cray-service:
           mountPath: /dhcpdb_create.sql
           readOnly: false
           subPath: dhcpdb_create.sql
+        - name: cray-dhcp-kea-jobs
+          mountPath: /bin/dhcp-helper.py
+          readOnly: true
+          subPath: dhcp-helper.py
+        - name: cray-dhcp-kea-jobs-template
+          mountPath: /bin/cray-dhcp-kea-dhcp4.conf
+          readOnly: true
+          subPath: cray-dhcp-kea-dhcp4.conf
     - name: "cray-dhcp-kea-ctrl-agent"
       image:
         repository: "cray/cray-dhcp-kea"
@@ -119,6 +127,14 @@ cray-service:
         name: cray-dhcp-kea-db-init
     - name: cray-dhcp-kea-socket
       emptyDir: {}
+    - name: cray-dhcp-kea-jobs
+      configMap:
+        defaultMode: 0700
+        name: cray-dhcp-kea-jobs
+    - name: cray-dhcp-kea-jobs-template
+      configMap:
+      defaultMode: 0700
+      name: cray-dhcp-kea-jobs-template
   sqlCluster:
     enabled: true
     users:
@@ -191,12 +207,3 @@ crayDhcpKeaCtrlAgentConfig :
             output: /var/log/cray-dhcp-kea-ctrl-agent.log
             pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
         severity: DEBUG
-jobs:
-  helper:
-    # TODO: determine if this is the right schedule, currently running every 15 minutes
-    schedule:
-      minute: "*/15"
-      hour: "*"
-      dayOfMonth: "*"
-      month: "*"
-      dayOfWeek: "*"

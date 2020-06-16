@@ -3,11 +3,8 @@
 import requests
 import json
 import ipaddress
-import time
 
-# making sure istio is ready
-# TODO: create a proper check
-time.sleep(30)
+
 # dict of the current IPv4 leases managed by Kea, each item in the format:
 # '08:08:08:08:08:08': {
 #     "cltt": 12345678,
@@ -98,7 +95,7 @@ dhcp_reservations = []
 #    cray_dhcp_kea_dhcp4 = json.loads(file.read())
 #
 # temp work around for job template load
-cray_dhcp_kea_dhcp4 = json.loads('{"command":"config-set","arguments":{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"host-reservation-identifiers":["circuit-id","hw-address","duid","client-id","flex-id"],"reservation-mode":"global","reservations":[],"subnet4":[],"valid-lifetime":120,"renew-timer":120,"rebind-timer":120},"Control-agent":{"http-host":"0.0.0.0","http-port":8000,"control-sockets":{"dhcp4":{"socket-type":"unix","socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket"}},"loggers":[{"name":"cray-dhcp-kea-ctrl-agent","output_options":[{"output":"stdout"},{"output":"\/var\/log\/cray-dhcp-kea-ctrl-agent.log","maxver":8,"maxsize":204800,"flush":true,"pattern":"%d{%j %H:%M:%S.%q} %c %m"}],"severity":"DEBUG","debuglevel":99}]}}}')
+cray_dhcp_kea_dhcp4 = json.loads('{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"host-reservation-identifiers":["circuit-id","hw-address","duid","client-id","flex-id"],"reservation-mode":"global","reservations":[],"subnet4":[],"valid-lifetime":120,"renew-timer":120,"rebind-timer":120}}')
 # query sls for cabinet subnets
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
 
@@ -121,7 +118,7 @@ for item in resp.json()[0]['ExtraProperties']['Networks']['cn']:
     subnet4_subnet['option-data']['name'] = 'router'
     subnet4_subnet['option-data']['data'] = cn_gateway
     subnet4.append(subnet4_subnet)
-cray_dhcp_kea_dhcp4['arguments']['Dhcp4']['subnet4'].extend(subnet4)
+cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 
 # query cray-dhcp-kea for lease db info
 data = {'command': 'config-get', 'service': ['dhcp4']}
@@ -133,7 +130,7 @@ try:
 except Exception as err:
     raise SystemExit(err)
 lease_database_info = resp.json()[0]['arguments']['Dhcp4']['lease-database']
-cray_dhcp_kea_dhcp4['arguments']['Dhcp4']['lease-database'] = lease_database_info
+cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = lease_database_info
 
 # 1) ##############################################################################
 #   a) Get network subnet and cabinet subnet info from SLS
@@ -238,7 +235,10 @@ for smd_mac_address in smd_ethernet_interfaces:
                 sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID']) + 'n0'
             resp = requests.get(url=sls_hardware_url)
         # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
-        if resp.json()['ExtraProperties']['Aliases'] != '' and '200' in resp:
+        alias = {}
+        if 'ExtraProperties' in resp.json():
+            aliases = resp.json()['ExtraProperties'].get('Aliases', {})
+        if alias:
             smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()['ExtraProperties']['Aliases']
         else:
             data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
@@ -253,17 +253,22 @@ for smd_mac_address in smd_ethernet_interfaces:
         post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
         resp = requests.patch(url=update_smd_url, json=post_data)
         if "Error" in resp:
-            print('we got an error posting, trying to patch instead')
+            print('we got an error patching, trying to post instead')
             resp = requests.patch(url=update_smd_url, json=post_data)
-cray_dhcp_kea_dhcp4['arguments']['Dhcp4']['reservations'].extend(dhcp_reservations)
+cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 print(json.dumps(cray_dhcp_kea_dhcp4))
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 
-# send udpate to kea
+# write config to disk
+with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
+    json.dump(cray_dhcp_kea_dhcp4, outfile)
+
+# reload config in kea from conf file written
+data = {'command': 'config-reload', 'service': ['dhcp4']}
 kea_headers = {'Content-Type': 'application/json'}
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
 try:
-    resp = requests.post(url=kea_api_endpoint, data=cray_dhcp_kea_dhcp4_json, headers=kea_headers)
+    resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
     resp.raise_for_status()
 except Exception as err:
     raise SystemExit(err)
