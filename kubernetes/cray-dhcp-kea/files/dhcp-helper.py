@@ -103,7 +103,7 @@ resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabine
 subnet4 = []
 for item in resp.json()[0]['ExtraProperties']['Networks']['cn']:
     subnet4_subnet = {}
-    subnet4_subnet['pools'] = {}
+    subnet4_subnet['pools'] = []
     subnet4_subnet['pools']['pool'] = {}
     subnet4_subnet['option-data'] = {}
     cn_network_cidr = resp.json()[0]['ExtraProperties']['Networks']['cn'][item]['CIDR']
