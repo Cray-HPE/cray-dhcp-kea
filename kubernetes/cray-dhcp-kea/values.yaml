@@ -17,6 +17,8 @@ cray-service:
     - name: "cray-dhcp-kea"
       image:
         repository: "cray/cray-dhcp-kea"
+        # TODO remove pullPolicy before PR
+        pullPolicy: Always
       command:
         - "sh"
         - "-c"
@@ -152,7 +154,7 @@ crayDhcpKeaDhcp4Config:
         relay:
           ip-addresses:
           -
-            "{{ .Values.hmnLoadBalancerIp }}"
+            {{ tpl Values.hmnLoadBalancerIp }}
         pools:
           - pool: 10.254.127.200 - 10.254.127.250
         option-data:
