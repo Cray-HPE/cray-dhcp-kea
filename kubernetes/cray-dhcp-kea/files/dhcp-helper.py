@@ -116,7 +116,6 @@ for item in resp.json()[0]['ExtraProperties']['Networks']['cn']:
     subnet4_subnet['subnet'] = cn_network_cidr
     subnet4_subnet['pools'][0]['pool'] = str(cn_network_pool_start) + '-' + str(cn_network_pool_end)
     subnet4_subnet['option-data'].append({'name': 'routers', 'data': cn_gateway})
-#    subnet4_subnet['pools'].append(subnet4_subnet['pools'][0]['pool'])
     subnet4.append(subnet4_subnet)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 
@@ -188,9 +187,11 @@ for item in resp.json():
 for smd_mac_address in smd_ethernet_interfaces:
     reservation = {}
     # smd uses mac address without ":" and kea needs mac with ":"
-    kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
+    #kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
+    kea_mac_format = ''
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and smd_mac_address not in kea_ipv4_leases:
+        print ('first if block')
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['ComponentID']:
             print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
@@ -211,13 +212,15 @@ for smd_mac_address in smd_ethernet_interfaces:
             aliases = resp.json()['ExtraProperties'].get('Aliases', {})
         if alias and ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cn_nmn_cidr):
             smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
-        # convert mac format
-        data['hw-address'] = kea_mac_format
-        data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
+        # switch mac format
+        kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+#        data['hw-address'] = kea_mac_format
+#        data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
+#        data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
         # submit dhcp reservation with hostname, mac and ip
-#        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
+        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
@@ -242,13 +245,13 @@ for smd_mac_address in smd_ethernet_interfaces:
             smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()['ExtraProperties']['Aliases']
         else:
             data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
-        # convert mac format
+        # switch mac format
+        kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
         data['hw-address'] = kea_mac_format
         if data['hw-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
-
     # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
-    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '' and smd_mac_address in kea_ipv4_leases and kea_ipv4_leases[kea_mac_format]['ip-address'] != '':
+    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '' and smd_mac_address in kea_ipv4_leases and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
         resp = requests.patch(url=update_smd_url, json=post_data)
