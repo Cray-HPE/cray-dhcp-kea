@@ -224,7 +224,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
-    if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] is None:
+    if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
         data = {}
         # submit dhcp reservation with only hostname and mac
         # check for alias
