@@ -246,8 +246,8 @@ for smd_mac_address in smd_ethernet_interfaces:
         else:
             data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         # switch mac format
-        kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
-        data['hw-address'] = kea_mac_format
+#        kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+        data['hw-address'] = smd_mac_address
         if data['hw-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
