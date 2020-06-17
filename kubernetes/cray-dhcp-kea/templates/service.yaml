@@ -6,6 +6,7 @@ metadata:
   labels:
   annotations:
     metallb.universe.tf/address-pool: hardware-management
+    metallb.universe.tf/allow-shared-ip:  cray-dhcp-kea-hmn
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
