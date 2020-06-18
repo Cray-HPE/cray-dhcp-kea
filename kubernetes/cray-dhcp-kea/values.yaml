@@ -145,8 +145,6 @@ cray-service:
   service:
     # service definitions for this chart defined manually
     enabled: false
-  ingress:
-    enabled: true
 crayDhcpKeaDhcp4Config:
   dhcp4:
     interfaces-config:
