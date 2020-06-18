@@ -142,6 +142,9 @@ cray-service:
     databases:
       dhcp: dhcpdsuser
     volumeSize: 10Gi
+  service:
+    # service definitions for this chart defined manually
+    enabled: false
   ingress:
     enabled: true
 crayDhcpKeaDhcp4Config:
