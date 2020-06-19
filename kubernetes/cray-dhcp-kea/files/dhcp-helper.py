@@ -301,12 +301,15 @@ for lease in resp.json()[0]['arguments']['leases']:
     hw_address = lease['hw-address']
     ip_address = lease['ip-address']
     subnet_id = lease['subnet-id']
-#    print (hw_address, ip_address, subnet_id)
-    data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': hw_address ,"ip-address": ip_address}}
-    kea_headers = {'Content-Type': 'application/json'}
-    kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
-    resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
-#    print(resp.json())
+    for reservation in cray_dhcp_kea_dhcp4['Dhcp4']['reservations']:
+#        print('checking ',hw_address,' with ',reservation['hw-address'])
+        if hw_address == reservation['hw-address'] and ip_address != reservation['ip-address']:
+            print ('we found a mis-match, deleting active lease',hw_address, ip_address, subnet_id)
+            data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': hw_address ,"ip-address": ip_address}}
+            kea_headers = {'Content-Type': 'application/json'}
+            kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
+            resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+            print(resp.json())
 
 # write config to disk
 with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
