@@ -205,7 +205,8 @@ for smd_mac_address in smd_ethernet_interfaces:
     #kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
     kea_mac_format = ''
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
-    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and 'Node' in smd_ethernet_interfaces[smd_mac_address]['Type'] and smd_mac_address not in kea_ipv4_leases:
+#    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and 'Node' in smd_ethernet_interfaces[smd_mac_address]['Type'] and smd_mac_address not in kea_ipv4_leases:
+    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and smd_mac_address not in kea_ipv4_leases:
 #        print ('first if block')
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
@@ -228,21 +229,23 @@ for smd_mac_address in smd_ethernet_interfaces:
                     smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
         # check mac format
         colon_count = 0
+        kea_mac_format = smd_mac_address
         for i in smd_mac_address:
             if i == ':':
                 colon_count = colon_count + 1
         if colon_count == 0:
-            smd_mac_address = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+            kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
 #        data['hw-address'] = kea_mac_format
 #        data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
-        data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': smd_mac_address, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
+        data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
         # submit dhcp reservation with hostname, mac and ip
         print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
-    if 'Node' in smd_ethernet_interfaces[smd_mac_address]['Type'] and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
+#    if 'Node' in smd_ethernet_interfaces[smd_mac_address]['Type'] and smd_ethernet_interfaces[smd_mac_address]['Type'] != 'NodeBMC' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
+    if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
             print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
@@ -254,8 +257,10 @@ for smd_mac_address in smd_ethernet_interfaces:
             except Exception as err:
                 raise SystemExit(err)
         # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
+            print(resp.json())
             alias = {}
-            if 'ExtraProperties' in resp.json():
+#            if 'ExtraProperties' in resp.json():
+            if resp.json() != 'None':
                 aliases = resp.json()['ExtraProperties'].get('Aliases', {})
             for i in range(len(nmn_cidr)):
                 if alias and ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(nmn_cidr[i]):
