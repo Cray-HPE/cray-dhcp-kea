@@ -240,7 +240,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
         # submit dhcp reservation with hostname, mac and ip
-        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
+#        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
@@ -269,12 +269,13 @@ for smd_mac_address in smd_ethernet_interfaces:
                 else:
                     data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         colon_count = 0
+        kea_mac_format = smd_mac_address
         for i in smd_mac_address:
             if i == ':':
                 colon_count = colon_count + 1
         if colon_count == 0:
-            smd_mac_address = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
-        data['hw-address'] = smd_mac_address
+            kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+        data['hw-address'] = kea_mac_format
         if data['hw-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
