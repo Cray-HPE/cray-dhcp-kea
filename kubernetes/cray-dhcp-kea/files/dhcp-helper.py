@@ -290,6 +290,24 @@ cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 print(json.dumps(cray_dhcp_kea_dhcp4))
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 
+# lease wipe to clear out any potential funky state
+data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
+kea_headers = {'Content-Type': 'application/json'}
+kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
+resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+
+for lease in resp.json()[0]['arguments']['leases']:
+#    print(lease)
+    hw_address = lease['hw-address']
+    ip_address = lease['ip-address']
+    subnet_id = lease['subnet-id']
+#    print (hw_address, ip_address, subnet_id)
+    data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': hw_address ,"ip-address": ip_address}}
+    kea_headers = {'Content-Type': 'application/json'}
+    kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
+    resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+#    print(resp.json())
+
 # write config to disk
 with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
     json.dump(cray_dhcp_kea_dhcp4, outfile)
