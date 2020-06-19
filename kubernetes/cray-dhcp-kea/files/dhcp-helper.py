@@ -257,10 +257,11 @@ for smd_mac_address in smd_ethernet_interfaces:
             except Exception as err:
                 raise SystemExit(err)
         # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
-            print(resp.json())
+            print('sls_hardware_url respond ',resp.json())
             alias = {}
 #            if 'ExtraProperties' in resp.json():
-            if resp.json() != 'None':
+#            if resp.json() != 'None':
+            if 'None' not in str(resp.json()):
                 aliases = resp.json()['ExtraProperties'].get('Aliases', {})
             for i in range(len(nmn_cidr)):
                 if alias and ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(nmn_cidr[i]):
