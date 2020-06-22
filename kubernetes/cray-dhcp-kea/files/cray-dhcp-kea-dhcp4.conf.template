@@ -26,7 +26,7 @@
       "client-id",
       "flex-id"
     ],
-    "reservation-mode": "global",
+    "reservation-mode": "all",
     "reservations": [],
     "subnet4": [],
     "valid-lifetime": 120,

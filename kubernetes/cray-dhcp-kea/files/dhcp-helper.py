@@ -3,6 +3,7 @@
 import requests
 import json
 import ipaddress
+import time
 
 
 # dict of the current IPv4 leases managed by Kea, each item in the format:
@@ -95,7 +96,7 @@ dhcp_reservations = []
 #    cray_dhcp_kea_dhcp4 = json.loads(file.read())
 #
 # temp work around for job template load
-cray_dhcp_kea_dhcp4 = json.loads('{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"host-reservation-identifiers":["circuit-id","hw-address","duid","client-id","flex-id"],"reservation-mode":"global","reservations":[],"subnet4":[],"valid-lifetime":120,"renew-timer":120,"rebind-timer":120}}')
+cray_dhcp_kea_dhcp4 = json.loads('{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"host-reservation-identifiers":["circuit-id","hw-address","duid","client-id","flex-id"],"reservation-mode":"all","reservations":[],"subnet4":[],"valid-lifetime":120,"renew-timer":120,"rebind-timer":120}}')
 # query sls for cabinet subnets
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
 
@@ -205,21 +206,15 @@ for smd_mac_address in smd_ethernet_interfaces:
     #kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
     kea_mac_format = ''
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
-#    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and 'Node' in smd_ethernet_interfaces[smd_mac_address]['Type'] and smd_mac_address not in kea_ipv4_leases:
-    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '' and smd_mac_address not in kea_ipv4_leases:
-#        print ('first if block')
+    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '':
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
             print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
-            sls_hardware_url = 'http://cray-sls/v1/search/hardware?parent=' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
+            sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
             print(sls_hardware_url)
-            try:
-                resp = requests.get(url=sls_hardware_url)
-                resp.raise_for_status()
-            except Exception as err:
-                raise SystemExit(err)
+            resp = requests.get(url=sls_hardware_url)
         # checking to see if its nmn nic, we will need to switch the name to nid instead of xname
-            print('nmn network cidr', nmn_cidr)
+#            print('nmn network cidr', nmn_cidr)
             alias = {}
             print(resp.json)
             if 'ExtraProperties' in resp.json()[0]:
@@ -235,8 +230,8 @@ for smd_mac_address in smd_ethernet_interfaces:
                 colon_count = colon_count + 1
         if colon_count == 0:
             kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
-#        data['hw-address'] = kea_mac_format
-#        data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
+        else:
+            kea_mac_format = smd_mac_address
         data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
         print(data)
         # submit dhcp reservation with hostname, mac and ip
@@ -244,23 +239,17 @@ for smd_mac_address in smd_ethernet_interfaces:
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
-#    if 'Node' in smd_ethernet_interfaces[smd_mac_address]['Type'] and smd_ethernet_interfaces[smd_mac_address]['Type'] != 'NodeBMC' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
+    # checking
     if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
             print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
-            sls_hardware_url = 'http://cray-sls/v1/search/hardware?parent=' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
+            sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
             print(sls_hardware_url)
-            try:
-                resp = requests.get(url=sls_hardware_url)
-                resp.raise_for_status()
-            except Exception as err:
-                raise SystemExit(err)
+            resp = requests.get(url=sls_hardware_url)
         # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
             print('sls_hardware_url respond ',resp.json())
             alias = {}
-#            if 'ExtraProperties' in resp.json():
-#            if resp.json() != 'None':
             if 'None' not in str(resp.json()):
                 aliases = resp.json()['ExtraProperties'].get('Aliases', {})
             for i in range(len(nmn_cidr)):
@@ -275,6 +264,8 @@ for smd_mac_address in smd_ethernet_interfaces:
                 colon_count = colon_count + 1
         if colon_count == 0:
             kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+        else:
+            kea_mac_format = smd_mac_address
         data['hw-address'] = kea_mac_format
         if data['hw-address'] != '' and data['hostname'] != '':
             dhcp_reservations.append(data)
@@ -309,7 +300,7 @@ for lease in resp.json()[0]['arguments']['leases']:
             kea_headers = {'Content-Type': 'application/json'}
             kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
             resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
-            print(resp.json())
+#            print(resp.json())
 
 # write config to disk
 with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
@@ -317,6 +308,21 @@ with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
 
 # reload config in kea from conf file written
 data = {'command': 'config-reload', 'service': ['dhcp4']}
+kea_headers = {'Content-Type': 'application/json'}
+kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
+try:
+    resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+    resp.raise_for_status()
+except Exception as err:
+    raise SystemExit(err)
+print(resp.json())
+
+#adding sleep delay
+print ('waiting 10 seconds for any leases to be given out')
+time.sleep(10)
+
+# check active leases
+data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
 kea_headers = {'Content-Type': 'application/json'}
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
 try:
