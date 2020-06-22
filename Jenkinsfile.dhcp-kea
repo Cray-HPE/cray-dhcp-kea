@@ -1,4 +1,4 @@
-@Library("dst-shared@release/shasta-1.3") _
+@Library("dst-shared@release/master") _
 
 dockerBuildPipeline {
     repository = "cray"
