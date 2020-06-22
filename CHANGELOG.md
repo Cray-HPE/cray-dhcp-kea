@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.1.10] - 2020-06-11
+
+### Added
+- added dhcp-helper.py that will be a job to get data from SMD/SLS to setup dhcp reservations
+
+### Changed
+
+### Deprecated
+
+### Removed
+- removed anisble playbook and build files
+### Fixed
+ - fixed startup-dhcp.sh missing db password
+### Security
 ## [0.1.8] - 2020-05-14
 
 ### Added

@@ -2,61 +2,95 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: cray-dhcp-kea-ingress-tcp
+  name: cray-dhcp-kea-tcp-hmn
   labels:
   annotations:
     metallb.universe.tf/address-pool: hardware-management
-    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip:  cray-dhcp-kea-hmn
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
   ports:
-    - name: kea-server-tcp
+    - name: kea-server-tcp-hmn
       port: 67
       protocol: TCP
       targetPort: 67
-    - name: kea-client-tcp
-      port: 68
-      protocol: TCP
-      targetPort: 68
   selector:
     app.kubernetes.io/name: cray-dhcp-kea
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: cray-dhcp-kea-ingress-udp
+  name: cray-dhcp-kea-tcp-nmn
   labels:
   annotations:
-    metallb.universe.tf/address-pool: hardware-management
     metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip:  cray-dhcp-kea-nmn
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
   ports:
-    - name: kea-server-udp
+    - name: kea-server-tcp-nmn
       port: 67
-      protocol: UDP
+      protocol: TCP
       targetPort: 67
-    - name: kea-client-udp
-      port: 68
-      protocol: UDP
-      targetPort: 68
   selector:
     app.kubernetes.io/name: cray-dhcp-kea
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: cray-dhcp-kea-ctrl-socket-ingress-tcp
+  name: cray-dhcp-kea-udp-hmn
+  labels:
   annotations:
     metallb.universe.tf/address-pool: hardware-management
-    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip:  cray-dhcp-kea-hmn
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
   ports:
-    - name: kea-ctrl-tcp
+    - name: kea-server-udp-hmn
+      port: 67
+      protocol: UDP
+      targetPort: 67
+  selector:
+    app.kubernetes.io/name: cray-dhcp-kea
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cray-dhcp-kea-udp-nmn
+  labels:
+  annotations:
+    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip:  cray-dhcp-kea-nmn
+    external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
+  ports:
+    - name: kea-server-udp-nmn
+      port: 67
+      protocol: UDP
+      targetPort: 67
+  selector:
+    app.kubernetes.io/name: cray-dhcp-kea
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cray-dhcp-kea-api
+  annotations:
+    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip:  cray-dhcp-kea-nmn
+    external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
+spec:
+  type: ClusterIP
+  ports:
+    - name: kea-api
       port: 8000
       protocol: TCP
       targetPort: 8000

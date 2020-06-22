@@ -1,6 +1,6 @@
 FROM dtr.dev.cray.com/baseos/alpine:latest as builder
 
-ARG KEA_DHCP_VERSION=1.6.1
+ARG KEA_DHCP_VERSION=1.6.2
 ARG LOG4_CPLUS_VERSION=2.0.5
 
 RUN apk add --no-cache --virtual .build-deps \
@@ -38,7 +38,12 @@ RUN apk --no-cache add \
         libressl \
         postgresql-dev \
         postgresql-client \
-        zlib
+        zlib \
+        py-pip \
+        curl \
+        jq \
+        python3 &&\
+        pip3 install requests ipaddress
 
 COPY --from=builder /usr/local /usr/local/
 
@@ -53,5 +58,5 @@ EXPOSE 8000/tcp
 COPY startup-dhcp.sh /
 # startup script for kea ctrl agent(api server)
 COPY startup-dhcp-ctrl-agent.sh /
-
-
+# copy network cidr script
+COPY get_network_cidr.py /

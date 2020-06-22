@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cray-dhcp-kea-jobs
+data:
+  dhcp-helper.py: |-
+{{ .Files.Get "files/dhcp-helper.py" | indent 4 }}

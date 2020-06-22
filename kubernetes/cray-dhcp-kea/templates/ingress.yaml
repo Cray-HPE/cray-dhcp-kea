@@ -1,0 +1,24 @@
+{{- $fullName := "cray-dhcp-kea" -}}
+{{- $shortName := $fullName | replace "cray-" "" }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: "{{ $fullName }}-api"
+  labels:
+    app.kubernetes.io/name: {{ $fullName }}
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - "services-gateway"
+  http:
+    - match:
+        - uri:
+            prefix: "/apis/{{ $shortName }}"
+      rewrite:
+        uri: "/"
+      route:
+        - destination:
+            host: "{{ $fullName }}-api"
+            port:
+              number: 8000
