@@ -273,7 +273,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '' and smd_mac_address in kea_ipv4_leases and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
-        resp = requests.patch(url=update_smd_url, json=post_data)
+        resp = requests.post(url=update_smd_url, json=post_data)
         if 200 not in resp:
             print('we got an error posting, trying to patch instead')
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
