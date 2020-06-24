@@ -185,9 +185,11 @@ for mac_address, mac_details in kea_ipv4_leases.items():
         resp = requests.post(url=update_smd_url, json=post_data)
         print('adding mac',mac_address,'adding ip address',kea_ip)
         print('update url', update_smd_url, ' with post data', post_data)
-        if "Error" in resp:
+        if 200 not in resp:
             print('we got an error posting, trying to patch instead')
+            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
             resp = requests.patch(url=update_smd_url, json=post_data)
+            print('response from patch', resp, ' ', resp.json())
 #   b) Query SMD to get all network interfaces it knows about
 try:
     resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
