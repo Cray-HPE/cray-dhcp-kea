@@ -96,7 +96,7 @@ dhcp_reservations = []
 #    cray_dhcp_kea_dhcp4 = json.loads(file.read())
 #
 # temp work around for job template load
-cray_dhcp_kea_dhcp4 = json.loads('{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"host-reservation-identifiers":["circuit-id","hw-address","duid","client-id","flex-id"],"reservation-mode":"all","reservations":[],"subnet4":[],"valid-lifetime":120,"renew-timer":120,"rebind-timer":120}}')
+cray_dhcp_kea_dhcp4 = json.loads('{"Dhcp4":{"control-socket":{"socket-name":"\/cray-dhcp-kea-socket\/cray-dhcp-kea.socket","socket-type":"unix"},"hooks-libraries":[{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_lease_cmds.so"},{"library":"\/usr\/local\/lib\/kea\/hooks\/libdhcp_stat_cmds.so"}],"interfaces-config":{"dhcp-socket-type":"raw","interfaces":["eth0"]},"lease-database":{},"host-reservation-identifiers":["circuit-id","hw-address","duid","client-id","flex-id"],"reservation-mode":"global","reservations":[],"subnet4":[],"valid-lifetime":120,"renew-timer":120,"rebind-timer":120}}')
 # query sls for cabinet subnets
 resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
 
