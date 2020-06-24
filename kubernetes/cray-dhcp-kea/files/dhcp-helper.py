@@ -274,9 +274,11 @@ for smd_mac_address in smd_ethernet_interfaces:
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
         resp = requests.patch(url=update_smd_url, json=post_data)
-        if "Error" in resp:
-            print('we got an error patching, trying to post instead')
+        if 200 not in resp:
+            print('we got an error posting, trying to patch instead')
+            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
             resp = requests.patch(url=update_smd_url, json=post_data)
+            print('response from patch', resp, ' ', resp.json())
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 print(json.dumps(cray_dhcp_kea_dhcp4))
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
