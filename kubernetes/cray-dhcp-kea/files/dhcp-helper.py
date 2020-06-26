@@ -134,6 +134,8 @@ for i in range(len(resp.json())):
                 subnet4_subnet['subnet'] = network_cidr
                 subnet4_subnet['pools'][0]['pool'] = str(network_pool_start) + '-' + str(network_pool_end)
                 subnet4_subnet['option-data'].append({'name': 'routers', 'data': gateway})
+                subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.92.100.225'})
+                subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.254.0.4'})
                 subnet4.append(subnet4_subnet)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 print(subnet4)
