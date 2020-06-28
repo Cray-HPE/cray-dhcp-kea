@@ -134,7 +134,14 @@ for i in range(len(resp.json())):
                 subnet4_subnet['subnet'] = network_cidr
                 subnet4_subnet['pools'][0]['pool'] = str(network_pool_start) + '-' + str(network_pool_end)
                 subnet4_subnet['option-data'].append({'name': 'routers', 'data': gateway})
-                subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.92.100.225,10.254.0.4'})
+                if system == 'NMN':
+                    subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.92.100.225,10.254.0.4'})
+                    subnet4_subnet['option-data'].append({'name': 'tftp-server-name', 'data': '10.92.100.60'})
+                    subnet4_subnet['option-data'].append({'name': 'boot-file-name', 'data': 'ipxe.efi'})
+                if system == 'HMN':
+                    subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.94.100.225,10.254.0.4'})
+                    subnet4_subnet['option-data'].append({'name': 'tftp-server-name', 'data': '10.94.100.60'})
+                    subnet4_subnet['option-data'].append({'name': 'boot-file-name', 'data': 'ipxe.efi'})
                 subnet4.append(subnet4_subnet)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 print(subnet4)
