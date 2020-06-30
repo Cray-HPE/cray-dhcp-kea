@@ -211,12 +211,11 @@ for item in resp.json():
 
 for smd_mac_address in smd_ethernet_interfaces:
     reservation = {}
-    # smd uses mac address without ":" and kea needs mac with ":"
-    #kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
     kea_mac_format = ''
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
     if smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
         data = {}
+        data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
 #            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
             sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
@@ -235,7 +234,7 @@ for smd_mac_address in smd_ethernet_interfaces:
                         for host in network:
 #                            print(host,' and ',smd_ethernet_interfaces[smd_mac_address]['IPAddress'])
                             if host == smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
-                                smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = alias
+                                data['hostname'] = alias
                                 print('setting alias')
         # check mac format
         colon_count = 0
@@ -245,9 +244,8 @@ for smd_mac_address in smd_ethernet_interfaces:
                 colon_count = colon_count + 1
         if colon_count == 0:
             kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
-        else:
-            kea_mac_format = smd_mac_address
-        data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
+        data['hw-address'] = kea_mac_format
+        data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
 #        print(data)
         # submit dhcp reservation with hostname, mac and ip
 #        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
@@ -256,6 +254,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
     if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
         data = {}
+        data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
 #            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
             sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
@@ -267,9 +266,7 @@ for smd_mac_address in smd_ethernet_interfaces:
             if '200' in str(resp.json()):
                 alias = resp.json()['ExtraProperties'].get('Aliases', {})
             if alias and resp.json()['ExtraProperties']['Role'] == 'Compute':
-                smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = alias
-            else:
-                data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
+                data['hostname'] = alias
         colon_count = 0
         kea_mac_format = smd_mac_address
         for i in smd_mac_address:
