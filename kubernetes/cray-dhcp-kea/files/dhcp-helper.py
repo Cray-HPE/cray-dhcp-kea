@@ -230,12 +230,9 @@ for smd_mac_address in smd_ethernet_interfaces:
                 alias = resp.json()['ExtraProperties'].get('Aliases', {})
                 if alias:
                     for cidr in nmn_cidr:
-                        network = ipaddress.ip_network(cidr)
-                        for host in network:
-#                            print(host,' and ',smd_ethernet_interfaces[smd_mac_address]['IPAddress'])
-                            if host == smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
-                                data['hostname'] = alias
-                                print('setting alias')
+                        if ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cidr):
+                            data['hostname'] = str(alias)
+                            print('setting alias with hostname/mac/ip',str(alias))
         # check mac format
         colon_count = 0
         kea_mac_format = smd_mac_address
@@ -244,6 +241,7 @@ for smd_mac_address in smd_ethernet_interfaces:
                 colon_count = colon_count + 1
         if colon_count == 0:
             kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+#        data['hostname'] = hostname
         data['hw-address'] = kea_mac_format
         data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
 #        print(data)
@@ -266,7 +264,7 @@ for smd_mac_address in smd_ethernet_interfaces:
             if '200' in str(resp.json()):
                 alias = resp.json()['ExtraProperties'].get('Aliases', {})
             if alias and resp.json()['ExtraProperties']['Role'] == 'Compute':
-                data['hostname'] = alias
+                data['hostname'] = str(alias)
         colon_count = 0
         kea_mac_format = smd_mac_address
         for i in smd_mac_address:
