@@ -109,8 +109,8 @@ for i in range(len(resp.json())):
     for networks in resp.json()[i]['ExtraProperties']['Networks']:
         if networks != 'ncn':
             for system in resp.json()[i]['ExtraProperties']['Networks'][networks]:
-                print('networks ',networks)
-                print ("********debug***********", system)
+#                print('networks ',networks)
+#                print ("********debug***********", system)
                 if system == 'NMN':
                     nmn_cidr.append(resp.json()[i]['ExtraProperties']['Networks'][networks][system]['CIDR'])
                 subnet4_subnet = {}
@@ -118,33 +118,32 @@ for i in range(len(resp.json())):
                 subnet4_subnet['pools'].append({'pool': {}})
                 subnet4_subnet['option-data'] = []
                 network_cidr = resp.json()[i]['ExtraProperties']['Networks'][networks][system]['CIDR']
-                print('network cidr: ',network_cidr)
+#                print('network cidr: ',network_cidr)
                 gateway = resp.json()[i]['ExtraProperties']['Networks'][networks][system]['Gateway']
-                print('gateway: ',gateway)
+#                print('gateway: ',gateway)
                 vlan = resp.json()[i]['ExtraProperties']['Networks'][networks][system]['VLan']
-                print ('vlan: ', vlan)
+#                print ('vlan: ', vlan)
                 network = ipaddress.ip_network(network_cidr)
                 network_total_hosts = network.num_addresses
                 network_pool_start = network[26]
                 network_pool_end = network[network_total_hosts - 51]
-                print ('network', network)
-                print ('total hosts on network ',network_total_hosts)
-                print ('start',network_pool_start,' to ',network_pool_end)
+#                print ('network', network)
+#                print ('total hosts on network ',network_total_hosts)
+#                print ('start',network_pool_start,' to ',network_pool_end)
                 #create dictionary json for subnet
                 subnet4_subnet['subnet'] = network_cidr
                 subnet4_subnet['pools'][0]['pool'] = str(network_pool_start) + '-' + str(network_pool_end)
                 subnet4_subnet['option-data'].append({'name': 'routers', 'data': gateway})
+                subnet4_subnet['boot-file-name'] = 'ipxe.efi'
                 if system == 'NMN':
                     subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.92.100.225,10.254.0.4'})
-                    subnet4_subnet['option-data'].append({'name': 'tftp-server-name', 'data': '10.92.100.60'})
-                    subnet4_subnet['option-data'].append({'name': 'boot-file-name', 'data': 'ipxe.efi'})
+                    subnet4_subnet['next-server'] = '10.92.100.60'
                 if system == 'HMN':
                     subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.94.100.225,10.254.0.4'})
-                    subnet4_subnet['option-data'].append({'name': 'tftp-server-name', 'data': '10.94.100.60'})
-                    subnet4_subnet['option-data'].append({'name': 'boot-file-name', 'data': 'ipxe.efi'})
+                    subnet4_subnet['next-server'] = '10.94.100.60'
                 subnet4.append(subnet4_subnet)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
-print(subnet4)
+#print(subnet4)
 
 # query cray-dhcp-kea for lease db info
 data = {'command': 'config-get', 'service': ['dhcp4']}
@@ -174,30 +173,30 @@ for lease in resp.json()[0]['arguments']['leases']:
         kea_ipv4_leases[lease['hw-address']] = lease
 # check to see if smd is aware of ips in kea
 for mac_address, mac_details in kea_ipv4_leases.items():
-    print('checking mac_address', mac_address)
-    print('checking ip', mac_details['ip-address'])
+#    print('checking mac_address', mac_address)
+#    print('checking ip', mac_details['ip-address'])
     kea_ip = mac_details['ip-address']
     # TODO: pull all needed data down once instead of query smd for each ip
     update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress=' + kea_ip
-    print(update_smd_url)
+#    print(update_smd_url)
     try:
         resp = requests.get(url=update_smd_url)
         resp.raise_for_status()
     except Exception as err:
         raise SystemExit(err)
-    print(resp.json())
+#    print(resp.json())
     if resp.json() == []:
         smd_mac_format = mac_address.replace(':', '')
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
         resp = requests.post(url=update_smd_url, json=post_data)
-        print('adding mac',mac_address,'adding ip address',kea_ip)
-        print('update url', update_smd_url, ' with post data', post_data)
+#        print('adding mac',mac_address,'adding ip address',kea_ip)
+#        print('update url', update_smd_url, ' with post data', post_data)
         if 200 not in resp:
-            print('we got an error posting, trying to patch instead')
+#            print('we got an error posting, trying to patch instead')
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
             resp = requests.patch(url=update_smd_url, json=post_data)
-            print('response from patch', resp, ' ', resp.json())
+#            print('response from patch', resp, ' ', resp.json())
 #   b) Query SMD to get all network interfaces it knows about
 try:
     resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
@@ -216,22 +215,28 @@ for smd_mac_address in smd_ethernet_interfaces:
     #kea_mac_format = ':'.join(smd_mac_address[i:i+2] for i in range(0,12,2))
     kea_mac_format = ''
     # if SMD has MAC and IP and not in Kea DHCP reservation, add DHCP reservation in Kea
-    if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] != '':
+    if smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
-            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
+#            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
             sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
-            print(sls_hardware_url)
+#            print(sls_hardware_url)
             resp = requests.get(url=sls_hardware_url)
         # checking to see if its nmn nic, we will need to switch the name to nid instead of xname
 #            print('nmn network cidr', nmn_cidr)
             alias = {}
-            print(resp.json)
-            if 'ExtraProperties' in resp.json()[0]:
-                aliases = resp.json()[0]['ExtraProperties'].get('Aliases', {})
-            for i in range(len(nmn_cidr)):
-                if alias and ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(nmn_cidr[i]):
-                    smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
+#            print(resp.json)
+            if 'ExtraProperties' in resp.json():
+#                print('extra properties exist')
+                alias = resp.json()['ExtraProperties'].get('Aliases', {})
+                if alias:
+                    for cidr in nmn_cidr:
+                        network = ipaddress.ip_network(cidr)
+                        for host in network:
+#                            print(host,' and ',smd_ethernet_interfaces[smd_mac_address]['IPAddress'])
+                            if host == smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
+                                smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = alias
+                                print('setting alias')
         # check mac format
         colon_count = 0
         kea_mac_format = smd_mac_address
@@ -243,7 +248,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         else:
             kea_mac_format = smd_mac_address
         data = {"hostname": smd_ethernet_interfaces[smd_mac_address]['ComponentID'],'hw-address': kea_mac_format, 'ip-address': smd_ethernet_interfaces[smd_mac_address]['IPAddress']}
-        print(data)
+#        print(data)
         # submit dhcp reservation with hostname, mac and ip
 #        print('Found MAC and IP address pair from SMD and updating Kea with the record: {} {} {}'.format(smd_mac_address, smd_ethernet_interfaces[smd_mac_address]['IPAddress'], smd_ethernet_interfaces[smd_mac_address]['ComponentID'],))
         if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
@@ -252,17 +257,17 @@ for smd_mac_address in smd_ethernet_interfaces:
     if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
         data = {}
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
-            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
+#            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
             sls_hardware_url = 'http://cray-sls/v1/hardware/' + str(smd_ethernet_interfaces[smd_mac_address]['ComponentID'])
-            print(sls_hardware_url)
+#            print(sls_hardware_url)
             resp = requests.get(url=sls_hardware_url)
         # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
-            print('sls_hardware_url respond ',resp.json())
+#            print('sls_hardware_url respond ',resp.json())
             alias = {}
-            if 'None' not in str(resp.json()):
-                aliases = resp.json()['ExtraProperties'].get('Aliases', {})
-            if alias and resp.json()[0]['ExtraProperties']['Role'] == 'Compute':
-                smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = resp.json()[0]['ExtraProperties']['Aliases']
+            if '200' in str(resp.json()):
+                alias = resp.json()['ExtraProperties'].get('Aliases', {})
+            if alias and resp.json()['ExtraProperties']['Role'] == 'Compute':
+                smd_ethernet_interfaces[smd_mac_address]['ComponentID'] = alias
             else:
                 data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         colon_count = 0
@@ -283,12 +288,12 @@ for smd_mac_address in smd_ethernet_interfaces:
         post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
         resp = requests.post(url=update_smd_url, json=post_data)
         if 200 not in resp:
-            print('we got an error posting, trying to patch instead')
+#            print('we got an error posting, trying to patch instead')
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/' + smd_mac_format
             resp = requests.patch(url=update_smd_url, json=post_data)
-            print('response from patch', resp, ' ', resp.json())
+#            print('response from patch', resp, ' ', resp.json())
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
-print(json.dumps(cray_dhcp_kea_dhcp4))
+#print(json.dumps(cray_dhcp_kea_dhcp4))
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 
 # lease wipe to clear out any potential funky state
