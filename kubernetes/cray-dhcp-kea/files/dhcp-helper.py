@@ -232,7 +232,7 @@ for smd_mac_address in smd_ethernet_interfaces:
                     for cidr in nmn_cidr:
                         if ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cidr):
                             data['hostname'] = alias[0]
-                            print('setting alias',json.dumps(data['hostname']))
+                            print('setting alias',alias[0])
         # check mac format
         colon_count = 0
         kea_mac_format = smd_mac_address
@@ -265,8 +265,8 @@ for smd_mac_address in smd_ethernet_interfaces:
             if '200' in str(resp.json()):
                 alias = resp.json()['ExtraProperties'].get('Aliases', {})
             if alias and resp.json()['ExtraProperties']['Role'] == 'Compute':
-                data['hostname'] = json.dumps(alias)
-                print('setting alias for hostname/mac reservation', json.dumps(data['hostname']))
+                data['hostname'] = alias[0]
+                print('setting alias for hostname/mac reservation', alias[0])
         colon_count = 0
         kea_mac_format = smd_mac_address
         for i in smd_mac_address:
