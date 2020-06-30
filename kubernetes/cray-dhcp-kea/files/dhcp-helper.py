@@ -136,10 +136,10 @@ for i in range(len(resp.json())):
                 subnet4_subnet['option-data'].append({'name': 'routers', 'data': gateway})
                 subnet4_subnet['boot-file-name'] = 'ipxe.efi'
                 if system == 'NMN':
-                    subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.92.100.225,10.252.0.4'})
+                    subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.252.0.4, 10.92.100.225'})
                     subnet4_subnet['next-server'] = '10.92.100.60'
                 if system == 'HMN':
-                    subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.94.100.225,10.254.0.4'})
+                    subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.252.0.4, 10.94.100.225'})
                     subnet4_subnet['next-server'] = '10.94.100.60'
                 subnet4.append(subnet4_subnet)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
