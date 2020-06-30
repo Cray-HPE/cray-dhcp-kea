@@ -43,4 +43,4 @@ cat /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 # what we use to run Cray DHCP Kea server
 nohup /usr/local/sbin/kea-dhcp4 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf &
 # we will need to tune this
-while true; do /dhcp-helper.py; sleep 60; done
+while true; do /dhcp-helper.py; sleep ${DHCP_HELPER_INTERVAL_SECONDS}; done
