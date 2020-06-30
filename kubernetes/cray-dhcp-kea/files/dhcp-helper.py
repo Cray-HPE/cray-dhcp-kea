@@ -231,8 +231,8 @@ for smd_mac_address in smd_ethernet_interfaces:
                 if alias:
                     for cidr in nmn_cidr:
                         if ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cidr):
-                            data['hostname'] = str(alias)
-                            print('setting alias with hostname/mac/ip',str(alias))
+                            data['hostname'] = alias[0]
+                            print('setting alias',json.dumps(data['hostname']))
         # check mac format
         colon_count = 0
         kea_mac_format = smd_mac_address
@@ -252,6 +252,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
     if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node' and '1' in smd_ethernet_interfaces[smd_mac_address]['Description'] and smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
         data = {}
+        print ('checking for hostname/mac reservation')
         data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
         if smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
 #            print("setting reservation for hostname/mac/ip %s",smd_ethernet_interfaces[smd_mac_address]['ComponentID'] )
@@ -259,12 +260,13 @@ for smd_mac_address in smd_ethernet_interfaces:
 #            print(sls_hardware_url)
             resp = requests.get(url=sls_hardware_url)
         # checking to see if its nmn ip, we will need to switch the name to nid instead of xname
-#            print('sls_hardware_url respond ',resp.json())
+            print('sls_hardware_url respond ',resp.json())
             alias = {}
             if '200' in str(resp.json()):
                 alias = resp.json()['ExtraProperties'].get('Aliases', {})
             if alias and resp.json()['ExtraProperties']['Role'] == 'Compute':
-                data['hostname'] = str(alias)
+                data['hostname'] = json.dumps(alias)
+                print('setting alias for hostname/mac reservation', json.dumps(data['hostname']))
         colon_count = 0
         kea_mac_format = smd_mac_address
         for i in smd_mac_address:
