@@ -106,7 +106,7 @@ def on_error(err, exit=True):
 
 # import base config
 cray_dhcp_kea_dhcp4 = {}
-with open('/cray_dhcp_kea_dhcp4.conf.template') as file:
+with open('/cray-dhcp-kea-dhcp4.conf.template') as file:
     cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
 # query sls for cabinet subnets
@@ -244,7 +244,10 @@ for smd_mac_address in smd_ethernet_interfaces:
     debug('sls hardware url:', sls_hardware_url)
     try:
         resp = requests.get(url=sls_hardware_url)
-        resp.raise_for_status()
+        if resp.status_code == 404:
+            print('WARNING: Not found {}'.format(sls_hardware_url))
+        else:
+            resp.raise_for_status()
     except Exception as err:
         on_error(err)
     sls_hardware_response = resp.json()
