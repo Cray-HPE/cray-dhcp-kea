@@ -40,6 +40,10 @@ cray-service:
             secretKeyRef:
               name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
               key: password
+        - name: DHCP_HELPER_DEBUG
+          value: "false"
+        - name: DHCP_HELPER_INTERVAL_SECONDS
+          value: "60"
       ports:
         - name: kea-server-udp
           containerPort: 67
@@ -74,7 +78,7 @@ cray-service:
           mountPath: /dhcp-helper.py
           readOnly: true
           subPath: dhcp-helper.py
-        - name: cray-dhcp-kea-jobs-template
+        - name: cray-dhcp-kea-jobs
           mountPath: /cray-dhcp-kea-dhcp4.conf.template
           readOnly: true
           subPath: cray-dhcp-kea-dhcp4.conf.template
@@ -129,10 +133,6 @@ cray-service:
       configMap:
         defaultMode: 0700
         name: cray-dhcp-kea-jobs
-    - name: cray-dhcp-kea-jobs-template
-      configMap:
-      defaultMode: 0700
-      name: cray-dhcp-kea-jobs-template
   sqlCluster:
     enabled: true
     users:
