@@ -6,4 +6,4 @@ data:
   dhcp-helper.py: |-
 {{ .Files.Get "files/dhcp-helper.py" | indent 4 }}
   cray-dhcp-kea-dhcp4.conf.template: |-
-{{ .Files.Get "files/cray-dhcp-kea-dhcp4.conf" | indent 4 }}
+{{ .Files.Get "files/cray-dhcp-kea-dhcp4.conf.template" | indent 4 }}
