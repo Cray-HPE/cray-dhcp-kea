@@ -251,34 +251,38 @@ for smd_mac_address in smd_ethernet_interfaces:
     except Exception as err:
         on_error(err)
     sls_hardware_response = resp.json()
+    # checking mac format
     if not ':' in smd_mac_address:
         kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
+    else:
+        kea_mac_format = smd_mac_address
     data['hw-address'] = kea_mac_format
-    data['ip-address'] = ''
 
     if 'Type' in smd_ethernet_interfaces[smd_mac_address] and smd_ethernet_interfaces[smd_mac_address]['Type'] == 'Node':
         alias = {}
         if 'ExtraProperties' in sls_hardware_response:
-            aliases = sls_hardware_response['ExtraProperties'].get('Aliases', [])
-            if len(aliases) > 0:
+            alias = sls_hardware_response['ExtraProperties'].get('Aliases', [])
+            if len(alias) > 0:
                 # checking to see if its nmn nic, we will need to switch the name to nid instead of xname
                 if 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] and smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
                     for cidr in nmn_cidr:
-                        network = ipaddress.ip_network(cidr)
-                        for host in network:
-                            if host == smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
-                                data['hostname'] = alias[0]
+                        if ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cidr):
+                            data['hostname'] = alias[0]
+                            debug('setting alias as hostname for ip/mac/hostname reservation ', alias[0])
                     data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
                     # submit dhcp reservation with hostname, mac and ip
                     if data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
                         dhcp_reservations.append(data)
+                        debug('setting dhcp reservation for ip/mac/hostname reservation', data)
                 # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
                 if 'Description' in smd_ethernet_interfaces[smd_mac_address] and '1' in smd_ethernet_interfaces[smd_mac_address]['Description']:
                     if smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '':
                         if sls_hardware_response['ExtraProperties']['Role'] == 'Compute':
                             data['hostname'] = alias[0]
+                            debug('setting alias as hostname', alias[0])
                         if data['hw-address'] != '' and data['hostname'] != '':
                             dhcp_reservations.append(data)
+                            debug('setting alias dhcp reservation for mac/hostname', data)
 
     # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address]:
@@ -298,6 +302,8 @@ for smd_mac_address in smd_ethernet_interfaces:
                     on_error(err)
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
+# logging kea config out
+print(cray_dhcp_kea_dhcp4_json)
 
 # lease wipe to clear out any potential funky state
 if len(leases_response) > 0:
