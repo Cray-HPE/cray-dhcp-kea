@@ -199,7 +199,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
     smd_mac_format = mac_address.replace(':', '')
 
     # TODO: pull all needed data down once instead of query smd for each ip
-    get_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/{}'.format(smd_mac_format)
+    get_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?MACAddress={}'.format(smd_mac_format)
     try:
         resp = requests.get(url=get_smd_url)
         if resp.status_code == 404:
