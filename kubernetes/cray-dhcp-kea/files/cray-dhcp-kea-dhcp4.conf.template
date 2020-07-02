@@ -20,17 +20,12 @@
     },
     "lease-database": {},
     "host-reservation-identifiers": [
-      "circuit-id",
-      "hw-address",
-      "duid",
-      "client-id",
-      "flex-id"
+      "hw-address"
     ],
     "reservation-mode": "global",
     "reservations": [],
     "subnet4": [],
     "valid-lifetime": 120,
-    "renew-timer": 120,
-    "rebind-timer": 120
+    "match-client-id": false
   }
 }

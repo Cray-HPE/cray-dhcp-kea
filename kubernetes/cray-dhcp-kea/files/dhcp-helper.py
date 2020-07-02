@@ -196,15 +196,19 @@ debug('kea ipv4 leases:', kea_ipv4_leases)
 # check to see if smd is aware of ips in kea
 for mac_address, mac_details in kea_ipv4_leases.items():
     kea_ip = mac_details['ip-address']
+    smd_mac_format = mac_address.replace(':', '')
+
     # TODO: pull all needed data down once instead of query smd for each ip
-    get_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ip)
+    get_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?MACAddress={}'.format(smd_mac_format)
     try:
         resp = requests.get(url=get_smd_url)
-        resp.raise_for_status()
+        if resp.status_code == 404:
+            print('WARNING: Not found {}'.format(get_smd_url))
+        else:
+            resp.raise_for_status()
     except Exception as err:
         on_error(err)
     if resp.json() == []:
-        smd_mac_format = mac_address.replace(':', '')
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
         try:
@@ -218,7 +222,6 @@ for mac_address, mac_details in kea_ipv4_leases.items():
                 resp.raise_for_status()
             except Exception as err:
                 on_error(err)
-
 #   b) Query SMD to get all network interfaces it knows about
 try:
     resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
@@ -289,8 +292,24 @@ for smd_mac_address in smd_ethernet_interfaces:
         dhcp_reservations.append(data)
         debug('setting dhcp reservation for ip/mac/hostname reservation', data)
 
-    # if IP Address is not present for a given mac address record in SMD, but Kea has a record with the MAC address and a non-empty IP, we can submit updates to SMD
-    if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address]:
+    # checking smd for latest information on ethernet interface in SMD
+    smd_mac_format = smd_mac_address.replace(':', '')
+    smd_interface_ip = ''
+    check_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/{}'.format(smd_mac_format)
+    try:
+        resp = requests.get(url=check_smd_url)
+        if resp.status_code == 404:
+            print('WARNING: Not found {}'.format(check_smd_url))
+        else:
+            resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    if 'IPAddress' in resp.json():
+        smd_interface_ip = resp.json()['IPAddress']
+        debug('refresh to confirm ip being set', smd_interface_ip)
+
+    # if we need to update SMD with IP address for ethernet interface
+    if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
         if (not 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] or smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '') and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
