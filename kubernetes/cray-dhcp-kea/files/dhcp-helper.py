@@ -197,18 +197,36 @@ debug('kea ipv4 leases:', kea_ipv4_leases)
 for mac_address, mac_details in kea_ipv4_leases.items():
     kea_ip = mac_details['ip-address']
     smd_mac_format = mac_address.replace(':', '')
+    search_smd_mac_resp = ''
+    search_smd_ip_resp = ''
 
     # TODO: pull all needed data down once instead of query smd for each ip
-    get_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?MACAddress={}'.format(smd_mac_format)
+    search_smd_mac_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?MACAddress={}'.format(smd_mac_format)
     try:
-        resp = requests.get(url=get_smd_url)
-        if resp.status_code == 404:
+        search_smd_mac_resp = requests.get(url=search_smd_mac_url)
+        if search_smd_mac_resp.status_code == 404:
             print('WARNING: Not found {}'.format(get_smd_url))
         else:
-            resp.raise_for_status()
+            search_smd_mac_resp.raise_for_status()
     except Exception as err:
         on_error(err)
-    if resp.json() == []:
+
+    search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ip)
+    try:
+        search_smd_ip_resp = requests.get(url=search_smd_ip_url)
+        if search_smd_ip_resp.status_code == 404:
+            print('WARNING: Not found {}'.format(search_smd_ip_url))
+        else:
+            search_smd_ip_resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+
+    # logging when detecting duplicate ips in SMD
+    if len(search_smd_ip_resp.json()) > 1:
+        print("more than one IP in SMD ",)
+        print(search_smd_ip_resp.json())
+
+    if search_smd_mac_resp.json() == [] and search_smd_ip_resp.json() == []:
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
         try:
