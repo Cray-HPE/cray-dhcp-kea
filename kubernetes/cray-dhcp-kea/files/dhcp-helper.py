@@ -126,14 +126,27 @@ debug('sls cabinet query response:', sls_cabinets)
 for i in range(len(sls_cabinets)):
     if 'ExtraProperties' in sls_cabinets[i] and 'Networks' in sls_cabinets[i]['ExtraProperties']:
         for network_name in sls_cabinets[i]['ExtraProperties']['Networks']:
+            dubplicate_cidr = False
             debug('network:', network_name)
-            if network_name != 'ncn':
+            if sls_cabinets[i]['ExtraProperties']:
                 network = sls_cabinets[i]['ExtraProperties']['Networks'][network_name]
                 debug('network data:', network)
                 for system_name in network:
                     debug('system:', system_name)
                     system = network[system_name]
                     debug('system data:', system)
+                    # checking for duplciate network cidrs and exiting for loop
+                    for subnet in subnet4:
+                        debug("cidr ",system['CIDR'])
+                        debug(" subnet is ",subnet['subnet'])
+                        if system['CIDR'] == subnet['subnet']:
+                            debug('duplicate subnet exiting', system['CIDR'])
+                            dubplicate_cidr = True
+                            break
+                    # exiting for loop if duplicate network cidr
+                    if dubplicate_cidr:
+                        debug('duplicate cidr true and exiting',system['CIDR'])
+                        break
                     if system_name == 'NMN':
                         nmn_cidr.append(system['CIDR'])
                     subnet4_subnet = {}
