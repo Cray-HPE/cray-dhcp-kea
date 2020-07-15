@@ -222,8 +222,8 @@ for mac_address, mac_details in kea_ipv4_leases.items():
         on_error(err)
 
     # logging when detecting duplicate ips in SMD
-    if len(search_smd_ip_resp.json()) > 1:
-        print("more than one IP in SMD ",)
+    if len(search_smd_ip_resp.json()) > 0:
+        print("we tried adding an a dupe ip",)
         print(search_smd_ip_resp.json())
 
     if search_smd_mac_resp.json() == [] and search_smd_ip_resp.json() == []:
@@ -355,7 +355,10 @@ for smd_mac_address in smd_ethernet_interfaces:
                         resp.raise_for_status()
                     except Exception as err:
                         on_error(err)
-cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
+            if len(search_smd_ip_resp.json()) > 0:
+                print("we tried adding an a dupe ip")
+                print(search_smd_ip_resp.json())
+                cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
 print(cray_dhcp_kea_dhcp4_json)
