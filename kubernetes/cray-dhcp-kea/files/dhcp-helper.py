@@ -126,14 +126,27 @@ debug('sls cabinet query response:', sls_cabinets)
 for i in range(len(sls_cabinets)):
     if 'ExtraProperties' in sls_cabinets[i] and 'Networks' in sls_cabinets[i]['ExtraProperties']:
         for network_name in sls_cabinets[i]['ExtraProperties']['Networks']:
+            dubplicate_cidr = False
             debug('network:', network_name)
-            if network_name != 'ncn':
+            if sls_cabinets[i]['ExtraProperties']:
                 network = sls_cabinets[i]['ExtraProperties']['Networks'][network_name]
                 debug('network data:', network)
                 for system_name in network:
                     debug('system:', system_name)
                     system = network[system_name]
                     debug('system data:', system)
+                    # checking for duplciate network cidrs and exiting for loop
+                    for subnet in subnet4:
+                        debug("cidr ",system['CIDR'])
+                        debug(" subnet is ",subnet['subnet'])
+                        if system['CIDR'] == subnet['subnet']:
+                            debug('duplicate subnet exiting', system['CIDR'])
+                            dubplicate_cidr = True
+                            break
+                    # exiting for loop if duplicate network cidr
+                    if dubplicate_cidr:
+                        debug('duplicate cidr true and exiting',system['CIDR'])
+                        break
                     if system_name == 'NMN':
                         nmn_cidr.append(system['CIDR'])
                     subnet4_subnet = {}
@@ -193,22 +206,40 @@ if len(leases_response) > 0:
                 kea_ipv4_leases[lease['hw-address']] = lease
 debug('kea ipv4 leases:', kea_ipv4_leases)
 
-# check to see if smd is aware of ips in kea
+# check to see if smd is aware of ips and macs in kea.  Potentially update SMD with new ethernet interfaces
 for mac_address, mac_details in kea_ipv4_leases.items():
     kea_ip = mac_details['ip-address']
     smd_mac_format = mac_address.replace(':', '')
+    search_smd_mac_resp = ''
+    search_smd_ip_resp = ''
 
     # TODO: pull all needed data down once instead of query smd for each ip
-    get_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?MACAddress={}'.format(smd_mac_format)
+    search_smd_mac_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?MACAddress={}'.format(smd_mac_format)
     try:
-        resp = requests.get(url=get_smd_url)
-        if resp.status_code == 404:
-            print('WARNING: Not found {}'.format(get_smd_url))
+        search_smd_mac_resp = requests.get(url=search_smd_mac_url)
+        if search_smd_mac_resp.status_code == 404:
+            print('WARNING: Not found {}'.format(smd_mac_format))
         else:
-            resp.raise_for_status()
+            search_smd_mac_resp.raise_for_status()
     except Exception as err:
         on_error(err)
-    if resp.json() == []:
+    # dupe ip check
+    search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ip)
+    try:
+        search_smd_ip_resp = requests.get(url=search_smd_ip_url)
+        if search_smd_ip_resp.status_code == 404:
+            print('WARNING: Not found {}'.format(search_smd_ip_url))
+        else:
+            search_smd_ip_resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+
+    # logging when detecting duplicate ips in SMD
+    if len(search_smd_ip_resp.json()) > 0:
+        print("we tried adding an a dupe ip for an new interface",)
+        print(search_smd_ip_resp.json())
+
+    if search_smd_mac_resp.json() == [] and search_smd_ip_resp.json() == []:
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
         post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
         try:
@@ -292,7 +323,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         dhcp_reservations.append(data)
         debug('setting dhcp reservation for ip/mac/hostname reservation', data)
 
-    # checking smd for latest information on ethernet interface in SMD
+    # checking smd for latest information on ethernet interface in SMD of known ethernet interfaces
     smd_mac_format = smd_mac_address.replace(':', '')
     smd_interface_ip = ''
     check_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/{}'.format(smd_mac_format)
@@ -308,22 +339,38 @@ for smd_mac_address in smd_ethernet_interfaces:
         smd_interface_ip = resp.json()['IPAddress']
         debug('refresh to confirm ip being set', smd_interface_ip)
 
+
     # if we need to update SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
         if (not 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] or smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '') and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
-            update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
-            post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
+            # dupe ip check
+            search_smd_ip_resp = ''
+            search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ipv4_leases[smd_mac_address]['ip-address'])
             try:
-                resp = requests.post(url=update_smd_url, json=post_data)
-                resp.raise_for_status()
+                search_smd_ip_resp = requests.get(url=search_smd_ip_url)
+                if search_smd_ip_resp.status_code == 404:
+                    print('WARNING: Not found {}'.format(search_smd_ip_url))
+                else:
+                    search_smd_ip_resp.raise_for_status()
             except Exception as err:
-                print('we got an error posting to SMD, trying to patch instead...')
+                on_error(err)
+            if len(search_smd_ip_resp.json()) == 0:
+                update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
+                post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
                 try:
-                    update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/{}'.format(smd_mac_format)
-                    resp = requests.patch(url=update_smd_url, json=post_data)
+                    resp = requests.post(url=update_smd_url, json=post_data)
                     resp.raise_for_status()
                 except Exception as err:
-                    on_error(err)
+                    print('we got an error posting to SMD, trying to patch instead...')
+                    try:
+                        update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/{}'.format(smd_mac_format)
+                        resp = requests.patch(url=update_smd_url, json=post_data)
+                        resp.raise_for_status()
+                    except Exception as err:
+                        on_error(err)
+            if len(search_smd_ip_resp.json()) > 0:
+                print("we tried adding an a dupe ip in know interface")
+                print(search_smd_ip_resp.json())
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
