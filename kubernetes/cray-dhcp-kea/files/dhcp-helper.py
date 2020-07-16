@@ -153,7 +153,7 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['pools'] = []
                     subnet4_subnet['pools'].append({'pool': {}})
                     subnet4_subnet['option-data'] = []
-                    ip_network = ipaddress.ip_network(system['CIDR'])
+                    ip_network = ipaddress.ip_network(system['CIDR'],strict=False)
                     network_total_hosts = ip_network.num_addresses
                     network_pool_start = ip_network[26]
                     network_pool_end = ip_network[network_total_hosts - 51]
@@ -305,7 +305,7 @@ for smd_mac_address in smd_ethernet_interfaces:
                 # checking to see if its nmn nic, we will need to switch the name to nid instead of xname
                 if 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] and smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
                     for cidr in nmn_cidr:
-                        if ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cidr):
+                        if ipaddress.IPv4Address(smd_ethernet_interfaces[smd_mac_address]['IPAddress']) in ipaddress.IPv4Network(cidr, strict=False):
                             data['hostname'] = alias[0]
                             debug('setting alias as hostname for ip/mac/hostname reservation ', alias[0])
                 # checking to see if we need to do a nid hostname and mac reservation to make first nid boot work properly
