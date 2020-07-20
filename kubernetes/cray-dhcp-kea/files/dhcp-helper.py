@@ -6,6 +6,7 @@ import ipaddress
 import time
 import os
 import sys
+import subprocess
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -122,6 +123,19 @@ sls_cabinets = resp.json()
 # parse the response from cray-sls for subnet/cabinet network information
 subnet4 = []
 nmn_cidr = []
+dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
+dns_masq_servers = {}
+
+# get dns masq server ip for nmn and hmn
+# this needs to go away in 1.4!!!
+system_name = ('nmn','hmn')
+for name in system_name:
+    ip=subprocess.run("getent hosts " + dns_masq_hostname + '-' + name +"|awk '{ print $1 }'",shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+    if ip.stdout == '':
+        print('error getting dns masq ip for ',dns_masq_hostname + name)
+    dns_masq_servers[name.upper()] = ip.stdout.rstrip("\n") + ','
+debug('this is the dns_masq_servesr:',dns_masq_servers)
+
 debug('sls cabinet query response:', sls_cabinets)
 for i in range(len(sls_cabinets)):
     if 'ExtraProperties' in sls_cabinets[i] and 'Networks' in sls_cabinets[i]['ExtraProperties']:
@@ -166,10 +180,10 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['option-data'].append({'name': 'routers', 'data': system['Gateway']})
                     subnet4_subnet['boot-file-name'] = 'ipxe.efi'
                     if system_name == 'NMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.252.0.4, 10.92.100.225'})
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + '10.92.100.225'})
                         subnet4_subnet['next-server'] = '10.92.100.60'
                     if system_name == 'HMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': '10.252.0.4, 10.94.100.225'})
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + '10.94.100.225'})
                         subnet4_subnet['next-server'] = '10.94.100.60'
                     subnet4.append(subnet4_subnet)
 debug('subnet4:', subnet4)
