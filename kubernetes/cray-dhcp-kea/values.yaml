@@ -173,8 +173,6 @@ crayDhcpKeaDhcp4Config:
         option-data:
           - name: routers
             data: 10.254.0.2
-          - name: domain-name-servers
-            data: 10.254.0.4
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4

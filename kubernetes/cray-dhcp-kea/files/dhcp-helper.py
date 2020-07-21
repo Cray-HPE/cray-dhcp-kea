@@ -6,7 +6,7 @@ import ipaddress
 import time
 import os
 import sys
-import subprocess
+import socket
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -130,10 +130,10 @@ dns_masq_servers = {}
 # this needs to go away in 1.4!!!
 system_name = ('nmn','hmn')
 for name in system_name:
-    ip=subprocess.run("getent hosts " + dns_masq_hostname + '-' + name +"|awk '{ print $1 }'",shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
-    if ip.stdout == '':
+    ip = socket.gethostbyname(dns_masq_hostname + '-' + name)
+    if ip == '':
         print('error getting dns masq ip for ',dns_masq_hostname + name)
-    dns_masq_servers[name.upper()] = ip.stdout.rstrip("\n") + ','
+    dns_masq_servers[name.upper()] = ip
 debug('this is the dns_masq_servesr:',dns_masq_servers)
 
 debug('sls cabinet query response:', sls_cabinets)
