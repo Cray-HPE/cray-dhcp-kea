@@ -22,6 +22,8 @@ cray-service:
         - "-c"
         - "/startup-dhcp.sh"
       env:
+        - name: DNS_MASQ_HOSTNAME
+          value: "ncn-w001"
         - name: DHCP_DBHOST
           value: cray-dhcp-kea-postgres
         - name: DHCP_DBPORT
@@ -43,7 +45,7 @@ cray-service:
         - name: DHCP_HELPER_DEBUG
           value: "false"
         - name: DHCP_HELPER_INTERVAL_SECONDS
-          value: "60"
+          value: "180"
       ports:
         - name: kea-server-udp
           containerPort: 67
@@ -171,8 +173,6 @@ crayDhcpKeaDhcp4Config:
         option-data:
           - name: routers
             data: 10.254.0.2
-          - name: domain-name-servers
-            data: 10.254.0.4
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4
