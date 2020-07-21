@@ -397,13 +397,19 @@ if len(leases_response) > 0:
             hw_address = lease['hw-address']
             ip_address = lease['ip-address']
             subnet_id = lease['subnet-id']
-            for reservation in cray_dhcp_kea_dhcp4['Dhcp4']['reservations']:
-                if 'hw-address' in lease and lease['hw-address'] == reservation['hw-address']:
-                    if 'ip-address' in lease and lease['ip-address'] != reservation['ip-address'] and 'subnet-id' in lease:
+            for first_reservation_check in cray_dhcp_kea_dhcp4['Dhcp4']['reservations']:
+                if 'hw-address' in lease and lease['hw-address'] == first_reservation_check['hw-address']:
+                    if 'ip-address' in lease and lease['ip-address'] != first_reservation_check['ip-address'] and 'subnet-id' in lease:
                         print ('we found a mis-match, deleting active lease', lease['hw-address'], lease['ip-address'], lease['subnet-id'])
                         data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': lease['hw-address'], 'ip-address': lease['ip-address']}}
-                        resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-
+                        resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
+                        # adding a second check to remove a lease that a device we do not manage ip for might be holding an ip we want to use
+                        # examples of devices we currently do not actively try to manage/discover: UPS and motivChilledDoors
+                        for second_reservation_check in leases_response[0]['arguments']['leases']:
+                            if second_reservation_check['ip-address'] == first_reservation_check['ip-address']:
+                                print ('we found an active lease holding an ip we need', second_reservation_check['hw-address'], second_reservation_check['ip-address'], second_reservation_check['subnet-id'])
+                                data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': second_reservation_check['hw-address'], 'ip-address': second_reservation_check['ip-address']}}
+                                resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
 # write config to disk
 with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
     json.dump(cray_dhcp_kea_dhcp4, outfile)
