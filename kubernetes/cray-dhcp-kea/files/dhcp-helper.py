@@ -403,10 +403,10 @@ if len(leases_response) > 0:
                         print ('we found a mis-match, deleting active lease', lease['hw-address'], lease['ip-address'], lease['subnet-id'])
                         data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': lease['hw-address'], 'ip-address': lease['ip-address']}}
                         resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
-                        # adding a second check to remove a lease that a device we do not manage ip for might be holding an ip we want to use
+                        # adding a second check to remove a lease that a device we currently do not manage is holding an ip we want to set
                         # examples of devices we currently do not actively try to manage/discover: UPS and motivChilledDoors
                         for second_reservation_check in leases_response[0]['arguments']['leases']:
-                            if second_reservation_check['ip-address'] == first_reservation_check['ip-address']:
+                            if second_reservation_check['ip-address'] == lease['ip-address']:
                                 print ('we found an active lease holding an ip we need', second_reservation_check['hw-address'], second_reservation_check['ip-address'], second_reservation_check['subnet-id'])
                                 data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': second_reservation_check['hw-address'], 'ip-address': second_reservation_check['ip-address']}}
                                 resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
