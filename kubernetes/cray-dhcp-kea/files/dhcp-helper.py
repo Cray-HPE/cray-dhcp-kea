@@ -133,7 +133,7 @@ for name in system_name:
     ip = socket.gethostbyname(dns_masq_hostname + '-' + name)
     if ip == '':
         print('error getting dns masq ip for ',dns_masq_hostname + name)
-    dns_masq_servers[name.upper()] = ip
+    dns_masq_servers[name.upper()] = ip + ','
 debug('this is the dns_masq_servesr:',dns_masq_servers)
 
 debug('sls cabinet query response:', sls_cabinets)
