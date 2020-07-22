@@ -8,4 +8,5 @@ then
   exit 0
 else
   exit 1
+  echo "Failed health check"
 fi
