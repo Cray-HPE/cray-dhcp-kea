@@ -54,8 +54,11 @@ cray-service:
           containerPort: 67
           protocol: TCP
       livenessProbe:
-        tcpSocket:
-          port: 67
+        exec:
+          command:
+            - /bin/sh
+            - -c
+            - /health-check.sh
         initialDelaySeconds: 5
         periodSeconds: 3
       readinessProbe:
@@ -84,6 +87,10 @@ cray-service:
           mountPath: /cray-dhcp-kea-dhcp4.conf.template
           readOnly: true
           subPath: cray-dhcp-kea-dhcp4.conf.template
+        - name: cray-dhcp-kea-jobs
+          mountPath: /health-check.sh
+          readOnly: true
+          subPath: health-check.sh
     - name: "cray-dhcp-kea-ctrl-agent"
       image:
         repository: "cray/cray-dhcp-kea"
@@ -101,8 +108,11 @@ cray-service:
           containerPort: 8000
           protocol: TCP
       livenessProbe:
-        tcpSocket:
-          port: 8000
+        exec:
+          command:
+            - /bin/sh
+            - -c
+            - /health-check.sh
         initialDelaySeconds: 5
         periodSeconds: 3
       readinessProbe:
@@ -119,6 +129,10 @@ cray-service:
           mountPath: /cray-dhcp-kea-socket
           readOnly: false
           subPath: cray-dhcp-kea-socket
+        - name: cray-dhcp-kea-jobs
+          mountPath: /health-check.sh
+          readOnly: true
+          subPath: health-check.sh
   volumes:
     - name: cray-dhcp-kea-dhcp4-conf
       configMap:
