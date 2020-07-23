@@ -59,8 +59,8 @@ cray-service:
             - /bin/sh
             - -c
             - /health-check.sh
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 30
+        periodSeconds: 60
       readinessProbe:
         tcpSocket:
           port: 67
@@ -113,8 +113,8 @@ cray-service:
             - /bin/sh
             - -c
             - /health-check.sh
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 30
+        periodSeconds: 60
       readinessProbe:
         tcpSocket:
           port: 8000

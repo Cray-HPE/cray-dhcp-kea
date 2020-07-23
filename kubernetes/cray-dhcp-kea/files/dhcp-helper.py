@@ -205,7 +205,7 @@ cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 #        cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = lease_database_info
 
 # testing in memory db
-cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = { "type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases","lfc-interval": 3600 },
+cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = { "type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases","lfc-interval": 3600 }
 
 #   a) Query Kea for DHCP leases, we'll just query the api
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
