@@ -190,19 +190,22 @@ debug('subnet4:', subnet4)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 
 # query cray-dhcp-kea for lease db info
-kea_request_data = {'command': 'config-get', 'service': ['dhcp4']}
-try:
-    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
+#kea_request_data = {'command': 'config-get', 'service': ['dhcp4']}
+#try:
+#    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
+#    resp.raise_for_status()
+#except Exception as err:
+#    on_error(err)
 
-kea_get_config = resp.json()
-debug('kea config-get response:', kea_get_config)
-if len(kea_get_config) > 0:
-    if 'arguments' in kea_get_config[0] and 'Dhcp4' in kea_get_config[0]['arguments'] and 'lease-database' in kea_get_config[0]['arguments']['Dhcp4']:
-        lease_database_info = kea_get_config[0]['arguments']['Dhcp4']['lease-database']
-        cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = lease_database_info
+#kea_get_config = resp.json()
+#debug('kea config-get response:', kea_get_config)
+#if len(kea_get_config) > 0:
+#    if 'arguments' in kea_get_config[0] and 'Dhcp4' in kea_get_config[0]['arguments'] and 'lease-database' in kea_get_config[0]['arguments']['Dhcp4']:
+#        lease_database_info = kea_get_config[0]['arguments']['Dhcp4']['lease-database']
+#        cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = lease_database_info
+
+# testing in memory db
+cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = { "type": "memfile", "persist": true,  "name": "/cray-dhcp-kea-socket/dhcp4.leases","lfc-interval": 3600 },
 
 #   a) Query Kea for DHCP leases, we'll just query the api
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
