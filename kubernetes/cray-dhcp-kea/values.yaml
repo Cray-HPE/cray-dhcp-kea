@@ -21,6 +21,13 @@ cray-service:
         - "sh"
         - "-c"
         - "/startup-dhcp.sh"
+      resources:
+        limits:
+          cpu: "4"
+          memory: "2Gi"
+        requests:
+          cpu: "1"
+          memory: "1Gi"
       env:
         - name: DNS_MASQ_HOSTNAME
           value: "ncn-w001"
@@ -60,7 +67,8 @@ cray-service:
             - -c
             - /health-check.sh
         initialDelaySeconds: 30
-        periodSeconds: 60
+        periodSeconds: 300
+        timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 67
@@ -114,7 +122,8 @@ cray-service:
             - -c
             - /health-check.sh
         initialDelaySeconds: 30
-        periodSeconds: 60
+        periodSeconds: 300
+        timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 8000
