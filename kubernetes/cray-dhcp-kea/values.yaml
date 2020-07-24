@@ -23,10 +23,10 @@ cray-service:
         - "/startup-dhcp.sh"
       resources:
         limits:
-          cpu: "4"
-          memory: "2Gi"
+          cpu: "6"
+          memory: "3Gi"
         requests:
-          cpu: "1"
+          cpu: "2"
           memory: "1Gi"
       env:
         - name: DNS_MASQ_HOSTNAME
@@ -181,12 +181,10 @@ crayDhcpKeaDhcp4Config:
       - library: "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
       - library: "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
     lease-database:
-      type: postgresql
-      name: "$DHCP_DBNAME"
-      host: "$DHCP_DBHOST"
-      user: "$DHCP_DBUSER"
-      password: "$DHCP_DBPASS"
-    valid-lifetime: 120
+      type: memfile
+      name: "/cray-dhcp-kea-socket/dhcp4.leases"
+      lfc-interval: 3600
+    valid-lifetime: 300
     subnet4:
       # adding hmn basic network info for now
       - subnet: 10.254.0.0/17

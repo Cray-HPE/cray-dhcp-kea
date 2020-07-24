@@ -189,23 +189,9 @@ for i in range(len(sls_cabinets)):
 debug('subnet4:', subnet4)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 
-# query cray-dhcp-kea for lease db info
-#kea_request_data = {'command': 'config-get', 'service': ['dhcp4']}
-#try:
-#    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-#    resp.raise_for_status()
-#except Exception as err:
-#    on_error(err)
-
-#kea_get_config = resp.json()
-#debug('kea config-get response:', kea_get_config)
-#if len(kea_get_config) > 0:
-#    if 'arguments' in kea_get_config[0] and 'Dhcp4' in kea_get_config[0]['arguments'] and 'lease-database' in kea_get_config[0]['arguments']['Dhcp4']:
-#        lease_database_info = kea_get_config[0]['arguments']['Dhcp4']['lease-database']
-#        cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = lease_database_info
-
-# testing in memory db
+# setup in memory db
 cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = { "type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases","lfc-interval": 3600 }
+cray_dhcp_kea_dhcp4['Dhcp4']['valid-lifetime'] = {"valid-lifetime": 300}
 
 #   a) Query Kea for DHCP leases, we'll just query the api
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
@@ -225,7 +211,7 @@ debug('kea ipv4 leases:', kea_ipv4_leases)
 
 # check to see if smd is aware of ips and macs in kea.  Potentially update SMD with new ethernet interfaces
 
-# getting updated information from SMD for ethernetInterfaces
+# getting information from SMD for all ethernetInterfaces
 smd_all_ethernet_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
 debug('smd all ethernet url:', smd_all_ethernet_url)
 try:
@@ -250,8 +236,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             search_smd_mac.append(smd_all_ethernet_resp.json()[j])
     # logging when detecting duplicate ips in SMD
     if len(search_smd_ip) > 0:
-        print("we tried adding an a dupe ip for an new interface",)
-        print(search_smd_ip)
+        debug("we tried adding an a dupe ip for an new interface",search_smd_ip)
 
     if search_smd_mac == [] and search_smd_ip == []:
         update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
@@ -335,18 +320,6 @@ for smd_mac_address in smd_ethernet_interfaces:
         dhcp_reservations.append(data)
         debug('setting dhcp reservation for ip/mac/hostname reservation', data)
 
-#    # checking smd for latest information on ethernet interface in SMD of known ethernet interfaces
-#    smd_mac_format = smd_mac_address.replace(':', '')
-#    smd_interface_ip = ''
-#    check_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces/{}'.format(smd_mac_format)
-#    try:
-#        resp = requests.get(url=check_smd_url)
-#        if resp.status_code == 404:
-#            print('WARNING: Not found {}'.format(check_smd_url))
-#        else:
-#            resp.raise_for_status()
-#    except Exception as err:
-#        on_error(err)
     # getting updated information from SMD for ethernetInterfaces
     smd_all_ethernet_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
     try:
