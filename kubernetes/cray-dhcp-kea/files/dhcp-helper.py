@@ -191,7 +191,7 @@ cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 
 # setup in memory db
 cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = { "type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases","lfc-interval": 3600 }
-cray_dhcp_kea_dhcp4['Dhcp4']['valid-lifetime'] = {"valid-lifetime": 300}
+cray_dhcp_kea_dhcp4['Dhcp4']['valid-lifetime'] = 300
 
 #   a) Query Kea for DHCP leases, we'll just query the api
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
@@ -265,6 +265,7 @@ for interface in smd_ethernet_interfaces_response:
         smd_ethernet_interfaces[interface['MACAddress']] = interface
 
 #   c) Resolve the results from both SMD and Kea to synchronize both
+# get all hardware info from SLS
 sls_all_hardware_url = 'http://cray-sls/v1/hardware'
 debug('sls all hardware url:', sls_all_hardware_url)
 try:
@@ -277,12 +278,12 @@ for smd_mac_address in smd_ethernet_interfaces:
     reservation = {}
     kea_mac_format = ''
     data = {}
+    smd_interface_ip = ''
+
     if not 'ComponentID' in smd_ethernet_interfaces[smd_mac_address]:
         on_error('no ComponentID found in smd ethernet interface', exit=False)
         continue
     data['hostname'] = smd_ethernet_interfaces[smd_mac_address]['ComponentID']
-#    for i in range(len(sls_all_hardware)):
-#    if smd_ethernet_interfaces[smd_mac_address]['ComponentID'] == sls_all_hardware[i]['Xname']:
     if not ':' in smd_mac_address:
         kea_mac_format = ':'.join(smd_mac_address[i:i + 2] for i in range(0, 12, 2))
     else:
@@ -290,7 +291,8 @@ for smd_mac_address in smd_ethernet_interfaces:
     data['hw-address'] = kea_mac_format
     # setting ip address information
     if 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] and smd_ethernet_interfaces[smd_mac_address]['IPAddress']:
-        data['ip-address'] = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
+        data['ip-address'] = smd_interface_ip = smd_ethernet_interfaces[smd_mac_address]['IPAddress']
+    # checking SLS hardware info
     for i in range(len(sls_all_hardware)):
         if smd_ethernet_interfaces[smd_mac_address]['ComponentID'] == sls_all_hardware[i]['Xname']:
             # node checks for switching hostname to an alias
@@ -319,20 +321,6 @@ for smd_mac_address in smd_ethernet_interfaces:
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         dhcp_reservations.append(data)
         debug('setting dhcp reservation for ip/mac/hostname reservation', data)
-
-    # getting updated information from SMD for ethernetInterfaces
-    smd_all_ethernet_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
-    try:
-        smd_all_ethernet_resp = requests.get(url=smd_all_ethernet_url)
-        smd_all_ethernet_resp.raise_for_status()
-    except Exception as err:
-        on_error(err)
-    smd_all_ethernet = smd_all_ethernet_resp.json()
-    for i in range(len(smd_all_ethernet)):
-        if 'IPAddress' in smd_all_ethernet[i]:
-            smd_interface_ip = smd_all_ethernet[i]['IPAddress']
-            debug('refresh to confirm ip being set', smd_interface_ip)
-
 
     # if we need to update SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
