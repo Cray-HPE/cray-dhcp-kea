@@ -367,7 +367,7 @@ if len(leases_response) > 0:
             subnet_id = lease['subnet-id']
             for first_reservation_check in cray_dhcp_kea_dhcp4['Dhcp4']['reservations']:
                 if 'hw-address' in lease and lease['hw-address'] == first_reservation_check['hw-address']:
-                    if 'ip-address' in lease and lease['ip-address'] != first_reservation_check['ip-address'] and 'subnet-id' in lease:
+                    if 'ip-address' in lease and 'ip-address' in first_reservation_check and lease['ip-address'] != first_reservation_check['ip-address']:
                         print ('we found a mis-match, deleting active lease', lease['hw-address'], lease['ip-address'], lease['subnet-id'])
                         data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': lease['hw-address'], 'ip-address': lease['ip-address']}}
                         resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
