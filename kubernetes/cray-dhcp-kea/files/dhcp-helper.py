@@ -250,7 +250,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
         except Exception as err:
             on_error(err)
         # we update SMD only if ip doesn't exec or special case where HSM discovery does not discover the hostname
-        if search_smd_ip_resp.json() == [] or (len(search_smd_ip_resp.json()) == 1 and kea_hostname != '' and kea_ip == search_smd_ip_resp.json()[0]['IPAddress'] and smd_mac_format == search_smd_ip_resp.json()[0]['MACAddress']):
+        if search_smd_ip_resp.json() == [] or (len(search_smd_ip_resp.json()) == 1 and kea_ip == search_smd_ip_resp.json()[0]['IPAddress'] and smd_mac_format == search_smd_ip_resp.json()[0]['MACAddress']):
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip, 'ComponentID': kea_hostname}
             try:
