@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - health monitor to not count the grep pid due to race condition
 - optmized dhcp-helper to query larger chunks of data from SMD and SLS
 - updated resource requests and limits
+- udpated metalLB trafficPolicy to be Local
 ### Deprecated
 ### Removed
 - removed postgres cluster and moved to in memory DB

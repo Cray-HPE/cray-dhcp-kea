@@ -10,6 +10,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
   ports:
     - name: kea-server-tcp-hmn
@@ -30,6 +31,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
   ports:
     - name: kea-server-tcp-nmn
@@ -50,6 +52,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
   ports:
     - name: kea-server-udp-hmn
@@ -70,6 +73,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: cray-dhcp-kea
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
   ports:
     - name: kea-server-udp-nmn
