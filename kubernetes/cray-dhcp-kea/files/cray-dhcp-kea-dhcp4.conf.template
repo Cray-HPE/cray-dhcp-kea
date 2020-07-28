@@ -25,7 +25,7 @@
     "reservation-mode": "global",
     "reservations": [],
     "subnet4": [],
-    "valid-lifetime": 120,
+    "valid-lifetime": 300,
     "match-client-id": false
   }
 }

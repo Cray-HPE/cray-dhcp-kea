@@ -21,27 +21,16 @@ cray-service:
         - "sh"
         - "-c"
         - "/startup-dhcp.sh"
+      resources:
+        limits:
+          cpu: "6"
+          memory: "3Gi"
+        requests:
+          cpu: "2"
+          memory: "1Gi"
       env:
         - name: DNS_MASQ_HOSTNAME
           value: "ncn-w001"
-        - name: DHCP_DBHOST
-          value: cray-dhcp-kea-postgres
-        - name: DHCP_DBPORT
-          value: "5432"
-        - name: DHCP_DBNAME
-          value: "dhcp"
-        - name: DHCP_DBOPTS
-          value: ""
-        - name: DHCP_DBUSER
-          valueFrom:
-            secretKeyRef:
-              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
-              key: username
-        - name: DHCP_DBPASS
-          valueFrom:
-            secretKeyRef:
-              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
-              key: password
         - name: DHCP_HELPER_DEBUG
           value: "false"
         - name: DHCP_HELPER_INTERVAL_SECONDS
@@ -59,8 +48,9 @@ cray-service:
             - /bin/sh
             - -c
             - /health-check.sh
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 30
+        periodSeconds: 300
+        timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 67
@@ -75,10 +65,6 @@ cray-service:
           mountPath: /cray-dhcp-kea-socket
           readOnly: false
           subPath: cray-dhcp-kea-socket
-        - name: cray-dhcp-kea-db-init
-          mountPath: /dhcpdb_create.sql
-          readOnly: false
-          subPath: dhcpdb_create.sql
         - name: cray-dhcp-kea-jobs
           mountPath: /dhcp-helper.py
           readOnly: true
@@ -113,8 +99,9 @@ cray-service:
             - /bin/sh
             - -c
             - /health-check.sh
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 30
+        periodSeconds: 300
+        timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 8000
@@ -149,13 +136,6 @@ cray-service:
       configMap:
         defaultMode: 0700
         name: cray-dhcp-kea-jobs
-  sqlCluster:
-    enabled: true
-    users:
-      dhcpdsuser: []
-    databases:
-      dhcp: dhcpdsuser
-    volumeSize: 10Gi
   service:
     # service definitions for this chart defined manually
     enabled: false
@@ -172,12 +152,10 @@ crayDhcpKeaDhcp4Config:
       - library: "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
       - library: "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
     lease-database:
-      type: postgresql
-      name: "$DHCP_DBNAME"
-      host: "$DHCP_DBHOST"
-      user: "$DHCP_DBUSER"
-      password: "$DHCP_DBPASS"
-    valid-lifetime: 120
+      type: memfile
+      name: "/cray-dhcp-kea-socket/dhcp4.leases"
+      lfc-interval: 3600
+    valid-lifetime: 300
     subnet4:
       # adding hmn basic network info for now
       - subnet: 10.254.0.0/17
