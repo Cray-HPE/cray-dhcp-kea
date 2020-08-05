@@ -236,10 +236,10 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             search_smd_mac.append(smd_all_ethernet_resp.json()[i])
     # logging when detecting duplicate ips in SMD
     if len(search_smd_ip) > 0:
-        debug("we tried adding an a dupe ip for an new interface", search_smd_ip)
+        print('we tried adding an a dupe ip for an new interface {} {}'.format(search_smd_mac,search_smd_ip))
 
     if search_smd_mac == [] or search_smd_ip == []:
-        # duplicate ip check
+        # double check duplicate ip check
         search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ip)
         try:
             search_smd_ip_resp = requests.get(url=search_smd_ip_url)
@@ -253,7 +253,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
         if search_smd_ip_resp.json() == []:
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
-            print ('updating SMD with ',post_data)
+            print ('updating SMD with {}'.format(post_data))
             try:
                 resp = requests.post(url=update_smd_url, json=post_data)
                 resp.raise_for_status()

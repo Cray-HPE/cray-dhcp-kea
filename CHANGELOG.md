@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - updated health check to improve logging on failed health checks
 - updated health check to check kea server and api health
-- updated chart vaules to increase grequency of health checks
+- updated chart vaules to increase frequency of health checks
 - updated dhcp-helper to not add kea hostname name to SMD
 - upgraded to Kea 1.7.10 to resolve high port number bug https://gitlab.isc.org/isc-projects/kea/-/issues/1302
 ### Deprecated
