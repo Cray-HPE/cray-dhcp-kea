@@ -249,10 +249,11 @@ for mac_address, mac_details in kea_ipv4_leases.items():
                 search_smd_ip_resp.raise_for_status()
         except Exception as err:
             on_error(err)
-        # we update SMD only if ip doesn't exec or special case where HSM discovery does not discover the hostname
-        if search_smd_ip_resp.json() == [] or (len(search_smd_ip_resp.json()) == 1 and kea_ip == search_smd_ip_resp.json()[0]['IPAddress'] and smd_mac_format == search_smd_ip_resp.json()[0]['MACAddress']):
+        # we update SMD only if ip doesn't exec
+        if search_smd_ip_resp.json() == []:
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
+            print ('updating SMD with ',post_data)
             try:
                 resp = requests.post(url=update_smd_url, json=post_data)
                 resp.raise_for_status()
@@ -352,6 +353,7 @@ for smd_mac_address in smd_ethernet_interfaces:
             if len(search_smd_ip_resp.json()) == 0:
                 update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
                 post_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
+                print('updating SMD with ', post_data)
                 try:
                     resp = requests.post(url=update_smd_url, json=post_data)
                     resp.raise_for_status()
