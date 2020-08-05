@@ -1,4 +1,6 @@
 #!/bin/bash
+# wait for istio
+until curl --head localhost:15000 ; do echo Waiting for Sidecar; sleep 3 ; done ; echo Sidecar available;
 
 mkdir -p /usr/local/kea
 #  since the username and password is dyanmic with the k8s postgres operator

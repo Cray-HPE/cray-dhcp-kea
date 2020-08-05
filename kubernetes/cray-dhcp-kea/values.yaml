@@ -49,13 +49,13 @@ cray-service:
             - -c
             - /health-check.sh
         initialDelaySeconds: 30
-        periodSeconds: 300
+        periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 67
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 30
+        periodSeconds: 60
       volumeMounts:
         - name: cray-dhcp-kea-dhcp4-conf
           mountPath: /cray-dhcp-kea-dhcp4.conf
@@ -100,13 +100,13 @@ cray-service:
             - -c
             - /health-check.sh
         initialDelaySeconds: 30
-        periodSeconds: 300
+        periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 8000
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 30
+        periodSeconds: 60
       volumeMounts:
         - name: cray-dhcp-kea-ctrl-agent-conf
           mountPath: /cray-dhcp-kea-ctrl-agent.conf
