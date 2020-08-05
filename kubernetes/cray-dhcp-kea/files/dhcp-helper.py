@@ -249,7 +249,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
                 search_smd_ip_resp.raise_for_status()
         except Exception as err:
             on_error(err)
-        # we update SMD only if ip doesn't exec
+        # we update SMD only if ip doesn't exist
         if search_smd_ip_resp.json() == []:
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
