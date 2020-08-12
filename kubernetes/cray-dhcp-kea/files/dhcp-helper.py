@@ -345,6 +345,7 @@ for smd_mac_address in smd_ethernet_interfaces:
             except Exception as err:
                 on_error(err)
             if len(search_smd_ip_resp.json()) == 0:
+                smd_mac_format = smd_mac_address.replace(':', '')
                 update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
                 patch_data = {'MACAddress': smd_mac_address, 'IPAddress': kea_ipv4_leases[smd_mac_address]['ip-address']}
                 print('updating SMD with {}'.format(patch_data))
