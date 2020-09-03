@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.14] - 2020-09-3
+### Added
+### Changed
+- CASMNET-304 - updated dhcp helper to assign 51 static ips at start of subnet from 26
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.3.13] - 2020-09-3
 ### Added
 ### Changed

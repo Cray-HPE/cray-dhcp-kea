@@ -169,7 +169,7 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['option-data'] = []
                     ip_network = ipaddress.ip_network(system['CIDR'],strict=False)
                     network_total_hosts = ip_network.num_addresses
-                    network_pool_start = ip_network[26]
+                    network_pool_start = ip_network[51]
                     network_pool_end = ip_network[network_total_hosts - 51]
                     debug('ip network:', ip_network)
                     debug('total hosts on network:', network_total_hosts)
