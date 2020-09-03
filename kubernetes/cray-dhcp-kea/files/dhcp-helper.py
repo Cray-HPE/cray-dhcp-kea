@@ -236,7 +236,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             search_smd_mac.append(smd_all_ethernet_resp.json()[i])
     # logging when detecting duplicate ips in SMD
     if len(search_smd_ip) > 0:
-        print('we tried adding an a dupe ip for an new interface {} {}'.format(search_smd_mac,search_smd_ip))
+        debug('we tried adding an a dupe ip for an new interface {} {}'.format(search_smd_mac,search_smd_ip),kea_hostname)
 
     if search_smd_mac == [] and search_smd_ip == []:
         # double check duplicate ip check
@@ -356,12 +356,12 @@ for smd_mac_address in smd_ethernet_interfaces:
                 except Exception as err:
                     on_error(err)
             if len(search_smd_ip_resp.json()) > 0:
-                print("we tried adding an a dupe ip in know interface")
+                print("we tried adding an a dupe ip in known interface")
                 print(search_smd_ip_resp.json())
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
-print(cray_dhcp_kea_dhcp4_json)
+debug("kea config",cray_dhcp_kea_dhcp4_json)
 
 # lease wipe to clear out any potential funky state
 if len(leases_response) > 0:
@@ -370,6 +370,11 @@ if len(leases_response) > 0:
             hw_address = lease['hw-address']
             ip_address = lease['ip-address']
             subnet_id = lease['subnet-id']
+            # checking for active dhcp leases that do not have a mac address and removing them
+            if lease['hw-address'] == "":
+                print ('we found a lease without mac, deleting active lease', lease['hw-address'], lease['ip-address'], lease['subnet-id'])
+                data = {'command': 'lease4-del', 'service': ['dhcp4'], 'arguments': {'hw-address': lease['hw-address'], 'ip-address': lease['ip-address']}}
+                resp = requests.post(url=kea_api_endpoint, json=data, headers=kea_headers)
             for first_reservation_check in cray_dhcp_kea_dhcp4['Dhcp4']['reservations']:
                 if 'hw-address' in lease and lease['hw-address'] == first_reservation_check['hw-address']:
                     if 'ip-address' in lease and 'ip-address' in first_reservation_check and lease['ip-address'] != first_reservation_check['ip-address']:
@@ -394,7 +399,7 @@ try:
     resp.raise_for_status()
 except Exception as err:
     on_error(err)
-print(resp.json())
+debug("logging config-reload",resp.json())
 
 #adding sleep delay
 print('waiting 10 seconds for any leases to be given out...')
@@ -407,4 +412,4 @@ try:
     resp.raise_for_status()
 except Exception as err:
     on_error(err)
-print(resp.json())
+debug("logging active leases",resp.json())
