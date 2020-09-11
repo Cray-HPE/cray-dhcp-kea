@@ -14,7 +14,8 @@ cray-service:
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "67"
   containers:
-    - name: "cray-dhcp-kea"
+    cray-dhcp-kea:
+      name: "cray-dhcp-kea"
       image:
         repository: "cray/cray-dhcp-kea"
       command:
@@ -77,7 +78,8 @@ cray-service:
           mountPath: /health-check.sh
           readOnly: true
           subPath: health-check.sh
-    - name: "cray-dhcp-kea-ctrl-agent"
+    cray-dhcp-kea-ctrl-agent:
+      name: "cray-dhcp-kea-ctrl-agent"
       image:
         repository: "cray/cray-dhcp-kea"
       command:
@@ -121,18 +123,23 @@ cray-service:
           readOnly: true
           subPath: health-check.sh
   volumes:
-    - name: cray-dhcp-kea-dhcp4-conf
+    cray-dhcp-kea-dhcp4-conf:
+      name: cray-dhcp-kea-dhcp4-conf
       configMap:
         name: cray-dhcp-kea-dhcp4-conf
-    - name: cray-dhcp-kea-ctrl-agent-conf
+    cray-dhcp-kea-ctrl-agent-conf:
+      name: cray-dhcp-kea-ctrl-agent-conf
       configMap:
         name: cray-dhcp-kea-ctrl-agent-conf
-    - name: cray-dhcp-kea-db-init
+    cray-dhcp-kea-db-init:
+      name: cray-dhcp-kea-db-init
       configMap:
         name: cray-dhcp-kea-db-init
-    - name: cray-dhcp-kea-socket
+    cray-dhcp-kea-socket:
+      name: cray-dhcp-kea-socket
       emptyDir: {}
-    - name: cray-dhcp-kea-jobs
+    cray-dhcp-kea-jobs:
+      name: cray-dhcp-kea-jobs
       configMap:
         defaultMode: 0700
         name: cray-dhcp-kea-jobs
@@ -171,7 +178,7 @@ crayDhcpKeaDhcp4Config:
         output_options:
           - output: stdout
         severity: DEBUG
-crayDhcpKeaCtrlAgentConfig :
+crayDhcpKeaCtrlAgentConfig:
   Control-agent:
     control-sockets:
       dhcp4:
@@ -180,14 +187,11 @@ crayDhcpKeaCtrlAgentConfig :
     http-host: 0.0.0.0
     http-port: 8000
     loggers:
-      -
-        debuglevel: 99
+      - debuglevel: 99
         name: cray-dhcp-kea-ctrl-agent
         output_options:
-          -
-            output: stdout
-          -
-            flush: true
+          - output: stdout
+          - flush: true
             maxsize: 204800
             maxver: 8
             output: /var/log/cray-dhcp-kea-ctrl-agent.log
