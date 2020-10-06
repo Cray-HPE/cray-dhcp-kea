@@ -1,5 +1,4 @@
----
 dependencies:
-  - name: cray-service
-    version: "~1.8.0-0"
-    repository: "@cray-internal"
+- name: cray-service
+  version: "^2.0.0"
+  repository: "@cray-internal"
