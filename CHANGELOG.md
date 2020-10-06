@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.1] - 2020-10-6
 ### Added
 ### Changed
-- CASMNET-340 - Updated kea to use "decline-probation-period" option.
-              - Removed forcing of IPs to move and let lease expire to move
-              - Load vlan information from SLS with dhcp-helper.py
+- CASMNET-340 
+    - Updated kea to use "decline-probation-period" option.
+    - Removed forcing of IPs to move and let lease expire naturally to move
+    - Load vlan information from SLS with dhcp-helper.py
+    - added message to configmap
 ### Deprecated
 ### Removed
 ### Fixed

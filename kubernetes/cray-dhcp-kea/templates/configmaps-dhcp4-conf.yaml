@@ -6,6 +6,7 @@ metadata:
 data:
   cray-dhcp-kea-dhcp4.conf: |-
     {
-    // the config will be udpated with dhcp-helper.py for updated configs, please query the api to get current configs
+    // *** the config will be udpated with dhcp-helper.py for updated configs, please query the cray-dhcp-kea api to get current configs ***
       "Dhcp4": {{ toPrettyJson .Values.crayDhcpKeaDhcp4Config.dhcp4 | indent 4 }}
+    // *** the config will be udpated with dhcp-helper.py for updated configs, please query the cray-dhcp-api to get current configs ***
     }
