@@ -1,5 +1,6 @@
 {
   "Dhcp4": {
+  "decline-probation-period": 3,
     "control-socket": {
       "socket-name": "/cray-dhcp-kea-socket/cray-dhcp-kea.socket",
       "socket-type": "unix"
