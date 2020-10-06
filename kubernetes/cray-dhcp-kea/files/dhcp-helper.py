@@ -179,6 +179,7 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['pools'][0]['pool'] = '{}-{}'.format(network_pool_start, network_pool_end)
                     subnet4_subnet['option-data'].append({'name': 'routers', 'data': system['Gateway']})
                     subnet4_subnet['boot-file-name'] = 'ipxe.efi'
+                    subnet4_subnet['id'] = system['VLan']
                     if system_name == 'NMN':
                         subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + '10.92.100.225'})
                         subnet4_subnet['next-server'] = '10.92.100.60'
