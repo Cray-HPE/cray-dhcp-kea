@@ -163,15 +163,6 @@ crayDhcpKeaDhcp4Config:
       name: "/cray-dhcp-kea-socket/dhcp4.leases"
       lfc-interval: 3600
     valid-lifetime: 300
-    subnet4:
-      # adding hmn basic network info for now
-      - subnet: 10.254.0.0/17
-        id: 2
-        pools:
-          - pool: 10.254.127.200 - 10.254.127.250
-        option-data:
-          - name: routers
-            data: 10.254.0.2
   Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4
