@@ -163,7 +163,6 @@ crayDhcpKeaDhcp4Config:
       name: "/cray-dhcp-kea-socket/dhcp4.leases"
       lfc-interval: 3600
     valid-lifetime: 300
-  Logging:
     loggers:
       - name: cray-dchp-kea-dhcp4
         output_options:
