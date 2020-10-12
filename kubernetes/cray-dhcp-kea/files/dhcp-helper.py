@@ -338,13 +338,13 @@ for smd_mac_address in smd_ethernet_interfaces:
         except Exception as err:
             on_error(err)
         # checking for dhcp reservation with an active lease doesn't come back with result=0
-        if (resp.json[0]['result'] != 0):
-            kea_lease4_add_data = {'command': 'lease4-get', 'service': ['dhcp4'],"arguments": {  "hw-address": data['hw-address'],"ip-address": data['ip-address'] }}
-                try:
-                    resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
-                    resp.raise_for_status()
-                except Exception as err:
-                    on_error(err)
+        if (resp.json()[0]['result'] != 0):
+            kea_lease4_add_data = {'command': 'lease4-get', 'service': ['dhcp4'],"arguments": { "hostname": data['hostname'], "hw-address": data['hw-address'],"ip-address": data['ip-address'] }}
+            try:
+                resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
+                resp.raise_for_status()
+            except Exception as err:
+                on_error(err)
 
 
     # 2nd update scenario for updating SMD with IP address for ethernet interface
