@@ -168,7 +168,7 @@ crayDhcpKeaDhcp4Config:
       - name: cray-dchp-kea-dhcp4
         output_options:
           - output: stdout
-        severity: DEBUG
+        severity: ERROR
 crayDhcpKeaCtrlAgentConfig:
   Control-agent:
     control-sockets:
@@ -187,4 +187,4 @@ crayDhcpKeaCtrlAgentConfig:
             maxver: 8
             output: /var/log/cray-dhcp-kea-ctrl-agent.log
             pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
-        severity: DEBUG
+        severity: ERROR
