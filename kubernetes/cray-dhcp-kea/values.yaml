@@ -177,13 +177,7 @@ crayDhcpKeaCtrlAgentConfig:
     http-host: 0.0.0.0
     http-port: 8000
     loggers:
-      - debuglevel: 99
-        name: cray-dhcp-kea-ctrl-agent
+      - name: cray-dhcp-kea-ctrl-agent
         output_options:
           - output: stdout
-          - flush: true
-            maxsize: 204800
-            maxver: 8
-            output: /var/log/cray-dhcp-kea-ctrl-agent.log
-            pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
         severity: ERROR
