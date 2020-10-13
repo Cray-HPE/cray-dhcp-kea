@@ -27,7 +27,7 @@
     "reservations": [],
     "subnet4": [],
     "valid-lifetime": 300,
-    "match-client-id": false
+    "match-client-id": false,
     "loggers": [
     {
       "name": "cray-dchp-kea-dhcp4",
