@@ -5,7 +5,7 @@ until curl --head localhost:15000 ; do echo Waiting for Sidecar; sleep 3 ; done 
 mkdir -p /usr/local/kea
 #  since the username and password is dyanmic with the k8s postgres operator
 #  we output the config file and substitute the environment variables
-cp /cray-dhcp-kea-dhcp4.conf /usr/local/kea/cray-dhcp-kea-dhcp4.conf
+cp /cray-dhcp-kea-dhcp4.conf.template /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 #  helpful for debugging
 cat /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 # what we use to run Cray DHCP Kea server
