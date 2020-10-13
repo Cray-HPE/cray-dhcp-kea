@@ -28,8 +28,7 @@
     "subnet4": [],
     "valid-lifetime": 300,
     "match-client-id": false
-  },
-  "loggers": [
+    "loggers": [
     {
       "name": "cray-dchp-kea-dhcp4",
       "output_options": [
@@ -40,4 +39,5 @@
       "severity": "ERROR"
     }
   ]
+  }
 }
