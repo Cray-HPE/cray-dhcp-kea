@@ -146,28 +146,6 @@ cray-service:
   service:
     # service definitions for this chart defined manually
     enabled: false
-crayDhcpKeaDhcp4Config:
-  dhcp4:
-    interfaces-config:
-      interfaces:
-        - "eth0"
-      dhcp-socket-type: raw
-    control-socket:
-      socket-type: unix
-      socket-name: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
-    hooks-libraries:
-      - library: "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
-      - library: "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
-    lease-database:
-      type: memfile
-      name: "/cray-dhcp-kea-socket/dhcp4.leases"
-      lfc-interval: 3600
-    valid-lifetime: 300
-    loggers:
-      - name: cray-dchp-kea-dhcp4
-        output_options:
-          - output: stdout
-        severity: ERROR
 crayDhcpKeaCtrlAgentConfig:
   Control-agent:
     control-sockets:
