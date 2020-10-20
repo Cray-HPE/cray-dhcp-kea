@@ -29,15 +29,15 @@
     "valid-lifetime": 300,
     "match-client-id": false,
     "loggers": [
-    {
-      "name": "cray-dchp-kea-dhcp4",
-      "output_options": [
-        {
-          "output": "stdout"
-        }
-      ],
-      "severity": "ERROR"
-    }
-  ]
+      {
+        "name": "cray-dchp-kea-dhcp4",
+        "output_options": [
+          {
+            "output": "stdout"
+          }
+        ],
+        "severity": "ERROR"
+      }
+    ]
   }
 }
