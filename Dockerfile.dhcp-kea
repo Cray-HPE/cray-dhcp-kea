@@ -62,3 +62,5 @@ COPY startup-dhcp.sh /
 COPY startup-dhcp-ctrl-agent.sh /
 # copy network cidr script
 COPY get_network_cidr.py /
+# startup config for kea server
+COPY startup-config-dhcp4.conf /

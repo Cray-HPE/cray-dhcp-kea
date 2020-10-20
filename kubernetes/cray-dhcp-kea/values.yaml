@@ -58,10 +58,6 @@ cray-service:
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
-        - name: cray-dhcp-kea-dhcp4-conf
-          mountPath: /cray-dhcp-kea-dhcp4.conf
-          readOnly: false
-          subPath: cray-dhcp-kea-dhcp4.conf
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
           readOnly: false
@@ -123,10 +119,6 @@ cray-service:
           readOnly: true
           subPath: health-check.sh
   volumes:
-    cray-dhcp-kea-dhcp4-conf:
-      name: cray-dhcp-kea-dhcp4-conf
-      configMap:
-        name: cray-dhcp-kea-dhcp4-conf
     cray-dhcp-kea-ctrl-agent-conf:
       name: cray-dhcp-kea-ctrl-agent-conf
       configMap:
@@ -146,29 +138,6 @@ cray-service:
   service:
     # service definitions for this chart defined manually
     enabled: false
-crayDhcpKeaDhcp4Config:
-  dhcp4:
-    interfaces-config:
-      interfaces:
-        - "eth0"
-      dhcp-socket-type: raw
-    control-socket:
-      socket-type: unix
-      socket-name: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
-    hooks-libraries:
-      - library: "/usr/local/lib/kea/hooks/libdhcp_lease_cmds.so"
-      - library: "/usr/local/lib/kea/hooks/libdhcp_stat_cmds.so"
-    lease-database:
-      type: memfile
-      name: "/cray-dhcp-kea-socket/dhcp4.leases"
-      lfc-interval: 3600
-    valid-lifetime: 300
-  Logging:
-    loggers:
-      - name: cray-dchp-kea-dhcp4
-        output_options:
-          - output: stdout
-        severity: DEBUG
 crayDhcpKeaCtrlAgentConfig:
   Control-agent:
     control-sockets:
@@ -178,13 +147,7 @@ crayDhcpKeaCtrlAgentConfig:
     http-host: 0.0.0.0
     http-port: 8000
     loggers:
-      - debuglevel: 99
-        name: cray-dhcp-kea-ctrl-agent
+      - name: cray-dhcp-kea-ctrl-agent
         output_options:
           - output: stdout
-          - flush: true
-            maxsize: 204800
-            maxver: 8
-            output: /var/log/cray-dhcp-kea-ctrl-agent.log
-            pattern: "%d{%j %H:%M:%S.%q} %c %m\n"
-        severity: DEBUG
+        severity: ERROR

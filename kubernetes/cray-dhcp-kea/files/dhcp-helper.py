@@ -330,6 +330,22 @@ for smd_mac_address in smd_ethernet_interfaces:
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         dhcp_reservations.append(data)
         debug('setting dhcp reservation for ip/mac/hostname reservation', data)
+        # we are checking reserved IP/MAC/Hostname as an active lease in kea
+        kea_lease4_get_data = {'command': 'lease4-get', 'service': ['dhcp4'],"arguments": { "ip-address": data['ip-address'] }}
+        try:
+            resp = requests.post(url=kea_api_endpoint, json=kea_lease4_get_data, headers=kea_headers)
+            resp.raise_for_status()
+        except Exception as err:
+            on_error(err)
+        # checking for dhcp reservation with an active lease doesn't come back with result=0
+        if (resp.json()[0]['result'] != 0):
+            kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'],"arguments": { "hostname": data['hostname'], "hw-address": data['hw-address'],"ip-address": data['ip-address'] }}
+            try:
+                resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
+                resp.raise_for_status()
+            except Exception as err:
+                on_error(err)
+
 
     # 2nd update scenario for updating SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
