@@ -58,10 +58,6 @@ cray-service:
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
-        - name: cray-dhcp-kea-dhcp4-conf
-          mountPath: /cray-dhcp-kea-dhcp4.conf
-          readOnly: false
-          subPath: cray-dhcp-kea-dhcp4.conf
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
           readOnly: false
@@ -123,10 +119,6 @@ cray-service:
           readOnly: true
           subPath: health-check.sh
   volumes:
-    cray-dhcp-kea-dhcp4-conf:
-      name: cray-dhcp-kea-dhcp4-conf
-      configMap:
-        name: cray-dhcp-kea-dhcp4-conf
     cray-dhcp-kea-ctrl-agent-conf:
       name: cray-dhcp-kea-ctrl-agent-conf
       configMap:
