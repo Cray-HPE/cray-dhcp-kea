@@ -123,16 +123,29 @@ sls_cabinets = resp.json()
 # parse the response from cray-sls for subnet/cabinet network information
 subnet4 = []
 nmn_cidr = []
-dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dns_masq_servers = {}
+dhcp_servers = {}
+tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
+tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
 
-# get dns masq server ip for nmn and hmn
-# this needs to go away in 1.4!!!
+
+# work with systems that have dnsmasqs and systems that do not
+if os.environ['DNS_MASQ_HOSTNAME'] != '':
+    dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
+else
+    dns_masq_hostname = ''
+
 system_name = ('nmn','hmn')
 for name in system_name:
+    # get dns masq server ip for nmn and hmn
+    # this needs to go away in 1.4!!!
     ip = socket.gethostbyname(dns_masq_hostname + '-' + name)
+    # getting dhcp server ip dynamically
+    dhcp_servers[name] = socket.gethostbyname('cray-dhcp-kea-tcp-' + name)
+    debug('getting dns')
     if ip == '':
-        print('error getting dns masq ip for ',dns_masq_hostname + name)
+        # enable dhcp-helper to handle systems with no dnsmasq
+        dns_masq_servers[name.upper()] = ''
     dns_masq_servers[name.upper()] = ip + ','
 debug('this is the dns_masq_servesr:',dns_masq_servers)
 
@@ -180,12 +193,14 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['option-data'].append({'name': 'routers', 'data': system['Gateway']})
                     subnet4_subnet['boot-file-name'] = 'ipxe.efi'
                     subnet4_subnet['id'] = system['VLan']
+                    subnet4_subnet['reservation-mode'] = 'all'
+                    subnet4_subnet['reservations']= []
                     if system_name == 'NMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + '10.92.100.225'})
-                        subnet4_subnet['next-server'] = '10.92.100.60'
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + dhcp_servers[system_name]})
+                        subnet4_subnet['next-server'] = tftp_server_nmn
                     if system_name == 'HMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + '10.94.100.225'})
-                        subnet4_subnet['next-server'] = '10.94.100.60'
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + dhcp_servers[system_name]})
+                        subnet4_subnet['next-server'] = tftp_server_hmn
                     subnet4.append(subnet4_subnet)
 debug('subnet4:', subnet4)
 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
@@ -328,7 +343,11 @@ for smd_mac_address in smd_ethernet_interfaces:
 
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
-        dhcp_reservations.append(data)
+        for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
+            if ipaddress.ip_address(data['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['subnet'],strict=False):
+                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(data)
+                break
         debug('setting dhcp reservation for ip/mac/hostname reservation', data)
         # we are checking reserved IP/MAC/Hostname as an active lease in kea
         kea_lease4_get_data = {'command': 'lease4-get', 'service': ['dhcp4'],"arguments": { "ip-address": data['ip-address'] }}
