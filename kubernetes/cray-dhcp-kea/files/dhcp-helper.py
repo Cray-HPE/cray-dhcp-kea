@@ -211,10 +211,10 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['reservation-mode'] = 'all'
                     subnet4_subnet['reservations']= []
                     if system_name == 'NMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_server[system_name]})
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_servers[system_name]})
                         subnet4_subnet['next-server'] = tftp_server_nmn
                     if system_name == 'HMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_server[system_name]})
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_servers[system_name]})
                         subnet4_subnet['next-server'] = tftp_server_hmn
                     subnet4.append(subnet4_subnet)
 debug('subnet4:', subnet4)
