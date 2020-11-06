@@ -7,6 +7,8 @@ import time
 import os
 import sys
 import socket
+from nslookup import Nslookup
+import random
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -118,36 +120,49 @@ except Exception as err:
     on_error(err)
 sls_cabinets = resp.json()
 
+# query sls for network subnets
+try:
+    resp = requests.get(url='http://cray-sls/v1/networks')
+    resp.raise_for_status()
+except Exception as err:
+    on_error(err)
+sls_networks = resp.json()
+
 # 1) ##############################################################################
 #   a) Get network subnet and cabinet subnet info from SLS
 # parse the response from cray-sls for subnet/cabinet network information
 subnet4 = []
 nmn_cidr = []
 dns_masq_servers = {}
-dhcp_servers = {}
+unbound_servers = {}
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
-
+unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
+unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_HMN']
+dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 
 # work with systems that have dnsmasqs and systems that do not
-if os.environ['DNS_MASQ_HOSTNAME'] != '':
-    dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
-else
-    dns_masq_hostname = ''
-
 system_name = ('nmn','hmn')
 for name in system_name:
-    # get dns masq server ip for nmn and hmn
-    # this needs to go away in 1.4!!!
-    ip = socket.gethostbyname(dns_masq_hostname + '-' + name)
-    # getting dhcp server ip dynamically
-    dhcp_servers[name] = socket.gethostbyname('cray-dhcp-kea-tcp-' + name)
-    debug('getting dns')
-    if ip == '':
-        # enable dhcp-helper to handle systems with no dnsmasq
+    try:
+        ip = socket.gethostbyname(dns_masq_hostname + '-' + name)
+    except socket.error:
+        ip =''
+    debug('getting dhcp',unbound_servers)
+    if ip != '':
+        # checking connectivity of dnsmasq server
+        check_resolver  = Nslookup(dns_servers=[ip])
+        try:
+            print ('querying name ',dns_masq_hostname + '-' + name + '.local')
+            ips_record = check_resolver.dns_lookup(dns_masq_hostname + '-' + name + '.local')
+            print('lookup answer ',ips_record.answer[0])
+            dns_masq_servers[name.upper()] = ips_record.answer[0] + ','
+        except:
+            dns_masq_servers[name.upper()] = ''
+            debug('dnsmasq check failed', ip)
+    else:
         dns_masq_servers[name.upper()] = ''
-    dns_masq_servers[name.upper()] = ip + ','
-debug('this is the dns_masq_servesr:',dns_masq_servers)
+    debug('this is the dns_masq_servesr:',dns_masq_hostname + '-' + name)
 
 debug('sls cabinet query response:', sls_cabinets)
 for i in range(len(sls_cabinets)):
@@ -196,10 +211,10 @@ for i in range(len(sls_cabinets)):
                     subnet4_subnet['reservation-mode'] = 'all'
                     subnet4_subnet['reservations']= []
                     if system_name == 'NMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + dhcp_servers[system_name]})
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_server[system_name]})
                         subnet4_subnet['next-server'] = tftp_server_nmn
                     if system_name == 'HMN':
-                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + dhcp_servers[system_name]})
+                        subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_server[system_name]})
                         subnet4_subnet['next-server'] = tftp_server_hmn
                     subnet4.append(subnet4_subnet)
 debug('subnet4:', subnet4)
@@ -343,6 +358,8 @@ for smd_mac_address in smd_ethernet_interfaces:
 
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
+        # retaining the original dhcp reservation structure
+        dhcp_reservations.append(data)
         for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
             if ipaddress.ip_address(data['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['subnet'],strict=False):
@@ -394,6 +411,35 @@ for smd_mac_address in smd_ethernet_interfaces:
             if len(search_smd_ip_resp.json()) > 0:
                 print("we tried adding an a dupe ip in known interface")
                 print(search_smd_ip_resp.json())
+
+# loading static reservations
+static_reservations = []
+for i in range(len(sls_networks)):
+    debug('length of SLS networks is',range(len(sls_networks)))
+    if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
+        debug('sls network subnet is', sls_networks[i]['ExtraProperties']['Subnets'])
+        if 'IPReservations' in sls_networks[i]['ExtraProperties']['Subnets'][0] and sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']:
+            ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
+            for j in range(len(ip_reservations)):
+                debug ('static reservation data is:', ip_reservations[j])
+                # creating a random mac to create a place hold reservation
+                random_mac = ("00:00:00:%02x:%02x:%02x" % (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+                ))
+                data = {'hostname': ip_reservations[j]['Aliases'][0], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
+                static_reservations.append(data)
+        debug ('static reservation data is',static_reservations)
+# loading static reservations into kea
+for i in range(len(static_reservations)):
+    for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+        debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
+        # loading per subnet
+        if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+            cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
+            break
+
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
