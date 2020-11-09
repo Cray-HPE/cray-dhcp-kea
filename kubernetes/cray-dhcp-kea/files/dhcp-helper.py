@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Copyright 2014-2020 Hewlett Packard Enterprise Development LP
+
 import requests
 import json
 import ipaddress
