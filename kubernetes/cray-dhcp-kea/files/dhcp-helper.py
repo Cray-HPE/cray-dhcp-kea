@@ -182,8 +182,8 @@ dns_masq_servers = {}
 unbound_servers = {}
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
-unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_HMN']
+unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 
 # work with systems that have dnsmasqs and systems that do not
@@ -505,9 +505,10 @@ except Exception as err:
     on_error(err)
 debug("logging config-reload",resp.json())
 
-#adding sleep delay
-print('waiting 10 seconds for any leases to be given out...')
-time.sleep(10)
+if os.environ['DHCP_HELPER_DEBUG'] == 'true':
+    # adding sleep delay during debug mode
+    print('waiting 10 seconds for any leases to be given out...')
+    time.sleep(10)
 
 # check active leases
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
