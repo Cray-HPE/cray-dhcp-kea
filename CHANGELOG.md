@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.16] - 2020-10-12
 ### Added
+- CASMNET-370
+    - updated dhcp reservation to be assigned under the subnet instead of global reservations
+    - loading static reservations from SLS
+    - added nslookup module to dhcp-helper
+### Changed
+- CASMNET-370
+    - all chart values are dynamic: tftp ip, unbound ip, 
+### Deprecated
+- CASMNET-370
+    - global reservations will be removed once there are no Shasta 1.3 systems in the field
+### Removed
+### Fixed
+### Security
+
+## [0.3.16] - 2020-10-12
+### Added
 ### Changed
 - CASMNET-345
     - updated dhcp-helper to set an active lease for dhcp reservations if there is active lease

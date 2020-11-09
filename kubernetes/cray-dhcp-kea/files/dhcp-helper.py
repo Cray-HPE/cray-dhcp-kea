@@ -7,8 +7,9 @@ import time
 import os
 import sys
 import socket
-from nslookup import Nslookup
 import random
+import dns.resolver
+import dns.exception
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -106,6 +107,50 @@ def on_error(err, exit=True):
     print('ERROR: {}'.format(err))
     if exit:
         sys.exit()
+class DNSresponse:
+    # data object for DNS answer response_full - full DNS response raw answer - DNS answer to the query
+    def __init__(self, response_full=[], answer=[]):
+        self.response_full = response_full
+        self.answer = answer
+
+class Nslookup:
+    # Object for DNS resolver, init with optional specific DNS servers
+    def __init__(self, dns_servers=[]):
+        self.dns_resolver = dns.resolver.Resolver()
+
+        if dns_servers:
+            self.dns_resolver.nameservers = dns_servers
+
+
+    def base_lookup(self, domain, record_type):
+        # Get the DNS record, if any, for the given domain.
+        # set DNS server for lookup
+        try:
+            # get the dns resolutions for this domain
+#            dns.resolver.Resolver.resolve()
+            answer = self.dns_resolver.query(domain, record_type)
+            return answer
+        except dns.resolver.NXDOMAIN:
+            # the domain does not exist so dns resolutions remain empty
+            pass
+        except dns.resolver.NoAnswer as e:
+#            print ("Warning: the DNS servers {} did not answer:".format(",".join(self.dns_resolver.nameservers)), e)
+            debug("Warning: the DNS servers did not answer:", e)
+        except dns.resolver.NoNameservers as e:
+#            print ("Warning: the nameservers did not answer:", e)
+            debug("Warning: the nameservers did not answer:", e)
+        except dns.exception.DNSException as e:
+#            print ("Error: DNS exception occurred:", e)
+            debug("Error: DNS exception occurred:", e)
+
+
+    def dns_lookup(self, domain):
+        dns_answer = self.base_lookup(domain, 'A')
+        if dns_answer:
+            dns_response = [answer.to_text() for answer in dns_answer.response.answer]
+            ips = [ip.address for ip in dns_answer]
+            return DNSresponse(dns_response, ips)
+        return DNSresponse()
 
 # import base config
 cray_dhcp_kea_dhcp4 = {}
@@ -153,14 +198,15 @@ for name in system_name:
         # checking connectivity of dnsmasq server
         check_resolver  = Nslookup(dns_servers=[ip])
         try:
-            print ('querying name ',dns_masq_hostname + '-' + name + '.local')
+            debug('querying name ',dns_masq_hostname + '-' + name + '.local')
             ips_record = check_resolver.dns_lookup(dns_masq_hostname + '-' + name + '.local')
-            print('lookup answer ',ips_record.answer[0])
+            debug('lookup answer ',ips_record.answer[0])
             dns_masq_servers[name.upper()] = ips_record.answer[0] + ','
         except:
             dns_masq_servers[name.upper()] = ''
             debug('dnsmasq check failed', ip)
     else:
+#        print ('^ NOT a critical error message on a Shasta 1.4')
         dns_masq_servers[name.upper()] = ''
     debug('this is the dns_masq_servesr:',dns_masq_hostname + '-' + name)
 
@@ -360,6 +406,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         # retaining the original dhcp reservation structure
         dhcp_reservations.append(data)
+        # seeting dhcp reservation under the subnet the reservation should be part of based on ip
         for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
             if ipaddress.ip_address(data['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['subnet'],strict=False):
