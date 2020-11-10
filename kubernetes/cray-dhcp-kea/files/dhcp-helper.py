@@ -216,35 +216,39 @@ for name in system_name:
 
 if not dnsmasq_running:
     for i in range(len(sls_networks)):
-        if sls_networks[i]['Name'] == 'NMN' or if sls_networks[i]['Name'] == 'HMN':
+        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN':
+            print('in nmn or hmn loop')
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
-                system = sls_networks[i]['ExtraProperties']['Subnets']
-            for j in range(len(sls_networks[i]['ExtraProperties']['Subnets'])):
-                system = sls_networks[i]['ExtraProperties']['Subnets'][j]
-                subnet4_subnet = {}
-                subnet4_subnet['pools'] = []
-                subnet4_subnet['pools'].append({'pool': {}})
-                subnet4_subnet['option-data'] = []
-                ip_network = ipaddress.ip_network(system['CIDR'], strict=False)
-                network_total_hosts = ip_network.num_addresses
-                network_pool_start = system['DHCPStart']
-                network_pool_end = system['DHCPEnd']
-                debug('ip network:', ip_network)
-                debug('total hosts on network:', network_total_hosts)
-                debug('range', '{} to {}'.format(network_pool_start, network_pool_end))
-                subnet4_subnet['subnet'] = system['CIDR']
-                subnet4_subnet['pools'][0]['pool'] = '{}-{}'.format(network_pool_start, network_pool_end)
-                subnet4_subnet['option-data'].append({'name': 'routers', 'data': system['Gateway']})
-                subnet4_subnet['boot-file-name'] = 'ipxe.efi'
-                subnet4_subnet['id'] = system['VlanID']
-                subnet4_subnet['reservation-mode'] = 'all'
-                subnet4_subnet['reservations'] = []
-            if system_name == 'NMN':
-                subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': dns_masq_servers[system_name] + unbound_servers[system_name]})
-                subnet4_subnet['next-server'] = tftp_server_nmn
-            if system_name == 'HMN':
-                subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': dns_masq_servers[system_name] + unbound_servers[system_name]})
-                subnet4_subnet['next-server'] = tftp_server_hmn
+                print ('in subnet loop')
+                for system in sls_networks[i]['ExtraProperties']['Subnets']:
+                    if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
+                        subnet4_subnet = {}
+                        subnet4_subnet['pools'] = []
+                        subnet4_subnet['pools'].append({'pool': {}})
+                        subnet4_subnet['option-data'] = []
+                        network_pool_start = system['DHCPStart']
+                        network_pool_end = system['DHCPEnd']
+                        debug('range', '{} to {}'.format(network_pool_start, network_pool_end))
+                        subnet4_subnet['pools'][0]['pool'] = '{}-{}'.format(network_pool_start, network_pool_end)
+                        ip_network = ipaddress.ip_network(system['CIDR'], strict=False)
+                        network_total_hosts = ip_network.num_addresses
+                        debug('ip network:', ip_network)
+                        debug('total hosts on network:', network_total_hosts)
+                        subnet4_subnet['subnet'] = system['CIDR']
+                        subnet4_subnet['option-data'].append({'name': 'routers', 'data': system['Gateway']})
+                        subnet4_subnet['boot-file-name'] = 'ipxe.efi'
+                        subnet4_subnet['id'] = system['VlanID']
+                        subnet4_subnet['reservation-mode'] = 'all'
+                        subnet4_subnet['reservations'] = []
+                        if sls_networks[i]['Name'] == 'NMN':
+                            subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['NMN']})
+                            subnet4_subnet['next-server'] = tftp_server_nmn
+                        if sls_networks[i]['Name'] == 'HMN':
+                            subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['HMN']})
+                            subnet4_subnet['next-server'] = tftp_server_hmn
+                        subnet4.append(subnet4_subnet)
+    cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
+
     # loading static reservations
     static_reservations = []
     for i in range(len(sls_networks)):
@@ -261,8 +265,7 @@ if not dnsmasq_running:
                     random.randint(0, 255),
                     random.randint(0, 255),
                     ))
-                    data = {'hostname': ip_reservations[j]['Aliases'][0], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
-
+                    data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
                     static_reservations.append(data)
             debug ('static reservation data is',static_reservations)
     # loading static reservations into kea
