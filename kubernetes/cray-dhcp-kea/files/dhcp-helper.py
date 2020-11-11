@@ -409,17 +409,16 @@ for mac_address, mac_details in kea_ipv4_leases.items():
                 on_error(err)
 #   b) Query SMD to get all network interfaces it knows about
 # refresh SMD ethernet interface data after 1st round of updating SMD
-if found_new_interfaces:
-    try:
-        resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
-        resp.raise_for_status()
-    except Exception as err:
-        on_error(err)
-    smd_ethernet_interfaces_response = resp.json()
-    debug('smd ethernet interfaces response:', smd_ethernet_interfaces_response)
-    for interface in smd_ethernet_interfaces_response:
-        if 'MACAddress' in interface and interface['MACAddress'] != '':
-            smd_ethernet_interfaces[interface['MACAddress']] = interface
+try:
+    resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
+    resp.raise_for_status()
+except Exception as err:
+    on_error(err)
+smd_ethernet_interfaces_response = resp.json()
+debug('smd ethernet interfaces response:', smd_ethernet_interfaces_response)
+for interface in smd_ethernet_interfaces_response:
+    if 'MACAddress' in interface and interface['MACAddress'] != '':
+        smd_ethernet_interfaces[interface['MACAddress']] = interface
 
 #   c) Resolve the results from both SMD and Kea to synchronize both
 # get all hardware info from SLS
