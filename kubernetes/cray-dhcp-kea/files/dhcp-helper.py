@@ -270,12 +270,12 @@ if not dnsmasq_running:
             debug ('static reservation data is',static_reservations)
     # loading static reservations into kea
     for i in range(len(static_reservations)):
+        dhcp_reservations.append(static_reservations[i])
         for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
             # loading per subnet
             if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
                 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
-                dhcp_reservations.append(static_reservations[i])
                 break
 
 # if system is running dnsmasq.  Shasta 1.3.x system
