@@ -217,9 +217,7 @@ for name in system_name:
 if not dnsmasq_running:
     for i in range(len(sls_networks)):
         if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN':
-            print('in nmn or hmn loop')
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
-                print ('in subnet loop')
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
                     if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
                         subnet4_subnet = {}
