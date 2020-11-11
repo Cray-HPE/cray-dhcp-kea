@@ -275,6 +275,7 @@ if not dnsmasq_running:
             # loading per subnet
             if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
                 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
+                dhcp_reservations.append(static_reservations[i])
                 break
 
 # if system is running dnsmasq.  Shasta 1.3.x system
