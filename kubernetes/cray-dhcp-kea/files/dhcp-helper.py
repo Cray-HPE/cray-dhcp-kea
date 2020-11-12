@@ -93,7 +93,7 @@ smd_ethernet_interfaces = {}
 #        "hostname": "rodimus-prime"
 #     }
 # ]
-dhcp_reservations = []
+global_dhcp_reservations = []
 
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {'Content-Type': 'application/json'}
@@ -129,20 +129,16 @@ class Nslookup:
         # set DNS server for lookup
         try:
             # get the dns resolutions for this domain
-#            dns.resolver.Resolver.resolve()
             answer = self.dns_resolver.query(domain, record_type)
             return answer
         except dns.resolver.NXDOMAIN:
             # the domain does not exist so dns resolutions remain empty
             pass
         except dns.resolver.NoAnswer as e:
-#            print ("Warning: the DNS servers {} did not answer:".format(",".join(self.dns_resolver.nameservers)), e)
             debug("Warning: the DNS servers did not answer:", e)
         except dns.resolver.NoNameservers as e:
-#            print ("Warning: the nameservers did not answer:", e)
             debug("Warning: the nameservers did not answer:", e)
         except dns.exception.DNSException as e:
-#            print ("Error: DNS exception occurred:", e)
             debug("Error: DNS exception occurred:", e)
 
     def dns_lookup(self, domain):
@@ -268,7 +264,7 @@ if not dnsmasq_running:
             debug ('static reservation data is',static_reservations)
     # loading static reservations into kea
     for i in range(len(static_reservations)):
-        dhcp_reservations.append(static_reservations[i])
+        global_dhcp_reservations.append(static_reservations[i])
         for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
             # loading per subnet
@@ -363,6 +359,7 @@ try:
 except Exception as err:
     on_error(err)
 smd_all_ethernet = smd_all_ethernet_resp.json()
+debug('1st pass of smd_all_ethernet_resp', smd_all_ethernet_resp)
 
 found_new_interfaces = False
 # check to see if smd is aware of ips and macs in kea.  Potentially update SMD with new ethernet interfaces
@@ -407,17 +404,20 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             except Exception as err:
                 on_error(err)
 #   b) Query SMD to get all network interfaces it knows about
-# refresh SMD ethernet interface data after 1st round of updating SMD
-try:
-    resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
-smd_ethernet_interfaces_response = resp.json()
-debug('smd ethernet interfaces response:', smd_ethernet_interfaces_response)
-for interface in smd_ethernet_interfaces_response:
+# refresh SMD ethernet interface data after if dhcp-helper posted an update to SMD
+if found_new_interfaces:
+    try:
+        resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
+        resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    smd_all_ethernet = resp.json()
+
+debug('found_new_interfaces is',found_new_interfaces)
+debug('2nd pass smd ethernet interfaces response:', smd_all_ethernet)
+for interface in smd_all_ethernet:
     if 'MACAddress' in interface and interface['MACAddress'] != '':
-        smd_ethernet_interfaces[interface['MACAddress']] = interface
+        smd_all_ethernet[interface['MACAddress']] = interface
 
 #   c) Resolve the results from both SMD and Kea to synchronize both
 # get all hardware info from SLS
@@ -469,13 +469,13 @@ for smd_mac_address in smd_ethernet_interfaces:
                                     data['hostname'] = alias[0]
                                     debug('setting alias as hostname', alias[0])
                                 if data['hw-address'] != '' and data['hostname'] != '':
-                                    dhcp_reservations.append(data)
+                                    global_dhcp_reservations.append(data)
                                     debug('setting alias dhcp reservation for mac/hostname', data)
 
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         # retaining the original dhcp reservation structure
-        dhcp_reservations.append(data)
+        global_dhcp_reservations.append(data)
         # setting dhcp reservation under the subnet the reservation should be part of based on ip
         for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
@@ -529,7 +529,7 @@ for smd_mac_address in smd_ethernet_interfaces:
                 print("we tried adding an a dupe ip in known interface")
                 print(search_smd_ip_resp.json())
 
-cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(dhcp_reservations)
+cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(global_dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
 debug("kea config",cray_dhcp_kea_dhcp4_json)

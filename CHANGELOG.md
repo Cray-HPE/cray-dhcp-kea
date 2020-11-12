@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMNET-370
     - tftp ip and unbound ip are set with chart values
     - enabled dhcp-helper to work with systems that use dnsmasq and systems without dnsmasq
+    - loading SMD ethernet data once unless an interface is updated instead of twice every run
 ### Deprecated
 - CASMNET-370
     - global reservations will be removed once there are no Shasta 1.3 systems in the field
