@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.16] - 2020-10-12
+## [0.4.3] - 2020-10-12
+### Added
+- CASMNET-370
+    - updated dhcp reservation to be assigned under the subnet instead of global reservations
+    - loading static ip reservations from SLS
+    - added nslookup module to dhcp-helper
+    - loading vlan info from SLS in dhcp-helper
+    - enabled sanity checks in Kea 
+### Changed
+- CASMNET-370
+    - tftp ip and unbound ip are set with chart values
+    - enabled dhcp-helper to work with systems that use dnsmasq and systems without dnsmasq
+    - loading SMD ethernet data once unless an interface is updated instead of twice every run
+### Deprecated
+- CASMNET-370
+    - global reservations will be removed once there are no Shasta 1.3 systems in the field
+### Removed
+### Fixed
+### Security
+
+## [0.3.15] - 2020-10-12
 ### Added
 ### Changed
 - CASMNET-345

@@ -43,7 +43,7 @@ RUN apk --no-cache add \
         curl \
         jq \
         python3 &&\
-        pip3 install requests ipaddress
+        pip3 install requests ipaddress nslookup
 
 COPY --from=builder /usr/local /usr/local/
 
