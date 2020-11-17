@@ -264,7 +264,7 @@ if not dnsmasq_running:
             debug ('static reservation data is',static_reservations)
     # loading static reservations into kea
     for i in range(len(static_reservations)):
-        global_dhcp_reservations.append(static_reservations[i])
+#        global_dhcp_reservations.append(static_reservations[i])
         for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
             # loading per subnet
@@ -475,7 +475,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         # retaining the original dhcp reservation structure
-        global_dhcp_reservations.append(data)
+#        global_dhcp_reservations.append(data)
         # setting dhcp reservation under the subnet the reservation should be part of based on ip
         for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
