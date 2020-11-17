@@ -413,11 +413,11 @@ if found_new_interfaces:
         on_error(err)
     smd_all_ethernet = resp.json()
 
-debug('found_new_interfaces is',found_new_interfaces)
-debug('2nd pass smd ethernet interfaces response:', smd_all_ethernet)
-for interface in smd_all_ethernet:
-    if 'MACAddress' in interface and interface['MACAddress'] != '':
-        smd_all_ethernet[interface['MACAddress']] = interface
+    debug('found_new_interfaces is',found_new_interfaces)
+    debug('2nd pass smd ethernet interfaces response:', smd_all_ethernet)
+    for interface in smd_all_ethernet:
+        if 'MACAddress' in interface and interface['MACAddress'] != '':
+            smd_all_ethernet[interface['MACAddress']] = interface
 
 #   c) Resolve the results from both SMD and Kea to synchronize both
 # get all hardware info from SLS
