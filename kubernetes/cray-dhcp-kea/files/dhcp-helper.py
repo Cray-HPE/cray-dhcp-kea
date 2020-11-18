@@ -411,10 +411,8 @@ try:
     resp.raise_for_status()
 except Exception as err:
     on_error(err)
-    smd_ethernet_interfaces_response = resp.json()
+smd_ethernet_interfaces_response = resp.json()
 
-debug('found_new_interfaces is',found_new_interfaces)
-debug('2nd pass smd ethernet interfaces response:', smd_ethernet_interfaces_response)
 for interface in smd_ethernet_interfaces_response:
     if 'MACAddress' in interface and interface['MACAddress'] != '':
         smd_ethernet_interfaces[interface['MACAddress']] = interface
