@@ -361,7 +361,7 @@ except Exception as err:
 smd_all_ethernet = smd_all_ethernet_resp.json()
 debug('1st pass of smd_all_ethernet_resp', smd_all_ethernet_resp)
 
-found_new_interfaces = False
+#found_new_interfaces = False
 # check to see if smd is aware of ips and macs in kea.  Potentially update SMD with new ethernet interfaces
 for mac_address, mac_details in kea_ipv4_leases.items():
     kea_hostname = mac_details['hostname']
@@ -394,7 +394,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             on_error(err)
         # we update SMD only if ip doesn't exist
         if search_smd_ip_resp.json() == []:
-            found_new_interfaces = True
+#            found_new_interfaces = True
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
             print ('updating SMD with {}'.format(post_data))
@@ -405,19 +405,19 @@ for mac_address, mac_details in kea_ipv4_leases.items():
                 on_error(err)
 #   b) Query SMD to get all network interfaces it knows about
 # refresh SMD ethernet interface data after if dhcp-helper posted an update to SMD
-if found_new_interfaces:
-    try:
-        resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
-        resp.raise_for_status()
-    except Exception as err:
-        on_error(err)
-    smd_all_ethernet = resp.json()
+#if found_new_interfaces:
+try:
+    resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
+    resp.raise_for_status()
+except Exception as err:
+    on_error(err)
+    smd_ethernet_interfaces_response = resp.json()
 
-    debug('found_new_interfaces is',found_new_interfaces)
-    debug('2nd pass smd ethernet interfaces response:', smd_all_ethernet)
-    for interface in smd_all_ethernet:
-        if 'MACAddress' in interface and interface['MACAddress'] != '':
-            smd_all_ethernet[interface['MACAddress']] = interface
+debug('found_new_interfaces is',found_new_interfaces)
+debug('2nd pass smd ethernet interfaces response:', smd_ethernet_interfaces_response)
+for interface in smd_ethernet_interfaces_response:
+    if 'MACAddress' in interface and interface['MACAddress'] != '':
+        smd_ethernet_interfaces[interface['MACAddress']] = interface
 
 #   c) Resolve the results from both SMD and Kea to synchronize both
 # get all hardware info from SLS
