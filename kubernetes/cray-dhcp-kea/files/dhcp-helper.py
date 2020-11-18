@@ -179,7 +179,7 @@ dns_masq_servers = {}
 unbound_servers = {}
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
-unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_HMN']
+unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
 unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dnsmasq_running = False
@@ -476,6 +476,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         # retaining the original dhcp reservation structure
 #        global_dhcp_reservations.append(data)
+        debug("setting dhcp reservation with mac/ip/hostname", data)
         # setting dhcp reservation under the subnet the reservation should be part of based on ip
         for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
