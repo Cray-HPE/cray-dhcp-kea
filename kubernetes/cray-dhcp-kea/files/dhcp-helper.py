@@ -264,13 +264,18 @@ if not dnsmasq_running:
             debug ('static reservation data is',static_reservations)
     # loading static reservations into kea
     for i in range(len(static_reservations)):
+        # loading static reservation in gloabl dhcp resrcations
 #        global_dhcp_reservations.append(static_reservations[i])
         for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
             debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
-            # loading per subnet
+            # loading static reservation per subnet
             if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+                # check for dupe ip in static reservations load
+                for record in cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations']:
+                    if static_reservations[i]['ip-address'] == record['ip-address']:
+                        print ('duplicate ip address with',static_reservations[i]['ip-address'],' and ', record['ip-address'])
+                        break
                 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
-                break
 
 # if system is running dnsmasq.  Shasta 1.3.x system
 if dnsmasq_running:
@@ -361,7 +366,7 @@ except Exception as err:
 smd_all_ethernet = smd_all_ethernet_resp.json()
 debug('1st pass of smd_all_ethernet_resp', smd_all_ethernet_resp)
 
-#found_new_interfaces = False
+found_new_interfaces = False
 # check to see if smd is aware of ips and macs in kea.  Potentially update SMD with new ethernet interfaces
 for mac_address, mac_details in kea_ipv4_leases.items():
     kea_hostname = mac_details['hostname']
@@ -394,7 +399,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             on_error(err)
         # we update SMD only if ip doesn't exist
         if search_smd_ip_resp.json() == []:
-#            found_new_interfaces = True
+            found_new_interfaces = True
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
             print ('updating SMD with {}'.format(post_data))
@@ -404,14 +409,19 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             except Exception as err:
                 on_error(err)
 #   b) Query SMD to get all network interfaces it knows about
-# refresh SMD ethernet interface data after if dhcp-helper posted an update to SMD
-#if found_new_interfaces:
-try:
-    resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
-smd_ethernet_interfaces_response = resp.json()
+
+# refresh SMD ethernet interface data if dhcp-helper posts a new ethernet interface
+if found_new_interfaces:
+    try:
+        resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
+        resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    smd_ethernet_interfaces_response = resp.json()
+else:
+    # use the same data from the first query to SMD ethernet table when dhcp-helper
+    # does not post new ethernet interface
+    smd_ethernet_interfaces_response = smd_all_ethernet
 
 for interface in smd_ethernet_interfaces_response:
     if 'MACAddress' in interface and interface['MACAddress'] != '':
