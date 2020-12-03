@@ -1,4 +1,4 @@
-@Library('dst-shared@master') _
+@Library('dst-shared@feature/CASMCLOUD-1125-githubapp-auth') _
 
 dockerBuildPipeline {
     repository = "cray"
@@ -9,4 +9,5 @@ dockerBuildPipeline {
     dockerfile = "Dockerfile.dhcp-kea"
     product = "csm"
     slackNotification = ["", "", false, false, true, false]
+    githubPushRepo = "Cray-HPE/cray-dhcp-kea"
 }
