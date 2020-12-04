@@ -192,7 +192,6 @@ time_servers_hmn = ''
 # picking ncn-w00[1-3] to set as time servers
 for i in range(1,4):
     try:
-        print('ncn-w00' + str(i))
         time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
         time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
         if i != 3:
@@ -478,6 +477,7 @@ for smd_mac_address in smd_ethernet_interfaces:
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         # retaining the original dhcp reservation structure and flattened dhcp reservation list
+        # duplicate reservation data in kea config will be removed once 1.3.x is not in the field
         global_dhcp_reservations.append(data)
         debug("setting dhcp reservation with mac/ip/hostname", data)
 
@@ -568,7 +568,6 @@ for i in range(len(sls_networks)):
         if 'IPReservations' in sls_networks[i]['ExtraProperties']['Subnets'][0] and sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']:
             ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
             for j in range(len(ip_reservations)):
-                print(ip_reservations[j])
                 debug ('static reservation data is:', ip_reservations[j])
                 # creating a random mac to create a place hold reservation
                 random_mac = ("00:00:00:%02x:%02x:%02x" % (
@@ -577,34 +576,40 @@ for i in range(len(sls_networks)):
                 random.randint(0, 255),
                 ))
                 data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
+                debug('adding to static_reservations object', data)
                 static_reservations.append(data)
         debug ('static reservation data is',static_reservations)
 
 
 # loading static reservations into kea
 for i in range(len(static_reservations)):
+    dupe_ip = False
+    # checking global reservations for duplicate ips
+    for record in global_dhcp_reservations:
+        debug('global static reservation', record)
+        if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
+            dupe_ip = True
+            print('duplicate ip address with', static_reservations[i], ' and ',record)
+            break
+    subnet_index = ''
+    # checking per subnet reservations for duplicate ips
     for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
         debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
         # loading per subnet
-        dupe_ip = False
         if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
             # check for dupe ip in static reservations load
+            subnet_index = j
+            debug('static subnet reservation index is', subnet_index)
             for record in cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations']:
+                debug('per subnet static reservation', record)
                 if static_reservations[i]['ip-address'] == record['ip-address']:
                     dupe_ip = True
-                    print('duplicate ip address with', static_reservations[i]['ip-address'], ' and ',
-                          record['ip-address'])
+                    print('duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record['ip-address'])
                     break
-            for record in global_dhcp_reservations:
-                print(record)
-                if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
-                    dupe_ip = True
-                    print('duplicate ip address with', static_reservations[i], ' and ',
-                          record)
-                    break
-            if not dupe_ip:
-                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
-                global_dhcp_reservations.append(static_reservations[i])
+    if not dupe_ip:
+        global_dhcp_reservations.append(static_reservations[i])
+        if subnet_index != '':
+            cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][subnet_index]['reservations'].append(static_reservations[i])
 
 
 
