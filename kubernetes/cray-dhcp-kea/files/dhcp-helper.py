@@ -510,55 +510,6 @@ for smd_mac_address in smd_ethernet_interfaces:
                 print("we tried adding an a dupe ip in known interface")
                 print(search_smd_ip_resp.json())
 
-# refresh kea active lease list as a flattened list
-kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
-try:
-    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
-leases_response = resp.json()
-debug('refresh of kea leases response:', leases_response)
-leased_ips_kea = []
-if len(leases_response) > 0:
-    if 'arguments' in leases_response[0] and 'leases' in leases_response[0]['arguments']:
-        for lease in leases_response[0]['arguments']['leases']:
-            if 'ip-address' in lease and lease['ip-address'] != '':
-                leased_ips_kea.append(lease['ip-address'])
-
-# create reservations per subnet and create place holder active lease list
-debug ('total number in global reservations object is:',len(global_dhcp_reservations))
-counter = 0
-place_holder_leases = []
-
-for i in range(len(global_dhcp_reservations)):
-    if 'ip-address' in global_dhcp_reservations[i] and global_dhcp_reservations[i]['hw-address'] != '' and global_dhcp_reservations[i]['ip-address'] != '' and global_dhcp_reservations[i]['hostname'] != '':
-        # create batch of active dhcp placeholders leases
-        if global_dhcp_reservations[i]['ip-address'] not in leased_ips_kea:
-            place_holder_leases.append({'hostname': global_dhcp_reservations[i]['hostname'], 'hw-address': global_dhcp_reservations[i]['hw-address'], 'ip-address': global_dhcp_reservations[i]['ip-address'], 'valid-lft': 600})
-
-        for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
-            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
-            if ipaddress.ip_address(global_dhcp_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
-                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(global_dhcp_reservations[i])
-                debug('setting per subnet dhcp reservation for ip/mac/hostname reservation', global_dhcp_reservations[i])
-                break
-debug('we need to create place holder active lease',place_holder_leases)
-
-# submit list of placeholder leases to kea in a batch
-if len(place_holder_leases) > 0:
-    for i in range(len(place_holder_leases)):
-        debug('we need to create place holder active lease',place_holder_leases)
-        kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'],'arguments': {}}
-        kea_lease4_add_data['arguments'] = place_holder_leases[i]
-        debug('http post to kea api',kea_lease4_add_data)
-        try:
-            resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
-            resp.raise_for_status()
-            debug('kea api response after submitting placeholder lease',resp.json()[0])
-        except Exception as err:
-            on_error(err)
-
 # loading static reservations data
 static_reservations = []
 for i in range(len(sls_networks)):
@@ -610,6 +561,56 @@ for i in range(len(static_reservations)):
         global_dhcp_reservations.append(static_reservations[i])
         if subnet_index != '':
             cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][subnet_index]['reservations'].append(static_reservations[i])
+
+# refresh kea active lease list as a flattened list
+kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
+try:
+    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
+    resp.raise_for_status()
+except Exception as err:
+    on_error(err)
+leases_response = resp.json()
+debug('refresh of kea leases response:', leases_response)
+leased_ips_kea = []
+if len(leases_response) > 0:
+    if 'arguments' in leases_response[0] and 'leases' in leases_response[0]['arguments']:
+        for lease in leases_response[0]['arguments']['leases']:
+            if 'ip-address' in lease and lease['ip-address'] != '':
+                leased_ips_kea.append(lease['ip-address'])
+
+# create reservations per subnet and create place holder active lease list
+debug ('total number in global reservations object is:',len(global_dhcp_reservations))
+counter = 0
+place_holder_leases = []
+
+for i in range(len(global_dhcp_reservations)):
+    if 'ip-address' in global_dhcp_reservations[i] and global_dhcp_reservations[i]['hw-address'] != '' and global_dhcp_reservations[i]['ip-address'] != '' and global_dhcp_reservations[i]['hostname'] != '':
+        # create batch of active dhcp placeholders leases
+        if global_dhcp_reservations[i]['ip-address'] not in leased_ips_kea:
+            place_holder_leases.append({'hostname': global_dhcp_reservations[i]['hostname'], 'hw-address': global_dhcp_reservations[i]['hw-address'], 'ip-address': global_dhcp_reservations[i]['ip-address'], 'valid-lft': 600})
+
+        for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
+            if ipaddress.ip_address(global_dhcp_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(global_dhcp_reservations[i])
+                debug('setting per subnet dhcp reservation for ip/mac/hostname reservation', global_dhcp_reservations[i])
+                break
+debug('we need to create place holder active lease',place_holder_leases)
+
+# submit list of placeholder leases to kea in a batch
+if len(place_holder_leases) > 0:
+    for i in range(len(place_holder_leases)):
+        debug('we need to create place holder active lease',place_holder_leases)
+        kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'],'arguments': {}}
+        kea_lease4_add_data['arguments'] = place_holder_leases[i]
+        debug('http post to kea api',kea_lease4_add_data)
+        try:
+            resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
+            resp.raise_for_status()
+            debug('kea api response after submitting placeholder lease',resp.json()[0])
+        except Exception as err:
+            on_error(err)
+
 
 
 
