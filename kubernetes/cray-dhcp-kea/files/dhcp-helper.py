@@ -109,7 +109,8 @@ def on_error(err, exit=True):
     print('ERROR: {}'.format(err))
     if exit:
         sys.exit()
-
+# only class DNSresponse and class Nslookup are only needed while 1.3.x systems are still in the field
+# imported the class locally to manage the error handling
 class DNSresponse:
     # data object for DNS answer response_full - full DNS response raw answer - DNS answer to the query
     def __init__(self, response_full=[], answer=[]):
@@ -129,7 +130,7 @@ class Nslookup:
         # set DNS server for lookup
         try:
             # get the dns resolutions for this domain
-            answer = self.dns_resolver.query(domain, record_type)
+           answer = self.dns_resolver.query(domain, record_type)
             return answer
         except dns.resolver.NXDOMAIN:
             # the domain does not exist so dns resolutions remain empty
@@ -184,6 +185,25 @@ unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dnsmasq_running = False
 
+# getting time server ips
+time_servers_nmn = ''
+time_servers_hmn = ''
+
+# picking ncn-w00[1-3] to set as time servers
+for i in range(1,4):
+    try:
+        print('ncn-w00' + str(i))
+        time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
+        time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
+        if i != 3:
+            time_servers_nmn += ','
+            time_servers_hmn += ','
+    except:
+        print('did not get ip for ncn-w00' + str(i))
+
+debug('time servers hmn',time_servers_nmn)
+debug('time servers nmn',time_servers_hmn)
+
 # work with systems that have dnsmasqs and systems that do not
 system_name = ('nmn','hmn')
 for name in system_name:
@@ -237,47 +257,18 @@ if not dnsmasq_running:
                         if sls_networks[i]['Name'] == 'NMN':
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['NMN']})
                             subnet4_subnet['next-server'] = tftp_server_nmn
+                            subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
+                            subnet4_subnet['option-data'].append({'name': 'ntp-servers', 'data': str(time_servers_nmn).strip('[]') })
                         if sls_networks[i]['Name'] == 'HMN':
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['HMN']})
                             subnet4_subnet['next-server'] = tftp_server_hmn
+                            subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_hmn).strip('[]') })
+                            subnet4_subnet['option-data'].append({'name': 'ntp-servers', 'data': str(time_servers_hmn).strip('[]') })
                         subnet4.append(subnet4_subnet)
     cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'].extend(subnet4)
 
-    # loading static reservations
-    static_reservations = []
-    for i in range(len(sls_networks)):
-        debug('length of SLS networks is',range(len(sls_networks)))
-        if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
-            debug('sls network subnet is', sls_networks[i]['ExtraProperties']['Subnets'])
-            if 'IPReservations' in sls_networks[i]['ExtraProperties']['Subnets'][0] and sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']:
-                ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
-                for j in range(len(ip_reservations)):
-                    debug ('static reservation data is:', ip_reservations[j])
-                    # creating a random mac to create a place hold reservation
-                    random_mac = ("00:00:00:%02x:%02x:%02x" % (
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                    ))
-                    data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
-                    static_reservations.append(data)
-            debug ('static reservation data is',static_reservations)
-    # loading static reservations into kea
-    for i in range(len(static_reservations)):
-        # loading static reservation in gloabl dhcp resrcations
-#        global_dhcp_reservations.append(static_reservations[i])
-        for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
-            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
-            # loading static reservation per subnet
-            if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
-                # check for dupe ip in static reservations load
-                for record in cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations']:
-                    if static_reservations[i]['ip-address'] == record['ip-address']:
-                        print ('duplicate ip address with',static_reservations[i]['ip-address'],' and ', record['ip-address'])
-                        break
-                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
-
 # if system is running dnsmasq.  Shasta 1.3.x system
+# this section will be removed when 1.3.x is not in the field
 if dnsmasq_running:
     debug('sls cabinet query response:', sls_cabinets)
     for i in range(len(sls_cabinets)):
@@ -379,12 +370,16 @@ for mac_address, mac_details in kea_ipv4_leases.items():
 
     for i in range(len(smd_all_ethernet)):
         if smd_mac_format == smd_all_ethernet[i]['ID']:
-            search_smd_ip.append(smd_all_ethernet_resp.json()[i])
+            search_smd_ip.append(smd_all_ethernet[i])
         if kea_ip == smd_all_ethernet[i]['IPAddress']:
-            search_smd_mac.append(smd_all_ethernet_resp.json()[i])
-    # logging when detecting duplicate ips in SMD
-    if len(search_smd_ip) > 0:
-        debug('we tried adding an a dupe ip for an new interface {} {}'.format(search_smd_mac,search_smd_ip),kea_hostname)
+            search_smd_mac.append(smd_all_ethernet[i])
+    # logging when detecting duplicate ips trying to be added into SMD
+    # this nested loop should only ever have 1 or 2 entries as a worse case
+    if len(search_smd_ip) > 0 and len(search_smd_mac) > 0:
+        for j in range(len(search_smd_ip)):
+            for k in range(len(search_smd_mac)):
+                if search_smd_ip[j]['ID'] != search_smd_mac[k]['ID']:
+                    print('we tried adding an a dupe ip for an new interface {} {}'.format(search_smd_ip[j],search_smd_mac[k]))
 
     if search_smd_mac == [] and search_smd_ip == []:
         # double check duplicate ip check
@@ -482,32 +477,9 @@ for smd_mac_address in smd_ethernet_interfaces:
 
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
-        # retaining the original dhcp reservation structure
-#        global_dhcp_reservations.append(data)
+        # retaining the original dhcp reservation structure and flattened dhcp reservation list
+        global_dhcp_reservations.append(data)
         debug("setting dhcp reservation with mac/ip/hostname", data)
-        # setting dhcp reservation under the subnet the reservation should be part of based on ip
-        for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
-            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i])
-            if ipaddress.ip_address(data['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['subnet'],strict=False):
-                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(data)
-                break
-        debug('setting dhcp reservation for ip/mac/hostname reservation', data)
-        # we are checking reserved IP/MAC/Hostname as an active lease in kea
-        kea_lease4_get_data = {'command': 'lease4-get', 'service': ['dhcp4'],"arguments": { "ip-address": data['ip-address'] }}
-        try:
-            resp = requests.post(url=kea_api_endpoint, json=kea_lease4_get_data, headers=kea_headers)
-            resp.raise_for_status()
-        except Exception as err:
-            on_error(err)
-        # checking for dhcp reservation with an active lease doesn't come back with result=0
-        if (resp.json()[0]['result'] != 0):
-            kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'],"arguments": { "hostname": data['hostname'], "hw-address": data['hw-address'],"ip-address": data['ip-address'] }}
-            try:
-                resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
-                resp.raise_for_status()
-            except Exception as err:
-                on_error(err)
-
 
     # 2nd update scenario for updating SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
@@ -538,6 +510,104 @@ for smd_mac_address in smd_ethernet_interfaces:
                 print("we tried adding an a dupe ip in known interface")
                 print(search_smd_ip_resp.json())
 
+# refresh kea active lease list as a flattened list
+kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
+try:
+    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
+    resp.raise_for_status()
+except Exception as err:
+    on_error(err)
+leases_response = resp.json()
+debug('refresh of kea leases response:', leases_response)
+leased_ips_kea = []
+if len(leases_response) > 0:
+    if 'arguments' in leases_response[0] and 'leases' in leases_response[0]['arguments']:
+        for lease in leases_response[0]['arguments']['leases']:
+            if 'ip-address' in lease and lease['ip-address'] != '':
+                leased_ips_kea.append(lease['ip-address'])
+
+# create reservations per subnet and create place holder active lease list
+debug ('total number in global reservations object is:',len(global_dhcp_reservations))
+counter = 0
+place_holder_leases = []
+
+for i in range(len(global_dhcp_reservations)):
+    if 'ip-address' in global_dhcp_reservations[i] and global_dhcp_reservations[i]['hw-address'] != '' and global_dhcp_reservations[i]['ip-address'] != '' and global_dhcp_reservations[i]['hostname'] != '':
+        # create batch of active dhcp placeholders leases
+        if global_dhcp_reservations[i]['ip-address'] not in leased_ips_kea:
+            place_holder_leases.append({'hostname': global_dhcp_reservations[i]['hostname'], 'hw-address': global_dhcp_reservations[i]['hw-address'], 'ip-address': global_dhcp_reservations[i]['ip-address'], 'valid-lft': 600})
+
+        for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
+            if ipaddress.ip_address(global_dhcp_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(global_dhcp_reservations[i])
+                debug('setting per subnet dhcp reservation for ip/mac/hostname reservation', global_dhcp_reservations[i])
+                break
+debug('we need to create place holder active lease',place_holder_leases)
+
+# submit list of placeholder leases to kea in a batch
+if len(place_holder_leases) > 0:
+    for i in range(len(place_holder_leases)):
+        debug('we need to create place holder active lease',place_holder_leases)
+        kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'],'arguments': {}}
+        kea_lease4_add_data['arguments'] = place_holder_leases[i]
+        debug('http post to kea api',kea_lease4_add_data)
+        try:
+            resp = requests.post(url=kea_api_endpoint, json=kea_lease4_add_data, headers=kea_headers)
+            resp.raise_for_status()
+            debug('kea api response after submitting placeholder lease',resp.json()[0])
+        except Exception as err:
+            on_error(err)
+
+# loading static reservations data
+static_reservations = []
+for i in range(len(sls_networks)):
+    debug('length of SLS networks is',range(len(sls_networks)))
+    if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
+        debug('sls network subnet is', sls_networks[i]['ExtraProperties']['Subnets'])
+        if 'IPReservations' in sls_networks[i]['ExtraProperties']['Subnets'][0] and sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']:
+            ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
+            for j in range(len(ip_reservations)):
+                print(ip_reservations[j])
+                debug ('static reservation data is:', ip_reservations[j])
+                # creating a random mac to create a place hold reservation
+                random_mac = ("00:00:00:%02x:%02x:%02x" % (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+                ))
+                data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
+                static_reservations.append(data)
+        debug ('static reservation data is',static_reservations)
+
+
+# loading static reservations into kea
+for i in range(len(static_reservations)):
+    for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+        debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
+        # loading per subnet
+        dupe_ip = False
+        if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+            # check for dupe ip in static reservations load
+            for record in cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations']:
+                if static_reservations[i]['ip-address'] == record['ip-address']:
+                    dupe_ip = True
+                    print('duplicate ip address with', static_reservations[i]['ip-address'], ' and ',
+                          record['ip-address'])
+                    break
+            for record in global_dhcp_reservations:
+                print(record)
+                if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
+                    dupe_ip = True
+                    print('duplicate ip address with', static_reservations[i], ' and ',
+                          record)
+                    break
+            if not dupe_ip:
+                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(static_reservations[i])
+                global_dhcp_reservations.append(static_reservations[i])
+
+
+
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(global_dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
@@ -560,12 +630,11 @@ if os.environ['DHCP_HELPER_DEBUG'] == 'true':
     # adding sleep delay during debug mode
     print('waiting 10 seconds for any leases to be given out...')
     time.sleep(10)
-
-# check active leases
-kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
-try:
-    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
-debug("logging active leases",resp.json())
+    # check active leases
+    kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
+    try:
+        resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
+        resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    debug("logging active leases",resp.json())
