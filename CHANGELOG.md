@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2020-12-7
+### Added
+- CASMNET-376
+    - dhcp-helper improved efficiency for scaling by flattening data objects and reducing nested logic complexity
+    - enabled dhcp-helper to work with 1.3.x and 1.4+ shasta system
+    - added tcpdump to cray-dhcp-kea container
+### Changed
+### Deprecated
+### Removed
+- CASMNET-376
+    - removed istio proxy wait on cray-dhcp-kea-api
+### Fixed
+### Security
+
 ## [0.4.3] - 2020-10-12
 ### Added
 - CASMNET-370
