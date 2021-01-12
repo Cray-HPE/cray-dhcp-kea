@@ -192,8 +192,8 @@ time_servers_hmn = ''
 # picking ncn-w00[1-3] to set as time servers
 for i in range(1,4):
     try:
-        time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
-        time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
+        time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '.nmn')
+        time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '.hmn')
         if i != 3:
             time_servers_nmn += ','
             time_servers_hmn += ','
@@ -519,16 +519,18 @@ for i in range(len(sls_networks)):
         if 'IPReservations' in sls_networks[i]['ExtraProperties']['Subnets'][0] and sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']:
             ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
             for j in range(len(ip_reservations)):
-                debug ('static reservation data is:', ip_reservations[j])
-                # creating a random mac to create a place hold reservation
-                random_mac = ("00:00:00:%02x:%02x:%02x" % (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
-                ))
-                data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
-                debug('adding to static_reservations object', data)
-                static_reservations.append(data)
+                # not loading switches from sls
+                if 'sw-' not in ip_reservations[j]['Name']:
+                    debug ('static reservation data is:', ip_reservations[j])
+                    # creating a random mac to create a place hold reservation
+                    random_mac = ("00:00:00:%02x:%02x:%02x" % (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    ))
+                    data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
+                    debug('adding to static_reservations object', data)
+                    static_reservations.append(data)
         debug ('static reservation data is',static_reservations)
 
 
