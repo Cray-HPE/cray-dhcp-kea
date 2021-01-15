@@ -215,7 +215,10 @@ for i in range(1,4):
                 except Exception as err:
                     on_error(err)
                 network_data = sls_network_resp.json()
-                subnets = network_data['ExtraProperties']['Subnets']
+                if 'Subnets' in network_data['ExtraProperties']:
+                    subnets = network_data['ExtraProperties']['Subnets']
+                else:
+                    break
                 for j in range(len(subnets)):
                     # check to see if there are any IPRservations
                     if 'IPReservations' in subnets[j] and len(subnets[j]['IPReservations']) > 0:
