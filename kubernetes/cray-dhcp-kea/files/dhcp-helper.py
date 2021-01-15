@@ -200,8 +200,8 @@ for i in range(1,4):
             time_servers_nmn += ','
             time_servers_hmn += ','
     except:
-        print('did not get ip for ncn-w00' + str(i) + 'from Unbound.')
-        print('getting info from SLS')
+        print('Did not get ip for ncn-w00' + str(i) + 'from Unbound.')
+        print('Going to try looking for info in SLS')
         lookup_in_unbound = False
         # this will only be used if querying unbound failed
         if not lookup_in_unbound:
@@ -233,7 +233,7 @@ for i in range(1,4):
                                 if i != 3:
                                     time_servers_nmn += ','
                             break
-                        print('did not get ip for ncn-w00' + str(i) + 'from SLS.')
+            print('did not get ip for ncn-w00' + str(i) + ' from SLS.')
 
 debug('time servers hmn',time_servers_nmn)
 debug('time servers nmn',time_servers_hmn)
