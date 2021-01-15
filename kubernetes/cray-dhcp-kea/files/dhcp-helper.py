@@ -561,7 +561,6 @@ for i in range(len(sls_networks)):
                     static_reservations.append(data)
         debug ('static reservation data is',static_reservations)
 
-
 # loading static reservations into kea
 for i in range(len(static_reservations)):
     dupe_ip = False
