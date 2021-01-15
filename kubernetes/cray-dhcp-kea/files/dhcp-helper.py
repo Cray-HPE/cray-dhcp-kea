@@ -192,6 +192,7 @@ time_servers_hmn = ''
 
 # picking ncn-w00[1-3] to set as time servers
 for i in range(1,4):
+    lookup_in_unbound = True
     try:
         time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '.nmn')
         time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '.hmn')
@@ -201,33 +202,38 @@ for i in range(1,4):
     except:
         print('did not get ip for ncn-w00' + str(i) + 'from Unbound.')
         print('getting info from SLS')
+        lookup_in_unbound = False
         # this will only be used if querying unbound failed
-        time_server = 'ncn-w00' + str(i)
-        for name in system_name:
-            try:
-                sls_networks_url = 'http://cray-sls/v1/networks/' + name.upper()
-                debug('smd networks url:', sls_networks_url)
-                sls_network_resp = requests.get(url=sls_networks_url)
-                sls_network_resp.raise_for_status()
-            except Exception as err:
-                on_error(err)
+        if not lookup_in_unbound:
+            time_server = 'ncn-w00' + str(i)
+            for name in system_name:
+                try:
+                    sls_networks_url = 'http://cray-sls/v1/networks/' + name.upper()
+                    debug('smd networks url:', sls_networks_url)
+                    sls_network_resp = requests.get(url=sls_networks_url)
+                    sls_network_resp.raise_for_status()
+                except Exception as err:
+                    on_error(err)
                 network_data = sls_network_resp.json()
                 subnets = network_data['ExtraProperties']['Subnets']
                 for j in range(len(subnets)):
-                    ip_reservations = subnets[j]['IPReservations']
+                    # check to see if there are any IPRservations
+                    if 'IPReservations' in subnets[j] and len(subnets[j]['IPReservations']) > 0:
+                        ip_reservations = subnets[j]['IPReservations']
+                    else:
+                        break
                     for k in range(len(ip_reservations)):
                         if ip_reservations[k]['Name'] == time_server:
                             if name == 'hmn':
                                 time_servers_hmn += ip_reservations[k]['IPAddress']
                                 if i != 3:
                                     time_servers_hmn += ','
-                                break
                             if name == 'nmn':
                                 time_servers_hmn += ip_reservations[k]['IPAddress']
                                 if i != 3:
                                     time_servers_nmn += ','
-                                break
-                    print('did not get ip for ncn-w00' + str(i) + 'from SLS.')
+                            break
+                        print('did not get ip for ncn-w00' + str(i) + 'from SLS.')
 
 debug('time servers hmn',time_servers_nmn)
 debug('time servers nmn',time_servers_hmn)
