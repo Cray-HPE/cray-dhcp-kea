@@ -184,6 +184,7 @@ unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
 unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dnsmasq_running = False
+system_name = ('nmn','hmn')
 
 # getting time server ips
 time_servers_nmn = ''
@@ -191,20 +192,56 @@ time_servers_hmn = ''
 
 # picking ncn-w00[1-3] to set as time servers
 for i in range(1,4):
+    lookup_in_unbound = True
     try:
-        time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
-        time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '-hmn')
+        time_servers_nmn += socket.gethostbyname('ncn-w00' + str(i) + '.nmn')
+        time_servers_hmn += socket.gethostbyname('ncn-w00' + str(i) + '.hmn')
         if i != 3:
             time_servers_nmn += ','
             time_servers_hmn += ','
     except:
-        print('did not get ip for ncn-w00' + str(i))
+        print('Did not get ip for ncn-w00' + str(i) + 'from Unbound.')
+        print('Going to try looking for info in SLS')
+        lookup_in_unbound = False
+        # this will only be used if querying unbound failed
+        if not lookup_in_unbound:
+            time_server = 'ncn-w00' + str(i)
+            for name in system_name:
+                try:
+                    sls_networks_url = 'http://cray-sls/v1/networks/' + name.upper()
+                    debug('smd networks url:', sls_networks_url)
+                    sls_network_resp = requests.get(url=sls_networks_url)
+                    sls_network_resp.raise_for_status()
+                except Exception as err:
+                    on_error(err)
+                network_data = sls_network_resp.json()
+                if 'Subnets' in network_data['ExtraProperties']:
+                    subnets = network_data['ExtraProperties']['Subnets']
+                else:
+                    break
+                for j in range(len(subnets)):
+                    # check to see if there are any IPRservations
+                    if 'IPReservations' in subnets[j] and len(subnets[j]['IPReservations']) > 0:
+                        ip_reservations = subnets[j]['IPReservations']
+                    else:
+                        break
+                    for k in range(len(ip_reservations)):
+                        if ip_reservations[k]['Name'] == time_server:
+                            if name == 'hmn':
+                                time_servers_hmn += ip_reservations[k]['IPAddress']
+                                if i != 3:
+                                    time_servers_hmn += ','
+                            if name == 'nmn':
+                                time_servers_hmn += ip_reservations[k]['IPAddress']
+                                if i != 3:
+                                    time_servers_nmn += ','
+                            break
+            print('did not get ip for ncn-w00' + str(i) + ' from SLS.')
 
 debug('time servers hmn',time_servers_nmn)
 debug('time servers nmn',time_servers_hmn)
 
 # work with systems that have dnsmasqs and systems that do not
-system_name = ('nmn','hmn')
 for name in system_name:
     try:
         ip = socket.gethostbyname(dns_masq_hostname + '-' + name)
@@ -519,28 +556,33 @@ for i in range(len(sls_networks)):
         if 'IPReservations' in sls_networks[i]['ExtraProperties']['Subnets'][0] and sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']:
             ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
             for j in range(len(ip_reservations)):
-                debug ('static reservation data is:', ip_reservations[j])
-                # creating a random mac to create a place hold reservation
-                random_mac = ("00:00:00:%02x:%02x:%02x" % (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
-                ))
-                data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
-                debug('adding to static_reservations object', data)
-                static_reservations.append(data)
+                # not loading switches from sls
+                if 'sw-' not in ip_reservations[j]['Name']:
+                    debug ('static reservation data is:', ip_reservations[j])
+                    # creating a random mac to create a place hold reservation
+                    random_mac = ("00:00:00:%02x:%02x:%02x" % (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    ))
+                    data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
+                    debug('adding to static_reservations object', data)
+                    static_reservations.append(data)
         debug ('static reservation data is',static_reservations)
-
 
 # loading static reservations into kea
 for i in range(len(static_reservations)):
     dupe_ip = False
-    # checking global reservations for duplicate ips
+    dupe_hostname = False
+    # checking global reservations for duplicate ips or hostnames
     for record in global_dhcp_reservations:
-        debug('global static reservation', record)
         if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
             dupe_ip = True
-            print('duplicate ip address with', static_reservations[i], ' and ',record)
+            print('Global reservation check found duplicate ip address with', static_reservations[i], ' and ',record)
+            break
+        if 'hostname' in record and static_reservations[i]['hostname'] == record['hostname']:
+            dupe_hostname = True
+            print('Global reservation check found duplicate hostname with', static_reservations[i], ' and ',record)
             break
     subnet_index = ''
     # checking per subnet reservations for duplicate ips
@@ -555,9 +597,13 @@ for i in range(len(static_reservations)):
                 debug('per subnet static reservation', record)
                 if static_reservations[i]['ip-address'] == record['ip-address']:
                     dupe_ip = True
-                    print('duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record['ip-address'])
+                    print('Per subnet reservation check found duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record['ip-address'])
                     break
-    if not dupe_ip:
+                if static_reservations[i]['hostname'] == record['hsotname']:
+                    dupe_hostname = True
+                    print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'], ' and ',record['hostname'])
+                    break
+    if not dupe_ip and not dupe_hostname:
         global_dhcp_reservations.append(static_reservations[i])
         if subnet_index != '':
             cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][subnet_index]['reservations'].append(static_reservations[i])
@@ -611,9 +657,6 @@ if len(place_holder_leases) > 0:
         except Exception as err:
             on_error(err)
 
-
-
-
 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].extend(global_dhcp_reservations)
 cray_dhcp_kea_dhcp4_json = json.dumps(cray_dhcp_kea_dhcp4)
 # logging kea config out
@@ -644,3 +687,7 @@ if os.environ['DHCP_HELPER_DEBUG'] == 'true':
     except Exception as err:
         on_error(err)
     debug("logging active leases",resp.json())
+# log when config reload failed
+if resp.json()[0]['result'] != 0:
+    print('Config reload failed')
+    print(resp.json())
