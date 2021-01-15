@@ -2,4 +2,4 @@ apiVersion: v1
 description: "Kubernetes resources for cray-dhcp-kea"
 name: "cray-dhcp-kea"
 home: "cloud/cray-dhcp-kea"
-version: 0.4.4
+version: 0.4.5
