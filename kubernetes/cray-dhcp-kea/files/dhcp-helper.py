@@ -215,7 +215,7 @@ for i in range(1,4):
                 except Exception as err:
                     on_error(err)
                 network_data = sls_network_resp.json()
-                if 'Subnets' in network_data['ExtraProperties']:
+                if 'Subnets' in network_data['ExtraProperties'] and len(network_data['ExtraProperties']['Subnets']) > 0:
                     subnets = network_data['ExtraProperties']['Subnets']
                 else:
                     break
@@ -232,7 +232,7 @@ for i in range(1,4):
                                 if i != 3:
                                     time_servers_hmn += ','
                             if name == 'nmn':
-                                time_servers_hmn += ip_reservations[k]['IPAddress']
+                                time_servers_nmn += ip_reservations[k]['IPAddress']
                                 if i != 3:
                                     time_servers_nmn += ','
                             break
@@ -268,7 +268,7 @@ for name in system_name:
 
 if not dnsmasq_running:
     for i in range(len(sls_networks)):
-        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN':
+        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN' or sls_networks[i]['Name'] == 'MTL':
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
                     if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
@@ -290,7 +290,7 @@ if not dnsmasq_running:
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
-                        if sls_networks[i]['Name'] == 'NMN':
+                        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'MTL':
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['NMN']})
                             subnet4_subnet['next-server'] = tftp_server_nmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
