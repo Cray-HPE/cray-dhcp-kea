@@ -271,6 +271,8 @@ if not dnsmasq_running:
         if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN' or sls_networks[i]['Name'] == 'MTL':
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
+                    if sls_networks[i]['Name'] == 'NMN':
+                        nmn_cidr.append(system['CIDR'])
                     if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
                         subnet4_subnet = {}
                         subnet4_subnet['pools'] = []
