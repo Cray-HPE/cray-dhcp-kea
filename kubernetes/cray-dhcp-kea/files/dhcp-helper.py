@@ -268,7 +268,7 @@ for name in system_name:
 
 if not dnsmasq_running:
     for i in range(len(sls_networks)):
-        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN' or sls_networks[i]['Name'] == 'MTL':
+        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'HMN' or sls_networks[i]['Name'] == 'MTL' or sls_networks[i]['Name'] == 'CAN':
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
                     if sls_networks[i]['Name'] == 'NMN':
@@ -292,7 +292,7 @@ if not dnsmasq_running:
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
-                        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'MTL':
+                        if sls_networks[i]['Name'] == 'NMN' or sls_networks[i]['Name'] == 'MTL' or sls_networks[i]['Name'] == 'CAN':
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['NMN']})
                             subnet4_subnet['next-server'] = tftp_server_nmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
