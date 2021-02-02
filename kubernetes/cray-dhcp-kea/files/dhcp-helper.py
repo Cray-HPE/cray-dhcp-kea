@@ -297,7 +297,7 @@ if not dnsmasq_running:
                             subnet4_subnet['next-server'] = tftp_server_nmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
                             subnet4_subnet['option-data'].append({'name': 'ntp-servers', 'data': str(time_servers_nmn).strip('[]') })
-                        if 'HMN' in sls_networks[i]['name']:
+                        if sls_networks[i]['Name'] == 'HMN':
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['HMN']})
                             subnet4_subnet['next-server'] = tftp_server_hmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_hmn).strip('[]') })
