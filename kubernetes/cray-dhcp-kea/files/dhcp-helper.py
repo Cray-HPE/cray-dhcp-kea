@@ -601,7 +601,7 @@ for i in range(len(static_reservations)):
                     dupe_ip = True
                     print('Per subnet reservation check found duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record['ip-address'])
                     break
-                if static_reservations[i]['hostname'] == record['hsotname']:
+                if static_reservations[i]['hostname'] == record['hostname']:
                     dupe_hostname = True
                     print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'], ' and ',record['hostname'])
                     break
