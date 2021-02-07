@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.10] - 2021-02-01
 ### Added
 ### Changed
+- CASMINST-1325
+  -  fix type-o in dhcp-helper.py
+### Deprecated
+### Removed
+
+## [0.4.10] - 2021-02-01
+### Added
+### Changed
 - CASMINST-1190
   -  Update subnet data load to support new CSI data
 ### Deprecated
