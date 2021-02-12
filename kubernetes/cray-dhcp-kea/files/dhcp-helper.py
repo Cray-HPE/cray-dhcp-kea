@@ -559,7 +559,7 @@ for i in range(len(sls_networks)):
             ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
             for j in range(len(ip_reservations)):
                 # not loading switches from sls
-                if 'sw-' not in ip_reservations[j]['Name']:
+                if 'sw-' not in ip_reservations[j]['Name'] and 'external-dns' not in ip_reservations[j]['Name']:
                     debug ('static reservation data is:', ip_reservations[j])
                     # creating a random mac to create a place hold reservation
                     random_mac = ("00:00:00:%02x:%02x:%02x" % (
