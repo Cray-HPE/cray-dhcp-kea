@@ -130,11 +130,17 @@ cray-service:
       name: "cray-dhcp-kea-exporter"
       image:
         repository: "shadwell/kea-exporter"
-        tag: "latest"
+        tag: "0.4.1p"
+        
+      ports:
+        - name: exporter
+          containerPort: 8080
+          protocol: TCP
+
       command:
         - "kea-exporter"
         - "--address"
-        - "127.0.0.1"
+        - "0.0.0.0"
         - "--port"
         - "8080"
         - "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
