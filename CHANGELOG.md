@@ -81,7 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.12] - 2021-02-07
 ## [0.4.11] - 2021-02-12
-### Added
+### Changed
+### Deprecated
+### Removed
 - CASMOSS-22
   -  Enabled "exporter" as sidecar container to enable Prometheus scrapping for the Kea service
 
