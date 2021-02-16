@@ -655,7 +655,7 @@ for i in range(len(global_dhcp_reservations)):
                             print('Per subnet reservation check found duplicate ip address with',
                                   static_reservations[i]['ip-address'], ' and ', record['ip-address'])
                             break
-                        if global_dhcp_reservations[i]['hostname'] == place_holder_leases[k]['hostname']:
+                        if global_dhcp_reservations[i]['hostname'] == record['hostname']:
                             dupe_hostname = True
                             print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'],
                                   ' and ', record['hostname'])
