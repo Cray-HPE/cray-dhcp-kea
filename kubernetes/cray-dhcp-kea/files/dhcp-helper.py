@@ -559,7 +559,7 @@ for i in range(len(sls_networks)):
             ip_reservations = sls_networks[i]['ExtraProperties']['Subnets'][0]['IPReservations']
             for j in range(len(ip_reservations)):
                 # not loading switches from sls
-                if 'sw-' not in ip_reservations[j]['Name']:
+                if 'sw' not in ip_reservations[j]['Name']:
                     debug ('static reservation data is:', ip_reservations[j])
                     # creating a random mac to create a place hold reservation
                     random_mac = ("00:00:00:%02x:%02x:%02x" % (
@@ -577,7 +577,8 @@ for i in range(len(static_reservations)):
     dupe_ip = False
     dupe_hostname = False
     # checking global reservations for duplicate ips or hostnames
-    for record in global_dhcp_reservations:
+    for k in range(len(global_dhcp_reservations)):
+        record = global_dhcp_reservations[k]
         if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
             dupe_ip = True
             print('Global reservation check found duplicate ip address with', static_reservations[i], ' and ',record)
@@ -586,29 +587,34 @@ for i in range(len(static_reservations)):
             dupe_hostname = True
             print('Global reservation check found duplicate hostname with', static_reservations[i], ' and ',record)
             break
+    if not dupe_ip and not dupe_hostname:
+        global_dhcp_reservations.append(static_reservations[i])
+
+for i in range(len(static_reservations)):
     subnet_index = ''
+    dupe_ip = False
+    dupe_hostname = False
     # checking per subnet reservations for duplicate ips
     for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
         debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
         # loading per subnet
-        if ipaddress.ip_address(static_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+        if ipaddress.IPv4Address(static_reservations[i]['ip-address']) in ipaddress.IPv4Network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
             # check for dupe ip in static reservations load
             subnet_index = j
             debug('static subnet reservation index is', subnet_index)
-            for record in cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations']:
+            for k in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'])):
+                record = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'][k]
                 debug('per subnet static reservation', record)
                 if static_reservations[i]['ip-address'] == record['ip-address']:
                     dupe_ip = True
                     print('Per subnet reservation check found duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record['ip-address'])
                     break
-                if static_reservations[i]['hostname'] == record['hostname']:
+                if static_reservations[i]['hostname'] == record[k]['hostname']:
                     dupe_hostname = True
                     print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'], ' and ',record['hostname'])
                     break
-    if not dupe_ip and not dupe_hostname:
-        global_dhcp_reservations.append(static_reservations[i])
-        if subnet_index != '':
-            cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][subnet_index]['reservations'].append(static_reservations[i])
+    if not dupe_ip and not dupe_hostname and subnet_index != '':
+        cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][subnet_index]['reservations'].append(static_reservations[i])
 
 # refresh kea active lease list as a flattened list
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
@@ -628,21 +634,37 @@ if len(leases_response) > 0:
 
 # create reservations per subnet and create place holder active lease list
 debug ('total number in global reservations object is:',len(global_dhcp_reservations))
-counter = 0
 place_holder_leases = []
 
 for i in range(len(global_dhcp_reservations)):
+    dupe_ip = False
+    dupe_hostname = False
+    subnet_found = False
     if 'ip-address' in global_dhcp_reservations[i] and global_dhcp_reservations[i]['hw-address'] != '' and global_dhcp_reservations[i]['ip-address'] != '' and global_dhcp_reservations[i]['hostname'] != '':
         # create batch of active dhcp placeholders leases
         if global_dhcp_reservations[i]['ip-address'] not in leased_ips_kea:
-            place_holder_leases.append({'hostname': global_dhcp_reservations[i]['hostname'], 'hw-address': global_dhcp_reservations[i]['hw-address'], 'ip-address': global_dhcp_reservations[i]['ip-address'], 'valid-lft': 600})
+            for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+                debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
+                # loading per subnet
+                if ipaddress.IPv4Address(global_dhcp_reservations[i]['ip-address']) in ipaddress.IPv4Network(
+                    cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
+                    for k in range(len(place_holder_leases)):
+                        record = place_holder_leases[k]
+                        if global_dhcp_reservations[i]['ip-address'] == record['ip-address']:
+                            dupe_ip = True
+                            print('Per subnet reservation check found duplicate ip address with',
+                                  static_reservations[i]['ip-address'], ' and ', record['ip-address'])
+                            break
+                        if global_dhcp_reservations[i]['hostname'] == record['hostname']:
+                            dupe_hostname = True
+                            print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'],
+                                  ' and ', record['hostname'])
+                            break
+                else:
+                    subnet_found = True
+            if not dupe_ip and not dupe_hostname and not subnet_found:
+                place_holder_leases.append({'hostname': global_dhcp_reservations[i]['hostname'], 'hw-address': global_dhcp_reservations[i]['hw-address'], 'ip-address': global_dhcp_reservations[i]['ip-address'], 'valid-lft': 600})
 
-        for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
-            debug('the subnet is ', cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j])
-            if ipaddress.ip_address(global_dhcp_reservations[i]['ip-address']) in ipaddress.ip_network(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
-                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'].append(global_dhcp_reservations[i])
-                debug('setting per subnet dhcp reservation for ip/mac/hostname reservation', global_dhcp_reservations[i])
-                break
 debug('we need to create place holder active lease',place_holder_leases)
 
 # submit list of placeholder leases to kea in a batch
