@@ -579,13 +579,13 @@ for i in range(len(static_reservations)):
     # checking global reservations for duplicate ips or hostnames
     for k in range(len(global_dhcp_reservations)):
         record = global_dhcp_reservations[k]
-        if 'ip-address' in record and static_reservations[i]['ip-address'] == global_dhcp_reservations[k]['ip-address']:
+        if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
             dupe_ip = True
-            print('Global reservation check found duplicate ip address with', static_reservations[i], ' and ',global_dhcp_reservations[k])
+            print('Global reservation check found duplicate ip address with', static_reservations[i], ' and ',record)
             break
-        if 'hostname' in record and static_reservations[i]['hostname'] == global_dhcp_reservations[k]['hostname']:
+        if 'hostname' in record and static_reservations[i]['hostname'] == record['hostname']:
             dupe_hostname = True
-            print('Global reservation check found duplicate hostname with', static_reservations[i], ' and ',global_dhcp_reservations[k])
+            print('Global reservation check found duplicate hostname with', static_reservations[i], ' and ',record)
             break
     if not dupe_ip and not dupe_hostname:
         global_dhcp_reservations.append(static_reservations[i])
@@ -604,14 +604,14 @@ for i in range(len(static_reservations)):
             debug('static subnet reservation index is', subnet_index)
             for k in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'])):
                 record = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['reservations'][k]
-                debug('per subnet static reservation', record[k])
-                if static_reservations[i]['ip-address'] == record[k]['ip-address']:
+                debug('per subnet static reservation', record)
+                if static_reservations[i]['ip-address'] == record['ip-address']:
                     dupe_ip = True
-                    print('Per subnet reservation check found duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record[k]['ip-address'])
+                    print('Per subnet reservation check found duplicate ip address with', static_reservations[i]['ip-address'], ' and ',record['ip-address'])
                     break
                 if static_reservations[i]['hostname'] == record[k]['hostname']:
                     dupe_hostname = True
-                    print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'], ' and ',record[k]['hostname'])
+                    print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'], ' and ',record['hostname'])
                     break
     if not dupe_ip and not dupe_hostname and subnet_index != '':
         cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][subnet_index]['reservations'].append(static_reservations[i])
@@ -650,15 +650,15 @@ for i in range(len(global_dhcp_reservations)):
                     cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][j]['subnet'], strict=False):
                     for k in range(len(place_holder_leases)):
                         record = place_holder_leases[k]
-                        if global_dhcp_reservations[i]['ip-address'] == place_holder_leases[k]['ip-address']:
+                        if global_dhcp_reservations[i]['ip-address'] == record['ip-address']:
                             dupe_ip = True
                             print('Per subnet reservation check found duplicate ip address with',
-                                  static_reservations[i]['ip-address'], ' and ', place_holder_leases[k]['ip-address'])
+                                  static_reservations[i]['ip-address'], ' and ', record['ip-address'])
                             break
                         if global_dhcp_reservations[i]['hostname'] == place_holder_leases[k]['hostname']:
                             dupe_hostname = True
                             print('Per subnet reservation check found duplicate hostname with', static_reservations[i]['hostname'],
-                                  ' and ', place_holder_leases[k]['hostname'])
+                                  ' and ', record['hostname'])
                             break
                 else:
                     subnet_found = True
