@@ -5,15 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.13] - 2021-02-17
-### Added
-### Changed
-- CASMINST-1483
-  -  updated variable for dupe checks in dhcp-helper
-### Deprecated
-### Removed
-
-## [0.4.12] - 2021-02-07
+## [0.4.14] - 2021-02-17
 ### Added
 ### Changed
 - CASMINST-1412
@@ -21,7 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 
-## [0.4.11] - 2021-02-07
+## [0.4.13] - 2021-02-16
+### Added
+### Changed
+- CASMINST-1412
+  -  update static reservation dupe checking logic
+### Deprecated
+### Removed
+
+## [0.4.12] - 2021-02-07
 ### Added
 ### Changed
 - CASMINST-1325
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 
-## [0.4.10] - 2021-02-01
+## [0.4.11] - 2021-02-01
 ### Added
 ### Changed
 - CASMINST-1190
