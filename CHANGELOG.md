@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.15] - 2021-02-18
 ### Added
 ### Changed
-- CASMINST-1412
-  -  update static reservation dupe checking logic
+- CASMTRIAGE-730
+  -  update static reservation dupe checking logic to filter out mac/ip reservations
 ### Deprecated
 ### Removed
 
