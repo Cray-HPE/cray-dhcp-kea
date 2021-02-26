@@ -271,7 +271,7 @@ if not dnsmasq_running:
         if any(n in sls_networks[i]['Name'] for n in ('NMN','HMN','MTL','CAN')):
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
-                    if sls_networks[i]['Name'] == 'NMN':
+                    if 'NMN' in sls_networks[i]['Name']:
                         nmn_cidr.append(system['CIDR'])
                     if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
                         subnet4_subnet = {}
@@ -333,7 +333,7 @@ if dnsmasq_running:
                         if dubplicate_cidr:
                             debug('duplicate cidr true and exiting',system['CIDR'])
                             break
-                        if system_name == 'NMN':
+                        if 'NMN' in system_name:
                             nmn_cidr.append(system['CIDR'])
                         subnet4_subnet = {}
                         subnet4_subnet['pools'] = []
@@ -354,10 +354,10 @@ if dnsmasq_running:
                         subnet4_subnet['id'] = system['VLan']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations']= []
-                        if system_name == 'NMN':
+                        if any(n in system_name for n in ('NMN', 'MTL', 'CAN')):
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_servers[system_name]})
                             subnet4_subnet['next-server'] = tftp_server_nmn
-                        if system_name == 'HMN':
+                        if 'HMN' in system_name:
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': dns_masq_servers[system_name] + unbound_servers[system_name]})
                             subnet4_subnet['next-server'] = tftp_server_hmn
                         subnet4.append(subnet4_subnet)
