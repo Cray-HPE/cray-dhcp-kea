@@ -551,6 +551,7 @@ for smd_mac_address in smd_ethernet_interfaces:
 
 # loading static reservations data
 static_reservations = []
+random_mac_set = set()
 for i in range(len(sls_networks)):
     debug('length of SLS networks is',range(len(sls_networks)))
     if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
@@ -561,12 +562,19 @@ for i in range(len(sls_networks)):
                 # not loading switches from sls
                 if 'sw' not in ip_reservations[j]['Name']:
                     debug ('static reservation data is:', ip_reservations[j])
-                    # creating a random mac to create a place hold reservation
-                    random_mac = ("00:00:00:%02x:%02x:%02x" % (
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                    ))
+                    random_unique_mac = False
+                    while not random_unique_mac:
+                        # creating a random mac to create a place hold reservation
+                        random_mac = ("00:00:00:%02x:%02x:%02x" % (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        ))
+                        debug('Random MAC generated is', random_mac)
+                        if random_mac not in random_mac_set:
+                            random_mac_set.add(random_mac)
+                            debug('Random MAC set is', random_mac_set)
+                            random_unique_mac = True
                     data = {'hostname': ip_reservations[j]['Name'], 'hw-address': random_mac, 'ip-address': ip_reservations[j]['IPAddress']}
                     debug('adding to static_reservations object', data)
                     static_reservations.append(data)
