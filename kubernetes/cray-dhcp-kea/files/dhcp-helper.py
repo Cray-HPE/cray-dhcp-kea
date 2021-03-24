@@ -338,6 +338,8 @@ if dnsmasq_running:
                             break
                         if 'NMN' in system_name:
                             nmn_cidr.append(system['CIDR'])
+                        if 'MTL' in system_name:
+                            mtl_cidr.append(system['CIDR'])
                         subnet4_subnet = {}
                         subnet4_subnet['pools'] = []
                         subnet4_subnet['pools'].append({'pool': {}})
