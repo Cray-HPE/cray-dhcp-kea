@@ -438,7 +438,7 @@ for mac_address, mac_details in kea_ipv4_leases.items():
         for cidr in mtl_cidr:
             if ipaddress.IPv4Address(kea_ip) in ipaddress.IPv4Network(cidr, strict=False):
                 mtl_ip = True
-                print('MTL ip found in Kea: mac:',smd_mac_format,'ip:',kea_ip)
+                print('MTL ip found in Kea during interface add: mac:',smd_mac_format,'ip:',kea_ip)
         # we update SMD only if ip doesn't exist
         if search_smd_ip_resp.json() == [] and not mtl_ip:
             found_new_interfaces = True
@@ -536,7 +536,7 @@ for smd_mac_address in smd_ethernet_interfaces:
         for cidr in mtl_cidr:
             if ipaddress.IPv4Address(kea_ipv4_leases[smd_mac_address]['ip-address']) in ipaddress.IPv4Network(cidr, strict=False):
                 mtl_ip = True
-                print('MTL ip found in Kea: mac:', smd_mac_address, 'ip:', kea_ipv4_leases[smd_mac_address]['ip-address'])
+                print('MTL ip found in Kea during iterface patch: mac:', smd_mac_address, 'ip:', kea_ipv4_leases[smd_mac_address]['ip-address'])
         if (not 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] or smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '') and kea_ipv4_leases[smd_mac_address]['ip-address'] != '' and not mtl_ip:
             # dupe ip check
             search_smd_ip_resp = ''
