@@ -176,6 +176,7 @@ sls_networks = resp.json()
 # parse the response from cray-sls for subnet/cabinet network information
 subnet4 = []
 nmn_cidr = []
+mtl_cidr = []
 dns_masq_servers = {}
 unbound_servers = {}
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
@@ -273,6 +274,8 @@ if not dnsmasq_running:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
                     if 'NMN' in sls_networks[i]['Name']:
                         nmn_cidr.append(system['CIDR'])
+                    if 'MTL' in sls_networks[i]['Name']:
+                        mtl_cidr.append(system['CIDR'])
                     if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
                         subnet4_subnet = {}
                         subnet4_subnet['pools'] = []
@@ -430,8 +433,14 @@ for mac_address, mac_details in kea_ipv4_leases.items():
                 search_smd_ip_resp.raise_for_status()
         except Exception as err:
             on_error(err)
+        # check the ip does not belong in the MTL subnet
+        mtl_ip = False
+        for cidr in mtl_cidr:
+            if ipaddress.IPv4Address(kea_ip) in ipaddress.IPv4Network(cidr, strict=False):
+                mtl_ip = True
+                print('MTL ip found in Kea: mac:',smd_mac_format,'ip:',kea_ip)
         # we update SMD only if ip doesn't exist
-        if search_smd_ip_resp.json() == []:
+        if search_smd_ip_resp.json() == [] and not mtl_ip:
             found_new_interfaces = True
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
@@ -522,7 +531,13 @@ for smd_mac_address in smd_ethernet_interfaces:
 
     # 2nd update scenario for updating SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
-        if (not 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] or smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '') and kea_ipv4_leases[smd_mac_address]['ip-address'] != '':
+        # check the ip does not belong in the MTL subnet
+        mtl_ip = False
+        for cidr in mtl_cidr:
+            if ipaddress.IPv4Address(kea_ipv4_leases[smd_mac_address]['ip-address']) in ipaddress.IPv4Network(cidr, strict=False):
+                mtl_ip = True
+                print('MTL ip found in Kea: mac:', smd_mac_address, 'ip:', kea_ipv4_leases[smd_mac_address]['ip-address'])
+        if (not 'IPAddress' in smd_ethernet_interfaces[smd_mac_address] or smd_ethernet_interfaces[smd_mac_address]['IPAddress'] == '') and kea_ipv4_leases[smd_mac_address]['ip-address'] != '' and not mtl_ip:
             # dupe ip check
             search_smd_ip_resp = ''
             search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ipv4_leases[smd_mac_address]['ip-address'])
