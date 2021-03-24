@@ -272,11 +272,11 @@ if not dnsmasq_running:
         if any(n in sls_networks[i]['Name'] for n in ('NMN','HMN','MTL','CAN')):
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and sls_networks[i]['ExtraProperties']['Subnets']:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
-                    if 'NMN' in sls_networks[i]['Name']:
-                        nmn_cidr.append(system['CIDR'])
-                    if 'MTL' in sls_networks[i]['Name']:
-                        mtl_cidr.append(system['CIDR'])
                     if 'DHCPStart' in system and system['DHCPStart'] and 'DHCPEnd' in system and system['DHCPEnd']:
+                        if 'NMN' in sls_networks[i]['Name']:
+                            nmn_cidr.append(system['CIDR'])
+                        if 'MTL' in sls_networks[i]['Name']:
+                            mtl_cidr.append(system['CIDR'])
                         subnet4_subnet = {}
                         subnet4_subnet['pools'] = []
                         subnet4_subnet['pools'].append({'pool': {}})
