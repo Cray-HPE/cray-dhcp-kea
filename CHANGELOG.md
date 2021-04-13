@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.19] - 2021-03-24
 ### Added
 ### Changed
+- CASMNET-639
+  - updated dockerfile base image source
+### Deprecated
+### Removed
+
+## [0.4.19] - 2021-03-24
+### Added
+### Changed
 - CASMINST-1844
   - added MTL filter to dhcp-helper.py
 ### Deprecated
