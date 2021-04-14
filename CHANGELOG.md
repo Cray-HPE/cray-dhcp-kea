@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMNET-639
   - updated dockerfile base image source
   - updated kea to 1.8.2
+  - updated log4cplus to 2.0.6
 ### Deprecated
 ### Removed
 
