@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.20] - 2021-04-13
+### Added
+### Changed
+- CASMNET-639
+  - updated dockerfile base image source
+  - updated kea to 1.8.2
+  - updated log4cplus to 2.0.6
+### Deprecated
+### Removed
+
 ## [0.4.19] - 2021-03-24
 ### Added
 ### Changed
