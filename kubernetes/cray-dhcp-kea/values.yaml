@@ -126,6 +126,29 @@ cray-service:
           mountPath: /health-check.sh
           readOnly: true
           subPath: health-check.sh
+    cray-dhcp-kea-exporter:
+      name: "cray-dhcp-kea-exporter"
+      image:
+        repository: "shadwell/kea-exporter"
+        tag: "0.4.1p"
+        
+      ports:
+        - name: exporter
+          containerPort: 8080
+          protocol: TCP
+
+      command:
+        - "kea-exporter"
+        - "--address"
+        - "0.0.0.0"
+        - "--port"
+        - "8080"
+        - "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
+      volumeMounts:
+        - name: cray-dhcp-kea-socket
+          mountPath: /cray-dhcp-kea-socket
+          readOnly: false
+          subPath: cray-dhcp-kea-socket
   volumes:
     cray-dhcp-kea-ctrl-agent-conf:
       name: cray-dhcp-kea-ctrl-agent-conf
