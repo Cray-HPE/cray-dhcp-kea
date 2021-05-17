@@ -44,7 +44,7 @@ RUN apk --no-cache add \
         jq \
         tcpdump \
         python3 &&\
-        pip3 install requests ipaddress nslookup
+        pip3 install requests ipaddress nslookup kea-exporter
 
 COPY --from=builder /usr/local /usr/local/
 
@@ -53,6 +53,7 @@ EXPOSE 67/tcp
 EXPOSE 68/udp
 EXPOSE 68/tcp
 EXPOSE 8000/tcp
+EXPOSE 9091/tcp
 
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
