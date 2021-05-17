@@ -131,12 +131,10 @@ cray-service:
       image:
         repository: "shadwell/kea-exporter"
         tag: "0.4.1p"
-        
       ports:
         - name: exporter
           containerPort: 8080
           protocol: TCP
-
       command:
         - "kea-exporter"
         - "--address"
