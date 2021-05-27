@@ -11,6 +11,7 @@ metadata:
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
+  externalTrafficPolicy: Local
   ports:
     - name: kea-server-tcp-hmn
       port: 67
@@ -31,6 +32,7 @@ metadata:
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
+  externalTrafficPolicy: Local
   ports:
     - name: kea-server-tcp-nmn
       port: 67
@@ -51,6 +53,7 @@ metadata:
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
+  externalTrafficPolicy: Local
   ports:
     - name: kea-server-udp-hmn
       port: 67
@@ -71,6 +74,7 @@ metadata:
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
+  externalTrafficPolicy: Local
   ports:
     - name: kea-server-udp-nmn
       port: 67
