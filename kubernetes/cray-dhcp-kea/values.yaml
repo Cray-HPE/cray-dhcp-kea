@@ -20,7 +20,6 @@ cray-service:
   nameOverride: cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "67"
-  containers:
 #    cray-dhcp-kea:
 #      name: "cray-dhcp-kea"
 #      image:
