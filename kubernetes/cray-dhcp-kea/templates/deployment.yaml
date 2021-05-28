@@ -25,13 +25,13 @@ spec:
         app.kubernetes.io/name: {{ include "cray-dhcp-kea.name" . }}
     spec:
       containers:
-      - name: cray-dhcp-kea
-        image: {{ include "cray-dhcp-kea.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dhcp-kea.app-version" .) }}
-        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
       - command:
         - "sh"
         - "-c"
         - "/startup-dhcp.sh"
+        name: cray-dhcp-kea
+        image: {{ include "cray-dhcp-kea.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dhcp-kea.app-version" .) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         livenessProbe:
           exec:
             command:
@@ -58,13 +58,13 @@ spec:
           value: "false"
         - name: DHCP_HELPER_INTERVAL_SECONDS
           value: "180"
-      - name: cray-dhcp-kea-ctrl-agent
-        image: {{ include "cray-dhcp-kea.image-prefix" .Values }}{{ .Values.image.repository }}
-        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-      - command:
-        - "sh"
-        - "-c"
-        - "/startup-dhcp-ctrl-agent.sh"
+        - command:
+            - "sh"
+            - "-c"
+            - "/startup-dhcp-ctrl-agent.sh"
+          name: cray-dhcp-kea-ctrl-agent
+          image: {{ include "cray-dhcp-kea.image-prefix" .Values }}{{ .Values.image.repository }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         livenessProbe:
           exec:
             command:
