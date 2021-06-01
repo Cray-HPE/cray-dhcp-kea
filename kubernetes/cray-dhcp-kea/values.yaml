@@ -6,12 +6,6 @@
 #   repository: ""
 #   tag: "" (default = "latest")
 #   pullPolicy: "" (default = "IfNotPresent")
-global:
-  appVersion: ""
-imagesHost: dtr.dev.cray.com
-image:
-  repository: cray/cray-cray-dhcp-kea
-  pullPolicy: IfNotPresent
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 replicaCount: 1
