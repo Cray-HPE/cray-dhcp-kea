@@ -179,6 +179,8 @@ nmn_cidr = []
 mtl_cidr = []
 dns_masq_servers = {}
 unbound_servers = {}
+hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
+nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
 unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
@@ -296,11 +298,13 @@ if not dnsmasq_running:
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
                         if any(n in sls_networks[i]['Name'] for n in ('NMN','MTL','CAN')):
-                            subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['NMN']})
+                            subnet4_subnet['option-data'].append({'name': 'dhcp-server-identifier','data': nmn_loadbalancer_ip })
+                            subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': unbound_servers['NMN']})
                             subnet4_subnet['next-server'] = tftp_server_nmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
                             subnet4_subnet['option-data'].append({'name': 'ntp-servers', 'data': str(time_servers_nmn).strip('[]') })
                         if 'HMN' in sls_networks[i]['Name']:
+                            subnet4_subnet['option-data'].append({'name': 'dhcp-server-identifier', 'data': hmn_loadbalancer_ip})
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['HMN']})
                             subnet4_subnet['next-server'] = tftp_server_hmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_hmn).strip('[]') })
