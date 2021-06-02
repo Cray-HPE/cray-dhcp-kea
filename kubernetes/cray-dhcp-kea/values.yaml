@@ -40,6 +40,10 @@ cray-service:
           value: "10.92.100.225"
         - name: UNBOUND_SERVER_HMN
           value: "10.94.100.225"
+        - name: NMN_LOADBALANCER_IP
+          value: "10.92.100.222"
+        - name: HMN_LOADBALANCER_IP
+          value: "10.94.100.222"
         - name: DHCP_HELPER_DEBUG
           value: "false"
         - name: DHCP_HELPER_INTERVAL_SECONDS
