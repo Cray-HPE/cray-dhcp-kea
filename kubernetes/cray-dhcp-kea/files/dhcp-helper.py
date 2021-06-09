@@ -530,10 +530,10 @@ for smd_mac_address in smd_ethernet_interfaces:
                                     global_dhcp_reservations.append(data)
                                     debug('setting alias dhcp reservation for mac/hostname', data)
     # notifying of duplicate ip detect
-    if data['ip-address'] in global_dhcp_ip_set:
+    if 'ip-address' in data and data['ip-address'] in global_dhcp_ip_set:
         print ('Duplicate ip found in data source', data)
     # notifying of duplicate hostname detected
-    if data['hostname'] in global_dhcp_hostname_set:
+    if 'ip-address' in data and data['hostname'] in global_dhcp_hostname_set:
         print('Duplicate hostname found in data source', data)
 
     # submit dhcp reservation with hostname, mac and ip
