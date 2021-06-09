@@ -188,6 +188,8 @@ unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dnsmasq_running = False
 system_name = ('nmn','hmn')
+global_dhcp_hostname_set = set()
+global_dhcp_ip_set = set()
 
 # getting time server ips
 time_servers_nmn = ''
@@ -527,13 +529,23 @@ for smd_mac_address in smd_ethernet_interfaces:
                                 if data['hw-address'] != '' and data['hostname'] != '':
                                     global_dhcp_reservations.append(data)
                                     debug('setting alias dhcp reservation for mac/hostname', data)
+    # notifying of duplicate ip detect
+    if data['ip-address'] in global_dhcp_ip_set:
+        print ('Duplicate ip found in data source', data)
+    # notifying of duplicate hostname detected
+    if data['hostname'] in global_dhcp_hostname_set:
+        print('Duplicate hostname found in data source', data)
 
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
-        # retaining the original dhcp reservation structure and flattened dhcp reservation list
-        # duplicate reservation data in kea config will be removed once 1.3.x is not in the field
-        global_dhcp_reservations.append(data)
-        debug("setting dhcp reservation with mac/ip/hostname", data)
+        # checking for duplicate hostname and/or ip
+        if data['ip-address'] not in global_dhcp_ip_set and data['hostname'] not in global_dhcp_hostname_set:
+            global_dhcp_ip_set.add(data['ip-address'])
+            global_dhcp_hostname_set.add(data['hostname'])
+            # retaining the original dhcp reservation structure and flattened dhcp reservation list
+            # duplicate reservation data in kea config will be removed once 1.3.x is not in the field
+            global_dhcp_reservations.append(data)
+            debug("setting dhcp reservation with mac/ip/hostname", data)
 
     # 2nd update scenario for updating SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
@@ -610,11 +622,13 @@ for i in range(len(static_reservations)):
         record = global_dhcp_reservations[k]
         if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
             dupe_ip = True
-            print('Global reservation check found duplicate ip address with', static_reservations[i], ' and ',record)
+            debug('Global reservation check found duplicate ip address with', static_reservations[i])
+            debug('and ',record)
             break
         if 'hostname' in record and static_reservations[i]['hostname'] == record['hostname']:
             dupe_hostname = True
-            print('Global reservation check found duplicate hostname with', static_reservations[i], ' and ',record)
+            debug('Global reservation check found duplicate hostname with', static_reservations[i])
+            debug('and ',record)
             break
     if not dupe_ip and not dupe_hostname:
         global_dhcp_reservations.append(static_reservations[i])
