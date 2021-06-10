@@ -8,8 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.3] - 2021-06-01
 ### Added
 ### Changed
- CASMNET-731
-  -  Change externalTrafficPolicy from Cluster to Local
+ CASMNET-754
+  -  Added hostname and ip dupe checking in the global reservations
+### Deprecated
+### Removed
+
+## [0.5.3] - 2021-06-01
+### Added
+### Changed
+ CASMNET-734
+  -  Set kea server identifier to be the metalLB IP
 ### Deprecated
 ### Removed
 
