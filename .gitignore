@@ -1,0 +1,3 @@
+kubernetes/cray-dhcp-kea/charts
+kubernetes/.packaged
+*.tgz
