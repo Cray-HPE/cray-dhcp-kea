@@ -1,14 +1,6 @@
 {
   "Dhcp4": {
     "decline-probation-period": 3,
-    "sanity-checks": {
-            "lease-checks": "fix-del"
-    },
-    "expired-leases-processing": {
-            "reclaim-timer-wait-time": 6000,
-            "hold-reclaimed-time": 86400,
-            "flush-reclaimed-timer-wait-time": 100
-    },
     "control-socket": {
       "socket-name": "/cray-dhcp-kea-socket/cray-dhcp-kea.socket",
       "socket-type": "unix"
@@ -34,7 +26,7 @@
     "reservation-mode": "global",
     "reservations": [],
     "subnet4": [],
-    "valid-lifetime": 3600,
+    "valid-lifetime": 300,
     "match-client-id": false,
     "loggers": [
       {
