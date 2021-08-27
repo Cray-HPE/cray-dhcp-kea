@@ -1,4 +1,4 @@
-FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.4 as builder
+FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.5 as builder
 
 ARG KEA_DHCP_VERSION=1.8.2
 ARG LOG4_CPLUS_VERSION=2.0.6
