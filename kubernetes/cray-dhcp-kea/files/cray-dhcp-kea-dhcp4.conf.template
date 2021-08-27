@@ -34,7 +34,7 @@
     "reservation-mode": "global",
     "reservations": [],
     "subnet4": [],
-    "valid-lifetime": 3600,
+    "valid-lifetime": 300,
     "match-client-id": false,
     "loggers": [
       {

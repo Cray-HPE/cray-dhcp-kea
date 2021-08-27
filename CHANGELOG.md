@@ -5,31 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.3] - 2021-08-24
-### Added
-### Changed
- CASMNET-747
-  -   Added pod priorityClassName 
-### Deprecated
-### Removed
-
-## [0.5.3] - 2021-06-09
-### Added
-### Changed
- CASMNET-754
-  -  Added hostname and ip dupe checking in the global reservations
-### Deprecated
-### Removed
-
-## [0.5.3] - 2021-06-01
-### Added
-### Changed
- CASMNET-734
-  -  Set kea server identifier to be the metalLB IP
-### Deprecated
-### Removed
-
-## [0.5.2] - 2021-05-26
+## [0.4.23] - 2021-06-01
 ### Added
 ### Changed
  CASMNET-731
@@ -37,35 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 
-## [0.5.1] - 2021-05-17
+## [0.4.22] - 2021-05-27
 ### Added
 ### Changed
- CASMTRIAGE-2260
-  -  Refactor Kea Exporter implementation
+ CASMNET-731
+  -  Change externalTrafficPolicy from Cluster to Local
 ### Deprecated
 ### Removed
 
-## [0.5.0] - 2021-05-13
-### Added
-- CASMOSS-22
-  -  Enabled "exporter" as sidecar container to enable Prometheus scrapping for the Kea service
-### Changed
-
-## [0.4.21] - 2021-05-12
+## [0.4.19] - 2021-04-27
 ### Added
 ### Changed
-- CASMNET-678
-  - Increased DHCP lease time to 3600s
-### Deprecated
-### Removed
-
-## [0.4.20] - 2021-04-13
-### Added
-### Changed
-- CASMNET-639
-  - updated dockerfile base image source
-  - updated kea to 1.8.2
-  - updated log4cplus to 2.0.6
+- CASMNET-608
+  - updated container baseos alpine:3.13.4
 ### Deprecated
 ### Removed
 
@@ -74,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMINST-1844
   - added MTL filter to dhcp-helper.py
-=======
 ### Deprecated
 ### Removed
 
@@ -110,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 
-## [0.4.14] - 2021-02-17
+## [0.4.14] - 2021-02-07
 ### Added
 ### Changed
 - CASMINST-1412
