@@ -5,15 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.3] - 2021-08-24
-### Added
-### Changed
- CASMNET-747
-  -   Added pod priorityClassName 
-### Deprecated
-### Removed
-
-## [0.5.3] - 2021-06-09
+## [0.5.4] - 2021-06-09
 ### Added
 ### Changed
  CASMNET-754
@@ -26,8 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  CASMNET-734
   -  Set kea server identifier to be the metalLB IP
-### Deprecated
-### Removed
 
 ## [0.5.2] - 2021-05-26
 ### Added
@@ -74,7 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMINST-1844
   - added MTL filter to dhcp-helper.py
-=======
 ### Deprecated
 ### Removed
 

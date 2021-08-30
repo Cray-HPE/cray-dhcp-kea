@@ -9,7 +9,6 @@
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 cray-service:
-  priorityClassName: "csm-high-priority-service"
   type: Deployment
   nameOverride: cray-dhcp-kea
   podAnnotations:
