@@ -66,3 +66,5 @@ COPY startup-dhcp-ctrl-agent.sh /
 COPY get_network_cidr.py /
 # startup config for kea server
 COPY startup-config-dhcp4.conf /
+
+USER kea
