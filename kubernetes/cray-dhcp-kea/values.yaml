@@ -130,10 +130,6 @@ cray-service:
           mountPath: /health-check.sh
           readOnly: true
           subPath: health-check.sh
-  securityContext:
-    runAsUser: 100
-    runAsGroup: 101
-    fsGroup: 101
   volumes:
     cray-dhcp-kea-ctrl-agent-conf:
       name: cray-dhcp-kea-ctrl-agent-conf
