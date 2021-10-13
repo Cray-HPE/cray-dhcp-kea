@@ -14,9 +14,10 @@ pipeline {
         NAME = "cray-dhcp-kea"
         DESCRIPTION = "Kea is the DHCP server for Shasta"
         IS_STABLE = getBuildIsStable()
-        VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
+        BUILD_TIMESTAMP = generateTimestamp()
+        VERSION = getDockerBuildVersion(isStable: env.IS_STABLE, buildTimestamp: env.BUILD_TIMESTAMP)
         DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION)
-        CHART_VERSION = getChartVersion(version: env.VERSION)
+        CHART_VERSION = getChartVersion(version: env.VERSION, buildTimestamp: env.BUILD_TIMESTAMP)
     }
 
     stages {
