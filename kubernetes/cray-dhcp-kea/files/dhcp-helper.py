@@ -12,6 +12,7 @@ import socket
 import random
 import dns.resolver
 import dns.exception
+import shutil
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -94,6 +95,7 @@ smd_ethernet_interfaces = {}
 #     }
 # ]
 global_dhcp_reservations = []
+kea_path = '/usr/local/kea'
 
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {'Content-Type': 'application/json'}
@@ -743,3 +745,15 @@ if os.environ['DHCP_HELPER_DEBUG'] == 'true':
 if resp.json()[0]['result'] != 0:
     print('Config reload failed')
     print(resp.json())
+    shutil.copyfile( kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', kea_path + '/cray-dhcp-kea-dhcp4.conf')
+    # 2nd reload config in kea from last known good config
+    keq_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
+    try:
+        resp = requests.post(url=kea_api_endpoint, json=keq_request_data, headers=kea_headers)
+        resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    debug("logging config-reload", resp.json())
+else:
+    # create backup copy of last known good kea config
+    shutil.copyfile(kea_path + '/cray-dhcp-kea-dhcp4.conf', kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', )

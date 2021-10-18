@@ -58,6 +58,8 @@ EXPOSE 9091/tcp
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
 
+RUN mkdir -p /srv/kea
+
 # startup script for kea server
 COPY startup-dhcp.sh /
 # startup script for kea ctrl agent(api server)

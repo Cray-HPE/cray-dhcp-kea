@@ -130,6 +130,8 @@ cray-service:
           mountPath: /health-check.sh
           readOnly: true
           subPath: health-check.sh
+        - name: cray-dhcp-kea-jobs
+          mountPath: /srv/kea
   securityContext:
     runAsUser: 100
     runAsGroup: 101
@@ -149,7 +151,7 @@ cray-service:
     cray-dhcp-kea-jobs:
       name: cray-dhcp-kea-jobs
       configMap:
-        defaultMode: 0700
+        defaultMode: 0777
         name: cray-dhcp-kea-jobs
   service:
     # service definitions for this chart defined manually
