@@ -58,7 +58,8 @@ EXPOSE 9091/tcp
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
 
-RUN mkdir -p /srv/kea
+RUN mkdir -p /srv/kea && \
+    mkdir /cray-dhcp-kea-socket
 
 # startup script for kea server
 COPY startup-dhcp.sh /
@@ -68,5 +69,16 @@ COPY startup-dhcp-ctrl-agent.sh /
 COPY get_network_cidr.py /
 # startup config for kea server
 COPY startup-config-dhcp4.conf /
+
+RUN chown -R kea /srv/kea
+RUN chown -R kea /usr/local/kea
+RUN chown -R kea /cray-dhcp-kea-socket
+
+RUN chmod +x /startup-dhcp.sh && \
+    chmod +x /startup-dhcp-ctrl-agent.sh && \
+    chmod +x /get_network_cidr.py && \
+    chmod +x /startup-config-dhcp4.conf
+
+
 
 USER kea
