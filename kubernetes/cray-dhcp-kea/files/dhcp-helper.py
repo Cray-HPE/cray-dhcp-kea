@@ -154,7 +154,7 @@ class Nslookup:
 
 # import base config
 cray_dhcp_kea_dhcp4 = {}
-with open('/cray-dhcp-kea-dhcp4.conf.template') as file:
+with open('/srv/kea/cray-dhcp-kea-dhcp4.conf.template') as file:
     cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
 # query sls for cabinet subnets

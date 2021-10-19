@@ -21,7 +21,7 @@ cray-service:
       command:
         - "sh"
         - "-c"
-        - "/startup-dhcp.sh"
+        - "/srv/kea/startup-dhcp.sh"
       resources:
         limits:
           cpu: "6"
@@ -114,10 +114,6 @@ cray-service:
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
-  securityContext:
-    runAsUser: 100
-    runAsGroup: 101
-    fsGroup: 101
   volumes:
     cray-dhcp-kea-ctrl-agent-conf:
       name: cray-dhcp-kea-ctrl-agent-conf
