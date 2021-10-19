@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mkdir -p /usr/local/kea
-cp /cray-dhcp-kea-ctrl-agent.conf /usr/local/kea/cray-dhcp-kea-ctrl-agent.conf
+#mkdir -p /usr/local/kea
+cp /srv/kea/cray-dhcp-kea-ctrl-agent.conf /usr/local/kea/cray-dhcp-kea-ctrl-agent.conf
 #  helpful for debugging
 cat /usr/local/kea/cray-dhcp-kea-ctrl-agent.conf
 # what we use to run Cray Dhcp Kea control agent(api)

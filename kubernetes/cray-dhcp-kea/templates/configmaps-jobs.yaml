@@ -7,5 +7,9 @@ data:
 {{ .Files.Get "files/dhcp-helper.py" | indent 4 }}
   cray-dhcp-kea-dhcp4.conf.template: |-
 {{ .Files.Get "files/cray-dhcp-kea-dhcp4.conf.template" | indent 4 }}
-  health-check.sh: |-
-{{ .Files.Get "files/health-check.sh" | indent 4 }}
+  startup-dhcp.sh: |-
+{{ .Files.Get "files/startup-dhcp.sh" | indent 4 }}
+  startup-dhcp-ctrl-agent.sh: |-
+{{ .Files.Get "files/startup-dhcp-ctrl-agent.sh" | indent 4 }}
+  startup-config-dhcp4.conf: |-
+{{ .Files.Get "files/startup-config-dhcp4.conf" | indent 4 }}
