@@ -49,12 +49,6 @@ RUN apk --no-cache add \
 
 COPY --from=builder /usr/local /usr/local/
 
-EXPOSE 67/udp
-EXPOSE 67/tcp
-EXPOSE 68/udp
-EXPOSE 68/tcp
-EXPOSE 8000/tcp
-EXPOSE 9091/tcp
 
 RUN addgroup -S kea && adduser -S kea -G kea
 
@@ -69,11 +63,15 @@ RUN chown -R kea /srv/kea && \
     chown -R kea /usr/local/kea && \
     chown -R kea /cray-dhcp-kea-socket
 
-# startup scripts
 COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 
 RUN chmod +x /srv/kea/startup-dhcp.sh && \
     chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
 
+EXPOSE 67/udp
+EXPOSE 67/tcp
+EXPOSE 68/udp
+EXPOSE 68/tcp
+EXPOSE 8000/tcp
+EXPOSE 9091/tcp
 USER kea
-ENTRYPOINT ["/srv/kea/startup-dhcp.sh"]

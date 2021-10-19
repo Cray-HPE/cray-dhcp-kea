@@ -13,6 +13,7 @@ cray-service:
   nameOverride: cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "67"
+  serviceAccountName: "kea"
   containers:
     cray-dhcp-kea:
       name: "cray-dhcp-kea"
@@ -72,7 +73,6 @@ cray-service:
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
-          readOnly: false
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
@@ -110,7 +110,6 @@ cray-service:
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
-          readOnly: false
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
