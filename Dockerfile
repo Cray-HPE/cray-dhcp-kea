@@ -65,15 +65,15 @@ RUN mkdir -p /srv/kea && \
     mkdir /cray-dhcp-kea-socket && \
     mkdir -p /usr/local/kea
 
+RUN chown -R kea /srv/kea && \
+    chown -R kea /usr/local/kea && \
+    chown -R kea /cray-dhcp-kea-socket
 
 # startup scripts
-COPY kubernetes/cray-dhcp-kea/files/* srv/kea/
+COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 
 RUN chmod +x /srv/kea/startup-dhcp.sh && \
     chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
 
-RUN chown -R kea /srv/kea && \
-    chown -R kea /usr/local/kea && \
-    chown -R kea /cray-dhcp-kea-socket
 USER kea
-ENTRYPOINT ["/srv/unbound/startup-dhcp.sh"]
+ENTRYPOINT ["/srv/kea/startup-dhcp.sh"]
