@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p /usr/local/kea
+#mkdir -p /usr/local/kea
 cp /cray-dhcp-kea-ctrl-agent.conf /usr/local/kea/cray-dhcp-kea-ctrl-agent.conf
 #  helpful for debugging
 cat /usr/local/kea/cray-dhcp-kea-ctrl-agent.conf

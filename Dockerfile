@@ -46,6 +46,7 @@ RUN apk --no-cache add \
         python3 &&\
         pip3 install requests ipaddress nslookup kea-exporter
 
+
 COPY --from=builder /usr/local /usr/local/
 
 EXPOSE 67/udp
@@ -55,28 +56,23 @@ EXPOSE 68/tcp
 EXPOSE 8000/tcp
 EXPOSE 9091/tcp
 
+RUN addgroup -S kea && adduser -S kea -G kea
+
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
 
-
-# startup script for kea server
-COPY startup-dhcp.sh /
-# startup script for kea ctrl agent(api server)
-COPY startup-dhcp-ctrl-agent.sh /
-# copy network cidr script
-COPY get_network_cidr.py /
-# startup config for kea server
-COPY startup-config-dhcp4.conf /
-
 RUN mkdir -p /srv/kea && \
     mkdir /cray-dhcp-kea-socket && \
-    chown -R kea /srv/kea && \
+    mkdir -p /usr/local/kea
+
+
+# startup scripts
+COPY kubernetes/cray-dhcp-kea/files/* srv/kea/
+
+RUN chmod +x /srv/kea/startup-dhcp.sh && \
+    chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
+
+RUN chown -R kea /srv/kea && \
     chown -R kea /usr/local/kea && \
     chown -R kea /cray-dhcp-kea-socket
-
-RUN chmod +x /startup-dhcp.sh && \
-    chmod +x /startup-dhcp-ctrl-agent.sh && \
-    chmod +x /get_network_cidr.py && \
-    chmod +x /startup-config-dhcp4.conf
-
 USER kea
