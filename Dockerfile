@@ -76,3 +76,4 @@ RUN chown -R kea /srv/kea && \
     chown -R kea /usr/local/kea && \
     chown -R kea /cray-dhcp-kea-socket
 USER kea
+ENTRYPOINT ["/srv/unbound/startup-dhcp.sh"]
