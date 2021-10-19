@@ -13,4 +13,5 @@ data:
 {{ .Files.Get "files/startup-dhcp-ctrl-agent.sh" | indent 4 }}
   startup-config-dhcp4.conf: |-
 {{ .Files.Get "files/startup-config-dhcp4.conf" | indent 4 }}
-
+  cray-dhc-kea-ctrl-agent.conf: |-
+{{ .Files.Get "files/cray-dhc-kea-ctrl-agent.conf" | indent 4 }}
