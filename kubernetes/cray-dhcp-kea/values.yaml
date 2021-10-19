@@ -60,7 +60,7 @@ cray-service:
           command:
             - /bin/sh
             - -c
-            - /health-check.sh
+            - /srv/kea/health-check.sh
         initialDelaySeconds: 30
         periodSeconds: 60
         timeoutSeconds: 20
@@ -75,17 +75,7 @@ cray-service:
           readOnly: false
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
-          mountPath: /dhcp-helper.py
-          readOnly: true
-          subPath: dhcp-helper.py
-        - name: cray-dhcp-kea-jobs
-          mountPath: /cray-dhcp-kea-dhcp4.conf.template
-          readOnly: true
-          subPath: cray-dhcp-kea-dhcp4.conf.template
-        - name: cray-dhcp-kea-jobs
-          mountPath: /health-check.sh
-          readOnly: true
-          subPath: health-check.sh
+          mountPath: /srv/kea
     cray-dhcp-kea-ctrl-agent:
       name: "cray-dhcp-kea-ctrl-agent"
       image:
@@ -93,7 +83,7 @@ cray-service:
       command:
         - "sh"
         - "-c"
-        - "/startup-dhcp-ctrl-agent.sh"
+        - "/srv/kea/startup-dhcp-ctrl-agent.sh"
       env:
         - name: DHCP_CAHOST
           value: "0.0.0.0"
@@ -108,7 +98,7 @@ cray-service:
           command:
             - /bin/sh
             - -c
-            - /health-check.sh
+            - /srv/kea/health-check.sh
         initialDelaySeconds: 30
         periodSeconds: 60
         timeoutSeconds: 20
@@ -118,18 +108,10 @@ cray-service:
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
-        - name: cray-dhcp-kea-ctrl-agent-conf
-          mountPath: /cray-dhcp-kea-ctrl-agent.conf
-          readOnly: false
-          subPath: cray-dhcp-kea-ctrl-agent.conf
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
           readOnly: false
           subPath: cray-dhcp-kea-socket
-        - name: cray-dhcp-kea-jobs
-          mountPath: /health-check.sh
-          readOnly: true
-          subPath: health-check.sh
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
   securityContext:
