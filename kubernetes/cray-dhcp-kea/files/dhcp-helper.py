@@ -12,6 +12,7 @@ import socket
 import random
 import dns.resolver
 import dns.exception
+import shutil
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -94,6 +95,7 @@ smd_ethernet_interfaces = {}
 #     }
 # ]
 global_dhcp_reservations = []
+kea_path = '/usr/local/kea'
 
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {'Content-Type': 'application/json'}
@@ -152,7 +154,7 @@ class Nslookup:
 
 # import base config
 cray_dhcp_kea_dhcp4 = {}
-with open('/cray-dhcp-kea-dhcp4.conf.template') as file:
+with open('/srv/kea/cray-dhcp-kea-dhcp4.conf.template') as file:
     cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
 # query sls for cabinet subnets
@@ -179,12 +181,12 @@ nmn_cidr = []
 mtl_cidr = []
 dns_masq_servers = {}
 unbound_servers = {}
-hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
-nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
 unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
 unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
+hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
+nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dnsmasq_running = False
 system_name = ('nmn','hmn')
@@ -300,7 +302,7 @@ if not dnsmasq_running:
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
                         if any(n in sls_networks[i]['Name'] for n in ('NMN','MTL','CAN')):
-                            subnet4_subnet['option-data'].append({'name': 'dhcp-server-identifier','data': nmn_loadbalancer_ip })
+                            subnet4_subnet['option-data'].append({'name': 'dhcp-server-identifier', 'data': nmn_loadbalancer_ip })
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': unbound_servers['NMN']})
                             subnet4_subnet['next-server'] = tftp_server_nmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
@@ -758,4 +760,17 @@ if os.environ['DHCP_HELPER_DEBUG'] == 'true':
 # log when config reload failed
 if resp.json()[0]['result'] != 0:
     print('Config reload failed')
+    print('Trying to load last known good config.')
     print(resp.json())
+    shutil.copyfile( kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', kea_path + '/cray-dhcp-kea-dhcp4.conf')
+    # 2nd reload config in kea from last known good config
+    keq_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
+    try:
+        resp = requests.post(url=kea_api_endpoint, json=keq_request_data, headers=kea_headers)
+        resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    debug("logging config-reload", resp.json())
+else:
+    # create backup copy of last known good kea config
+    shutil.copyfile(kea_path + '/cray-dhcp-kea-dhcp4.conf', kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', )

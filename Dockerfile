@@ -1,4 +1,4 @@
-FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.5 as builder
+ROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.5 as builder
 
 ARG KEA_DHCP_VERSION=1.8.2
 ARG LOG4_CPLUS_VERSION=2.0.6
@@ -46,7 +46,28 @@ RUN apk --no-cache add \
         python3 &&\
         pip3 install requests ipaddress nslookup kea-exporter
 
+
 COPY --from=builder /usr/local /usr/local/
+
+
+RUN addgroup -S kea && adduser -S kea -G kea
+
+ENV DHCP_HELPER_DEBUG=false
+ENV DHCP_HELPER_INTERVAL_SECONDS=180
+
+RUN mkdir -p /srv/kea && \
+    mkdir /cray-dhcp-kea-socket && \
+    mkdir -p /usr/local/kea
+
+RUN chown -R kea /srv/kea && \
+    chown -R kea /usr/local/kea && \
+    chown -R kea /cray-dhcp-kea-socket && \
+    chown -R kea /usr/local/var/run/kea
+
+COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
+
+RUN chmod +x /srv/kea/startup-dhcp.sh && \
+    chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
 
 EXPOSE 67/udp
 EXPOSE 67/tcp
@@ -54,17 +75,4 @@ EXPOSE 68/udp
 EXPOSE 68/tcp
 EXPOSE 8000/tcp
 EXPOSE 9091/tcp
-
-ENV DHCP_HELPER_DEBUG=false
-ENV DHCP_HELPER_INTERVAL_SECONDS=180
-
-# startup script for kea server
-COPY startup-dhcp.sh /
-# startup script for kea ctrl agent(api server)
-COPY startup-dhcp-ctrl-agent.sh /
-# copy network cidr script
-COPY get_network_cidr.py /
-# startup config for kea server
-COPY startup-config-dhcp4.conf /
-
 USER kea
