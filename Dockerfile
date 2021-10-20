@@ -69,10 +69,10 @@ COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 RUN chmod +x /srv/kea/startup-dhcp.sh && \
     chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
 
-EXPOSE 67/udp
-EXPOSE 67/tcp
-EXPOSE 68/udp
-EXPOSE 68/tcp
+EXPOSE 6067/udp
+EXPOSE 6067/tcp
+EXPOSE 6068/udp
+EXPOSE 6068/tcp
 EXPOSE 8000/tcp
 EXPOSE 9091/tcp
 USER kea
