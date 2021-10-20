@@ -8,7 +8,7 @@
 #   pullPolicy: "" (default = "IfNotPresent")
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
-serverPort: 6068
+serverPort: 6067
 cray-service:
   priorityClassName: "csm-high-priority-service"
   type: Deployment
@@ -52,10 +52,10 @@ cray-service:
           value: "180"
       ports:
         - name: kea-server-udp
-          containerPort: 6068
+          containerPort: 6067
           protocol: UDP
         - name: kea-server-tcp
-          containerPort: 6068
+          containerPort: 6067
           protocol: TCP
       livenessProbe:
         exec:
@@ -68,7 +68,7 @@ cray-service:
         timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
-          port: 6068
+          port: 6067
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
