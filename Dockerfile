@@ -61,7 +61,8 @@ RUN mkdir -p /srv/kea && \
 
 RUN chown -R kea /srv/kea && \
     chown -R kea /usr/local/kea && \
-    chown -R kea /cray-dhcp-kea-socket
+    chown -R kea /cray-dhcp-kea-socket && \
+    chown -R kea /usr/local/var/run/kea
 
 COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 
