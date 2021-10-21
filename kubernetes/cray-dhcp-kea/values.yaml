@@ -67,8 +67,11 @@ cray-service:
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
-        tcpSocket:
-          port: 6067
+        exec:
+          command:
+            - /bin/sh
+            - -c
+            - /srv/kea/health-check.sh
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
