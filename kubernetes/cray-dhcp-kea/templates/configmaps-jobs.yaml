@@ -15,3 +15,5 @@ data:
 {{ .Files.Get "files/startup-config-dhcp4.conf" | indent 4 }}
   cray-dhcp-kea-ctrl-agent.conf: |-
 {{ .Files.Get "files/cray-dhcp-kea-ctrl-agent.conf" | indent 4 }}
+  health-check.sh: |-
+{{ .Files.Get "files/health-check.sh" | indent 4 }}
