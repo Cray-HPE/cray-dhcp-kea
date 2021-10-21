@@ -20,11 +20,16 @@ pipeline {
     }
 
     stages {
-        stage("Build") {
+      stage("New") {
+        steps {
+          sh "ls"
+        }
+      }  
+      stage("Build") {
             parallel {
                 stage('Image') {
                     steps {
-                        sh "make image"
+                    echo "HELLO THERE!"
                     }
                 }
 
@@ -35,7 +40,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Publish ') {
             steps {
                 script {
