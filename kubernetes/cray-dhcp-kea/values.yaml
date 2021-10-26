@@ -66,6 +66,7 @@ cray-service:
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
+        exec:
           command:
             - /bin/sh
             - -c
