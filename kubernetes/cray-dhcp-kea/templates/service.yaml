@@ -16,7 +16,7 @@ spec:
     - name: kea-server-tcp-hmn
       port: 67
       protocol: TCP
-      targetPort: 67
+      targetPort: {{ .Values.serverPort }}
   selector:
     app.kubernetes.io/name: cray-dhcp-kea
 ---
@@ -37,7 +37,7 @@ spec:
     - name: kea-server-tcp-nmn
       port: 67
       protocol: TCP
-      targetPort: 67
+      targetPort: {{ .Values.serverPort }}
   selector:
     app.kubernetes.io/name: cray-dhcp-kea
 ---
@@ -58,7 +58,7 @@ spec:
     - name: kea-server-udp-hmn
       port: 67
       protocol: UDP
-      targetPort: 67
+      targetPort: {{ .Values.serverPort }}
   selector:
     app.kubernetes.io/name: cray-dhcp-kea
 ---
@@ -79,7 +79,7 @@ spec:
     - name: kea-server-udp-nmn
       port: 67
       protocol: UDP
-      targetPort: 67
+      targetPort: {{ .Values.serverPort }}
   selector:
     app.kubernetes.io/name: cray-dhcp-kea
 ---

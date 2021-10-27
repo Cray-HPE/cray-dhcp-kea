@@ -12,6 +12,7 @@ import socket
 import random
 import dns.resolver
 import dns.exception
+import shutil
 
 # dict for sls hardware entry
 # 'x3000c0s19b1n0' : {
@@ -94,6 +95,7 @@ smd_ethernet_interfaces = {}
 #     }
 # ]
 global_dhcp_reservations = []
+kea_path = '/usr/local/kea'
 
 kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {'Content-Type': 'application/json'}
@@ -152,7 +154,7 @@ class Nslookup:
 
 # import base config
 cray_dhcp_kea_dhcp4 = {}
-with open('/cray-dhcp-kea-dhcp4.conf.template') as file:
+with open('/srv/kea/cray-dhcp-kea-dhcp4.conf.template') as file:
     cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
 # query sls for cabinet subnets
@@ -188,6 +190,8 @@ nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
 dns_masq_hostname = os.environ['DNS_MASQ_HOSTNAME']
 dnsmasq_running = False
 system_name = ('nmn','hmn')
+global_dhcp_hostname_set = set()
+global_dhcp_ip_set = set()
 
 # getting time server ips
 time_servers_nmn = ''
@@ -298,11 +302,13 @@ if not dnsmasq_running:
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
                         if any(n in sls_networks[i]['Name'] for n in ('NMN','MTL','CAN')):
-                            subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['NMN']})
+                            subnet4_subnet['option-data'].append({'name': 'dhcp-server-identifier', 'data': nmn_loadbalancer_ip })
+                            subnet4_subnet['option-data'].append({'name': 'domain-name-servers', 'data': unbound_servers['NMN']})
                             subnet4_subnet['next-server'] = tftp_server_nmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_nmn).strip('[]') })
                             subnet4_subnet['option-data'].append({'name': 'ntp-servers', 'data': str(time_servers_nmn).strip('[]') })
                         if 'HMN' in sls_networks[i]['Name']:
+                            subnet4_subnet['option-data'].append({'name': 'dhcp-server-identifier', 'data': hmn_loadbalancer_ip})
                             subnet4_subnet['option-data'].append({'name': 'domain-name-servers','data': unbound_servers['HMN']})
                             subnet4_subnet['next-server'] = tftp_server_hmn
                             subnet4_subnet['option-data'].append({'name': 'time-servers', 'data': str(time_servers_hmn).strip('[]') })
@@ -525,13 +531,23 @@ for smd_mac_address in smd_ethernet_interfaces:
                                 if data['hw-address'] != '' and data['hostname'] != '':
                                     global_dhcp_reservations.append(data)
                                     debug('setting alias dhcp reservation for mac/hostname', data)
+    # notifying of duplicate ip detect
+    if 'ip-address' in data and data['ip-address'] in global_dhcp_ip_set:
+        print ('Duplicate ip found in data source', data)
+    # notifying of duplicate hostname detected
+    if 'ip-address' in data and data['hostname'] in global_dhcp_hostname_set:
+        print('Duplicate hostname found in data source', data)
 
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
-        # retaining the original dhcp reservation structure and flattened dhcp reservation list
-        # duplicate reservation data in kea config will be removed once 1.3.x is not in the field
-        global_dhcp_reservations.append(data)
-        debug("setting dhcp reservation with mac/ip/hostname", data)
+        # checking for duplicate hostname and/or ip
+        if data['ip-address'] not in global_dhcp_ip_set and data['hostname'] not in global_dhcp_hostname_set:
+            global_dhcp_ip_set.add(data['ip-address'])
+            global_dhcp_hostname_set.add(data['hostname'])
+            # retaining the original dhcp reservation structure and flattened dhcp reservation list
+            # duplicate reservation data in kea config will be removed once 1.3.x is not in the field
+            global_dhcp_reservations.append(data)
+            debug("setting dhcp reservation with mac/ip/hostname", data)
 
     # 2nd update scenario for updating SMD with IP address for ethernet interface
     if smd_mac_address in kea_ipv4_leases and 'ip-address' in kea_ipv4_leases[smd_mac_address] and smd_interface_ip == '':
@@ -608,11 +624,13 @@ for i in range(len(static_reservations)):
         record = global_dhcp_reservations[k]
         if 'ip-address' in record and static_reservations[i]['ip-address'] == record['ip-address']:
             dupe_ip = True
-            print('Global reservation check found duplicate ip address with', static_reservations[i], ' and ',record)
+            debug('Global reservation check found duplicate ip address with', static_reservations[i])
+            debug('and ',record)
             break
         if 'hostname' in record and static_reservations[i]['hostname'] == record['hostname']:
             dupe_hostname = True
-            print('Global reservation check found duplicate hostname with', static_reservations[i], ' and ',record)
+            debug('Global reservation check found duplicate hostname with', static_reservations[i])
+            debug('and ',record)
             break
     if not dupe_ip and not dupe_hostname:
         global_dhcp_reservations.append(static_reservations[i])
@@ -742,4 +760,17 @@ if os.environ['DHCP_HELPER_DEBUG'] == 'true':
 # log when config reload failed
 if resp.json()[0]['result'] != 0:
     print('Config reload failed')
+    print('Trying to load last known good config.')
     print(resp.json())
+    shutil.copyfile( kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', kea_path + '/cray-dhcp-kea-dhcp4.conf')
+    # 2nd reload config in kea from last known good config
+    keq_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
+    try:
+        resp = requests.post(url=kea_api_endpoint, json=keq_request_data, headers=kea_headers)
+        resp.raise_for_status()
+    except Exception as err:
+        on_error(err)
+    debug("logging config-reload", resp.json())
+else:
+    # create backup copy of last known good kea config
+    shutil.copyfile(kea_path + '/cray-dhcp-kea-dhcp4.conf', kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', )

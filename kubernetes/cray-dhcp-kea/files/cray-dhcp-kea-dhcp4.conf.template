@@ -22,7 +22,7 @@
       }
     ],
     "interfaces-config": {
-      "dhcp-socket-type": "raw",
+      "dhcp-socket-type": "udp",
       "interfaces": [
         "eth0"
       ]
