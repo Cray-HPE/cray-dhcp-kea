@@ -8,12 +8,13 @@
 #   pullPolicy: "" (default = "IfNotPresent")
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
+serverPort: 6067
 cray-service:
   priorityClassName: "csm-high-priority-service"
   type: Deployment
   nameOverride: cray-dhcp-kea
   podAnnotations:
-    traffic.sidecar.istio.io/excludeOutboundPorts: "67"
+    traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
   containers:
     cray-dhcp-kea:
       name: "cray-dhcp-kea"
@@ -22,7 +23,7 @@ cray-service:
       command:
         - "sh"
         - "-c"
-        - "/startup-dhcp.sh"
+        - "/srv/kea/startup-dhcp.sh"
       resources:
         limits:
           cpu: "6"
@@ -49,50 +50,36 @@ cray-service:
           value: "false"
         - name: DHCP_HELPER_INTERVAL_SECONDS
           value: "180"
-        - name: KEA_SOCKET
-          value: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
-        - name: KEA_EXPORTER_ADDRESS
-          value: "0.0.0.0"
-        - name: KEA_EXPORTER_PORT
-          value: "8080"
       ports:
         - name: kea-server-udp
-          containerPort: 67
+          containerPort: 6067
           protocol: UDP
         - name: kea-server-tcp
-          containerPort: 67
+          containerPort: 6067
           protocol: TCP
       livenessProbe:
         exec:
           command:
             - /bin/sh
             - -c
-            - /health-check.sh
+            - /srv/kea/health-check.sh
         initialDelaySeconds: 30
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
-        tcpSocket:
-          port: 67
+        exec:
+          command:
+            - /bin/sh
+            - -c
+            - /srv/kea/health-check.sh
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
-          readOnly: false
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
-          mountPath: /dhcp-helper.py
-          readOnly: true
-          subPath: dhcp-helper.py
-        - name: cray-dhcp-kea-jobs
-          mountPath: /cray-dhcp-kea-dhcp4.conf.template
-          readOnly: true
-          subPath: cray-dhcp-kea-dhcp4.conf.template
-        - name: cray-dhcp-kea-jobs
-          mountPath: /health-check.sh
-          readOnly: true
-          subPath: health-check.sh
+          mountPath: /srv/kea
     cray-dhcp-kea-ctrl-agent:
       name: "cray-dhcp-kea-ctrl-agent"
       image:
@@ -100,7 +87,7 @@ cray-service:
       command:
         - "sh"
         - "-c"
-        - "/startup-dhcp-ctrl-agent.sh"
+        - "/srv/kea/startup-dhcp-ctrl-agent.sh"
       env:
         - name: DHCP_CAHOST
           value: "0.0.0.0"
@@ -115,7 +102,7 @@ cray-service:
           command:
             - /bin/sh
             - -c
-            - /health-check.sh
+            - /srv/kea/health-check.sh
         initialDelaySeconds: 30
         periodSeconds: 60
         timeoutSeconds: 20
@@ -125,34 +112,19 @@ cray-service:
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
-        - name: cray-dhcp-kea-ctrl-agent-conf
-          mountPath: /cray-dhcp-kea-ctrl-agent.conf
-          readOnly: false
-          subPath: cray-dhcp-kea-ctrl-agent.conf
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
-          readOnly: false
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
-          mountPath: /health-check.sh
-          readOnly: true
-          subPath: health-check.sh
+          mountPath: /srv/kea
   volumes:
-    cray-dhcp-kea-ctrl-agent-conf:
-      name: cray-dhcp-kea-ctrl-agent-conf
-      configMap:
-        name: cray-dhcp-kea-ctrl-agent-conf
-    cray-dhcp-kea-db-init:
-      name: cray-dhcp-kea-db-init
-      configMap:
-        name: cray-dhcp-kea-db-init
     cray-dhcp-kea-socket:
       name: cray-dhcp-kea-socket
       emptyDir: {}
     cray-dhcp-kea-jobs:
       name: cray-dhcp-kea-jobs
       configMap:
-        defaultMode: 0700
+        defaultMode: 0777
         name: cray-dhcp-kea-jobs
   service:
     # service definitions for this chart defined manually
