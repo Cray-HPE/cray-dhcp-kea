@@ -3,6 +3,8 @@
 # Copyright 2014-2021 Hewlett Packard Enterprise Development LP
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import json
 import ipaddress
 import time
@@ -13,87 +15,88 @@ import random
 import dns.resolver
 import dns.exception
 import shutil
+from urllib.parse import urljoin
+import logging
 
-# dict for sls hardware entry
-# 'x3000c0s19b1n0' : {
-#     "Parent":"x3000c0s19b1",
-#     "Xname":"x3000c0s19b1n0",
-#     "Type":"comptype_node",
-#     "Class":"River",
-#     "TypeString":"Node",
-#     "ExtraProperties":{
-#          "Aliases":["nid000001"],
-#          "NID":1,
-#          "Role":"Compute"
-#     }
-# }
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
-# dict for lease database information
-# "lease-database": {
-#    "host": "cray-dhcp-kea-postgres",
-#    "name": "dhcp",
-#    "password": "xxxxxxxxxxx",
-#    "type": "postgresql",
-#    "user": "dhcpdsuser"
-# }
+class APIRequest(object):
+    """
 
-# array for subnet4 for cabinet subnets
-# [
-#   {
-#     "pools": {
-#       "pool": "10.254.0.26-10.254.3.205"
-#     },
-#     "option-data": {
-#       "name": "router",
-#       "data": "10.254.0.1"
-#     },
-#     "subnet": "10.254.0.0/22"
-#   }
-# ]
+    Example use:
+        api_request = APIRequest('http://cray-smd')
+        response = api_request('GET', '/hsm/v1/Inventory/EthernetInterfaces')
 
-# dict of the current IPv4 leases managed by Kea, each item in the format:
-# '08:08:08:08:08:08': {
-#     "cltt": 12345678,
-#     "duid": "42:42:42:42:42:42:42:42",
-#     "fqdn-fwd": false,
-#     "fqdn-rev": true,
-#     "hostname": "myhost.example.com.",
-#     "hw-address": "08:08:08:08:08:08",
-#     "iaid": 1,
-#     "ip-address": "10.0.0.20",
-#     "preferred-lft": 500,
-#     "state": 0,
-#     "subnet-id": 44,
-#     "type": "IA_NA",
-#     "valid-lft": 3600
-# }
+        print (f"response.status_code")
+        print (f"{response.status_code}")
+        print()
+        print (f"response.reason")
+        print (f"{response.reason}")
+        print()
+        print (f"response.text")
+        print (f"{response.text}")
+        print()
+        print (f"response.json")
+        print (f"{response.json()}")
+    """
+
+    def __init__(self, base_url, headers=None):
+        if not base_url.endswith('/'):
+            base_url += '/'
+        self._base_url = base_url
+
+        if headers is not None:
+            self._headers = headers
+        else:
+            self._headers = {}
+
+    def __call__(self, method, route, **kwargs):
+
+        if route.startswith('/'):
+            route = route[1:]
+
+        url = urljoin(self._base_url, route, allow_fragments=False)
+
+        headers = kwargs.pop('headers', {})
+        headers.update(self._headers)
+
+        retry_strategy = Retry(
+            total=10,
+            backoff_factor=0.1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            method_whitelist=["PATCH", "DELETE", "POST","HEAD", "GET", "OPTIONS"]
+        )
+
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        http = requests.Session()
+        http.mount("https://", adapter)
+        http.mount("http://", adapter)
+
+        response = http.request(method=method, url=url, headers=headers, **kwargs)
+
+        if 'data' in kwargs:
+            log.info(f"{method} {url} with headers:"
+                     f"{json.dumps(headers, indent=4)}"
+                     f"and data:"
+                     f"{json.dumps(kwargs['data'], indent=4)}")
+        elif 'json' in kwargs:
+            log.info(f"{method} {url} with headers:"
+                     f"{json.dumps(headers, indent=4)}"
+                     f"and JSON:"
+                     f"{json.dumps(kwargs['json'], indent=4)}")
+        else:
+            log.info(f"{method} {url} with headers:"
+                     f"{json.dumps(headers, indent=4)}")
+        log.info(f"Response to {method} {url} => {response.status_code} {response.reason}"
+                 f"{response.text}")
+
+        return response
+
 kea_ipv4_leases = {}
 
-# dict of network interfaces that SMD is aware of, each item in the format:
-# 'a4:bf:01:3e:c8:fa': {
-#     "ID": "a4bf013ec8fa",
-#     "Description": "System NIC 2",
-#     "MACAddress": "a4:bf:01:3e:c8:fa",
-#     "IPAddress": "",
-#     "LastUpdate": "2020-06-01T22:42:07.204895Z",
-#     "ComponentID": "x3000c0s19b1n0",
-#     "Type": "Node"
-# }
 smd_ethernet_interfaces = {}
 
-# dhcp reservation array structure
-# there will be two types of reservations.
-# [
-#     {
-#         "hostname": "Joey-Jo-Jo-Junior-Shabadoo",
-#         "hw-address": "1a:1b:1c:1d:1e:1f",
-#         "ip-address": "192.0.2.201"
-#     },
-#     {
-#        "hw-address": "01:11:22:33:44:55:66",
-#        "hostname": "rodimus-prime"
-#     }
-# ]
 global_dhcp_reservations = []
 kea_path = '/usr/local/kea'
 
@@ -158,19 +161,13 @@ with open('/srv/kea/cray-dhcp-kea-dhcp4.conf.template') as file:
     cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
 # query sls for cabinet subnets
-try:
-    resp = requests.get(url='http://cray-sls/v1/search/hardware?type=comptype_cabinet')
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
+sls_request = APIRequest('http://cray-sls')
+resp = sls_request('GET', '/v1/search/hardware?type=comptype_cabinet')
 sls_cabinets = resp.json()
 
 # query sls for network subnets
-try:
-    resp = requests.get(url='http://cray-sls/v1/networks')
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
+sls_request = APIRequest('http://cray-sls')
+resp = sls_request('GET', '/v1/networks')
 sls_networks = resp.json()
 
 # 1) ##############################################################################
@@ -383,11 +380,8 @@ cray_dhcp_kea_dhcp4['Dhcp4']['valid-lifetime'] = 3600
 
 #   a) Query Kea for DHCP leases, we'll just query the api
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
-try:
-    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
+kea_request = APIRequest(kea_api_endpoint)
+resp = kea_request('POST', '/',json=kea_request_data, headers=kea_headers)
 leases_response = resp.json()
 debug('kea leases response:', leases_response)
 if len(leases_response) > 0:
@@ -400,13 +394,10 @@ debug('kea ipv4 leases:', kea_ipv4_leases)
 # getting information from SMD for all ethernetInterfaces
 smd_all_ethernet_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
 debug('smd all ethernet url:', smd_all_ethernet_url)
-try:
-    smd_all_ethernet_resp = requests.get(url=smd_all_ethernet_url)
-    smd_all_ethernet_resp.raise_for_status()
-except Exception as err:
-    on_error(err)
-smd_all_ethernet = smd_all_ethernet_resp.json()
-debug('1st pass of smd_all_ethernet_resp', smd_all_ethernet_resp)
+smd_request = APIRequest('http://cray-smd')
+resp = smd_request('GET', '/hsm/v1/Inventory/EthernetInterfaces')
+smd_all_ethernet = resp.json()
+debug('1st pass of smd_all_ethernet_resp', smd_all_ethernet)
 
 found_new_interfaces = False
 # check to see if smd is aware of ips and macs in kea.  Potentially update SMD with new ethernet interfaces
@@ -434,15 +425,16 @@ for mac_address, mac_details in kea_ipv4_leases.items():
 
     if search_smd_mac == [] and search_smd_ip == []:
         # double check duplicate ip check
-        search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ip)
-        try:
-            search_smd_ip_resp = requests.get(url=search_smd_ip_url)
-            if search_smd_ip_resp.status_code == 404:
-                print('WARNING: Not found {}'.format(search_smd_ip_url))
-            else:
-                search_smd_ip_resp.raise_for_status()
-        except Exception as err:
-            on_error(err)
+#        search_smd_ip_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?IPAddress={}'.format(kea_ip)
+#        try:
+#            search_smd_ip_resp = requests.get(url=search_smd_ip_url)
+#            if search_smd_ip_resp.status_code == 404:
+#                print('WARNING: Not found {}'.format(search_smd_ip_url))
+#            else:
+#                search_smd_ip_resp.raise_for_status()
+#        except Exception as err:
+#            on_error(err)
+        search_smd_ip_resp = smd_request('GET', f'hsm/v1/Inventory/EthernetInterfaces?IPAddress={kea_ip}')
         # check the ip does not belong in the MTL subnet
         mtl_ip = False
         for cidr in mtl_cidr:
@@ -455,20 +447,12 @@ for mac_address, mac_details in kea_ipv4_leases.items():
             update_smd_url = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
             post_data = {'MACAddress': smd_mac_format, 'IPAddress': kea_ip}
             print ('updating SMD with {}'.format(post_data))
-            try:
-                resp = requests.post(url=update_smd_url, json=post_data)
-                resp.raise_for_status()
-            except Exception as err:
-                on_error(err)
+            resp = smd_request('POST', 'hsm/v1/Inventory/EthernetInterfaces', json=post_data)
 #   b) Query SMD to get all network interfaces it knows about
 
 # refresh SMD ethernet interface data if dhcp-helper posts a new ethernet interface
 if found_new_interfaces:
-    try:
-        resp = requests.get(url='http://cray-smd/hsm/v1/Inventory/EthernetInterfaces')
-        resp.raise_for_status()
-    except Exception as err:
-        on_error(err)
+    resp = smd_request('GET', 'hsm/v1/Inventory/EthernetInterfaces')
     smd_ethernet_interfaces_response = resp.json()
 else:
     # use the same data from the first query to SMD ethernet table when dhcp-helper
@@ -483,11 +467,7 @@ for interface in smd_ethernet_interfaces_response:
 # get all hardware info from SLS
 sls_all_hardware_url = 'http://cray-sls/v1/hardware'
 debug('sls all hardware url:', sls_all_hardware_url)
-try:
-    resp = requests.get(url=sls_all_hardware_url)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
+resp = sls_request('GET', 'v1/hardware')
 sls_all_hardware = resp.json()
 for smd_mac_address in smd_ethernet_interfaces:
     reservation = {}
@@ -537,7 +517,35 @@ for smd_mac_address in smd_ethernet_interfaces:
     # notifying of duplicate hostname detected
     if 'ip-address' in data and data['hostname'] in global_dhcp_hostname_set:
         print('Duplicate hostname found in data source', data)
-
+#        print ('URL: http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + data['hostname'])
+        resp = smd_request('GET','hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + data['hostname'])
+        repair_data = resp.json()
+#        print(repair_data)
+        for i in range(len(repair_data)):
+            if repair_data[i]['IPAddress'] == '':
+                print ('repair_data: Deleting entry with no ip')
+                del repair_data[i]
+        print(repair_data)
+        if len(repair_data) != 2:
+            print('Automated repair failed')
+            break
+        else:
+            date0 = datetime.datetime.fromisoformat(repair_data[0]['LastUpdate'][:-1]))
+            date1 = datetime.datetime.fromisoformat(repair_data[1]['LastUpdate'][:-1]))
+            if date0 < date1:
+                print('URL: http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + repair_data[0]['ID'])
+                patch_data = {'IPAddress': ''}
+                resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + repair_data[0]['ID'], json=patch_data)
+#               print('URL: http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + repair_data[1]['ID'])
+                patch_data = {'IPAddress': repair_data[0]['IPAddress']}
+                resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + repair_data[1]['ID'], json=patch_data)
+            else:
+#                print('URL: http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + repair_data[1]['ID'])
+                patch_data = {'IPAddress': ''}
+                resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + repair_data[1]['ID'], json=patch_data)
+#                print('URL: http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + repair_data[0]['ID'])
+                patch_data = {'IPAddress': repair_data[1]['IPAddress']}
+                resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + repair_data[0]['ID'], json=patch_data)
     # submit dhcp reservation with hostname, mac and ip
     if 'ip-address' in data and data['hw-address'] != '' and data['ip-address'] != '' and data['hostname'] != '':
         # checking for duplicate hostname and/or ip
@@ -664,12 +672,8 @@ for i in range(len(global_dhcp_reservations)):
 
 # refresh kea active lease list as a flattened list
 kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
-try:
-    resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
-leases_response = resp.json()
+response = kea_request('POST', '/', json=kea_request_data, headers=kea_headers)
+leases_response = response.json()
 debug('refresh of kea leases response:', leases_response)
 leased_ips_kea = []
 if len(leases_response) > 0:
@@ -737,12 +741,8 @@ with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
     json.dump(cray_dhcp_kea_dhcp4, outfile)
 
 # reload config in kea from conf file written
-keq_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
-try:
-    resp = requests.post(url=kea_api_endpoint, json=keq_request_data, headers=kea_headers)
-    resp.raise_for_status()
-except Exception as err:
-    on_error(err)
+kea_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
+resp = kea_request('POST', '/', json=kea_request_data, headers=kea_headers)
 debug("logging config-reload",resp.json())
 
 if os.environ['DHCP_HELPER_DEBUG'] == 'true':
@@ -751,11 +751,7 @@ if os.environ['DHCP_HELPER_DEBUG'] == 'true':
     time.sleep(10)
     # check active leases
     kea_request_data = {'command': 'lease4-get-all', 'service': ['dhcp4']}
-    try:
-        resp = requests.post(url=kea_api_endpoint, json=kea_request_data, headers=kea_headers)
-        resp.raise_for_status()
-    except Exception as err:
-        on_error(err)
+    resp = kea_request('POST', '/',json=kea_request_data, headers=kea_headers)
     debug("logging active leases",resp.json())
 # log when config reload failed
 if resp.json()[0]['result'] != 0:
@@ -765,11 +761,7 @@ if resp.json()[0]['result'] != 0:
     shutil.copyfile( kea_path + '/cray-dhcp-kea-dhcp4.conf.bak', kea_path + '/cray-dhcp-kea-dhcp4.conf')
     # 2nd reload config in kea from last known good config
     keq_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
-    try:
-        resp = requests.post(url=kea_api_endpoint, json=keq_request_data, headers=kea_headers)
-        resp.raise_for_status()
-    except Exception as err:
-        on_error(err)
+    resp = kea_request('POST', '/', json=kea_request_data, headers=kea_headers)
     debug("logging config-reload", resp.json())
 else:
     # create backup copy of last known good kea config
