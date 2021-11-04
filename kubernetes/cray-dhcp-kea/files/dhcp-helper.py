@@ -721,8 +721,8 @@ for record in bss_host_records:
                 log.info(f'Patch Data:')
                 log.info(f"MAC:{static_mac}, IP:{static_ip}")
                 patch_data = {'IPAddress': static_ip}
-                # resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + static_mac.replace(':', ''), json=patch_data)
-                print(f"resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + {static_mac.replace(':', '')}, json={patch_data})")
+                resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + static_mac.replace(':', ''), json=patch_data)
+                log.debug(f"resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + {static_mac.replace(':', '')}, json={patch_data})")
 
 # loading static reservations data
 static_reservations = []
