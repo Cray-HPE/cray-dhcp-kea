@@ -250,6 +250,10 @@ for i in range(1,4):
                             break
             print('did not get ip for ncn-w00' + str(i) + ' from SLS.')
 
+# there are rare instances where we do not get all 3 time servers
+time_servers_nmn = time_servers_nmn.replace(',,',',')
+time_servers_hmn = time_servers_hmn.replace(',,',',')
+
 debug('time servers hmn',time_servers_nmn)
 debug('time servers nmn',time_servers_hmn)
 
@@ -725,15 +729,15 @@ for record in bss_host_records:
             log.info(f"static_mac stripped of colons {static_mac.replace(':', '').lower()}")
             log.info(f'{len(resp.json())}')
             if len(resp.json()) == 7 and static_mac != '':
-                if resp.json()['IPAddress'] != ''
+                if resp.json()['IPAddress'] != '':
                     log.info(f'Patch Data:')
                     log.info(f"MAC:{static_mac}, IP:{static_ip}")
-                    log.info(f'Patch URL: cray-smd/hsm/v1/Inventory/EthernetInterfaces/{static_mac.replace(':', '')}')
+                    log.info(f"Patch URL: cray-smd/hsm/v1/Inventory/EthernetInterfaces/{static_mac.replace(':', '')}")
                     patch_data = {'IPAddress': static_ip}
                     resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + static_mac.replace(':', ''), json=patch_data)
                 else:
                     log.warning(f'Tried to update IP for alias:{alias}, alias_network: {alias_network}, ip:{static_ip},MAC:{static_mac}')
-                    log.warning(f'Entry already had IP: {resp.json()['IPAddress']}')
+                    log.warning(f"Entry already had IP: {resp.json()['IPAddress']}")
 
 
 
