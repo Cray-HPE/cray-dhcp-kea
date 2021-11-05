@@ -21,7 +21,7 @@ import datetime
 import re
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -96,7 +96,7 @@ class APIRequest(object):
         else:
             log.debug(f"{method} {url} with headers:"
                      f"{json.dumps(headers, indent=4)}")
-        log.info(f"Response to {method} {url} => {response.status_code} {response.reason}"
+        log.debug(f"Response to {method} {url} => {response.status_code} {response.reason}"
                  f"{response.text}")
 
         return response
@@ -664,6 +664,7 @@ for record in bss_host_records:
                     if 'ExtraProperties' in sls_record:
                         #print(f"{sls_record['ExtraProperties']['Aliases'][0]}")
                         if 'Aliases' in sls_record['ExtraProperties'] and sls_record['ExtraProperties']['Aliases'][0] == alias:
+                            bond0_first_interface = ''
                             xname = sls_record['Xname']
                             xname_bmc = sls_record['Parent']
                             log.debug(f'Alias to xname found {static_ip} {alias} and {xname} {xname_bmc}')
@@ -672,7 +673,8 @@ for record in bss_host_records:
                             log.debug(f'bss_params:')
                             log.debug(f'{bss_params}')
                             for param in bss_params:
-                                log.debug(f'param loop for first bond interface')
+                                log.debug(f'param loop for first bond interface csm-1.0')
+                                # csm-1.0
                                 if 'bond=bond0' in param:
                                     log.debug(f'param: {param}')
                                     bond0_interfaces = param.split(':')
@@ -687,9 +689,19 @@ for record in bss_host_records:
                                     temp_string = param.split(':',1)
                                     bond0_first_interface_mac = temp_string[1]
                                     log.debug(f'{bond0_first_interface_mac}')
+                            #csm-1.2
+                            if bond0_first_interface == '':
+                                for param in bss_params:
+                                    log.debug(f'param loop for first bond interface csm-1.2+')
+                                    if 'ifname=mgmt0' in param:
+                                        log.debug(f'param: {param}')
+                                        interface_mgmt0 = param.split(':', 1)
+                                        log.debug(f'bond0_interfaces: {interface_mgmt0}')
+                                        bond0_first_interface_mac = interface_mgmt0[1]
+                                        log.debug(f'bond0_first_interface_mac:{bond0_first_interface_mac}')
                 static_mac = bond0_first_interface_mac
                 log.info(f'the data for NMN alias:{alias}, ip:{static_ip}, xname:{xname}, MAC:{static_mac}')
-            if 'hmn' in alias_network:
+            if 'hmn' in alias_network and 'ncn-m001' not in alias:
                 # get xname from alias
                 for sls_record in sls_all_hardware:
                     if 'ExtraProperties' in sls_record:
@@ -698,31 +710,32 @@ for record in bss_host_records:
                             xname_bmc = sls_record['Parent']
                 resp = smd_api('GET', 'hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + xname_bmc)
                 smd_query = resp.json()
-                # hpe hardware
-                if len(smd_query) == 1:
-                    static_mac = smd_entry['MACAddress']
-                # gigabyte or intel hardware
-                if len(smd_query) > 1:
-                    max_int = 0
-                    for smd_entry in smd_query:
-                        if 'usb' not in smd_entry['Description'].lower():
-                            hex_to_int = int(smd_entry['ID'][-2:],16)
-                            if hex_to_int > max_int:
-                                max_int = hex_to_int
-                    for smd_entry in smd_query:
-                        hex_to_int = int(smd_entry['ID'][-2:], 16)
-                        if max_int == hex_to_int:
-                            static_mac = smd_entry['MACAddress']
+                max_int = 0
+                for i in range(len(smd_query)):
+                    if 'usb' not in smd_query[0]['Description'].lower():
+                        hex_to_int = int(smd_query[i]['ID'][-2:],16)
+                        if hex_to_int > max_int:
+                            max_int = hex_to_int
+                for i in range(len(smd_query)):
+                    hex_to_int = int(smd_query[i]['ID'][-2:], 16)
+                    if max_int == hex_to_int:
+                        static_mac = smd_query[i]['MACAddress']
                 log.info(f'the data for BMC alias:{alias}, ip:{static_ip}, xname:{xname_bmc}, MAC:{static_mac}')
             resp = smd_api('GET', 'hsm/v1/Inventory/EthernetInterfaces/' + static_mac.replace(':', '').lower())
-            log.debug(f"static_mac stripped of colons {static_mac.replace(':', '').lower()}")
-            log.debug(f'{len(resp.json())}')
+            log.info(f"static_mac stripped of colons {static_mac.replace(':', '').lower()}")
+            log.info(f'{len(resp.json())}')
             if len(resp.json()) == 7 and static_mac != '':
-                log.info(f'Patch Data:')
-                log.info(f"MAC:{static_mac}, IP:{static_ip}")
-                patch_data = {'IPAddress': static_ip}
-                resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + static_mac.replace(':', ''), json=patch_data)
-                log.debug(f"resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + {static_mac.replace(':', '')}, json={patch_data})")
+                if resp.json()['IPAddress'] != ''
+                    log.info(f'Patch Data:')
+                    log.info(f"MAC:{static_mac}, IP:{static_ip}")
+                    log.info(f'Patch URL: cray-smd/hsm/v1/Inventory/EthernetInterfaces/{static_mac.replace(':', '')}')
+                    patch_data = {'IPAddress': static_ip}
+                    resp = smd_api('PATCH', 'hsm/v1/Inventory/EthernetInterfaces/' + static_mac.replace(':', ''), json=patch_data)
+                else:
+                    log.warning(f'Tried to update IP for alias:{alias}, alias_network: {alias_network}, ip:{static_ip},MAC:{static_mac}')
+                    log.warning(f'Entry already had IP: {resp.json()['IPAddress']}')
+
+
 
 # loading static reservations data
 static_reservations = []
