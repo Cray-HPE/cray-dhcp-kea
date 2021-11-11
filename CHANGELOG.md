@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 - support for shasta-1.3 that used dnsmasq
-- removed placeholder dhcp leases
 ### Fixed### Security
 
 ## [0.8.8] - 2021-10-27
