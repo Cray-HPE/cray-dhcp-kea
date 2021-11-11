@@ -741,8 +741,6 @@ unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
 unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
 nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
-dns_masq_hostname = (os.environ['DNS_MASQ_HOSTNAME'])
-#time_server_networks = os.environ[TIME_SERVER_NETWORKS]
 
 # setup kea configs
 kea_path = '/usr/local/kea'
