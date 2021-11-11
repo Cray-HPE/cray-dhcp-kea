@@ -32,8 +32,6 @@ cray-service:
           cpu: "2"
           memory: "1Gi"
       env:
-        - name: DNS_MASQ_HOSTNAME
-          value: "ncn-w001"
         - name: TFTP_SERVER_NMN
           value: "10.92.100.60"
         - name: TFTP_SERVER_HMN
@@ -46,10 +44,8 @@ cray-service:
           value: "10.92.100.222"
         - name: HMN_LOADBALANCER_IP
           value: "10.94.100.222"
-        - name: DHCP_HELPER_DEBUG
-          value: "false"
         - name: DHCP_HELPER_INTERVAL_SECONDS
-          value: "180"
+          value: "120"
       ports:
         - name: kea-server-udp
           containerPort: 6067
