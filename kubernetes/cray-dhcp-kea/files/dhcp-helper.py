@@ -210,6 +210,10 @@ def get_kea_dhcp4_leases():
 
     return resp.json()
 
+def create_index_kea_dhcp4_lease(kea_dhcp4_leases):
+    kea_dhcp4_by_mac = {}
+    for entry in kea_dhcp4_leases:
+        kea_dhcp4_by_mac[entry['hw-address']] = entry
 
 def get_sls_networks():
     # get information from SLS networks
@@ -523,8 +527,8 @@ def compare_smd_kea_information(kea_dhcp4_leases, main_smd_ip_set):
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_alias_to_xname, sls_hardware):
 
-    indexed_smd_data = create_index_smd_ethernet_interfaces(smd_ethernet_interfaces)
-    sls_data_by_xname = create_index_sls_all_hardware(sls_hardware)
+    #indexed_smd_data = create_index_smd_ethernet_interfaces(smd_ethernet_interfaces)
+    #sls_data_by_xname = create_index_sls_all_hardware(sls_hardware)
 
     # create dynamic set of sets
     list_of_subnet_sets = {}
@@ -694,6 +698,36 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, n
 
     return cray_dhcp_kea_dhcp4
 
+def create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases):
+
+    place_holder_leases = []
+    kea_active_ip_set = set()
+
+    for lease in kea_dhcp4_leases[0]['arguments']['leases']:
+        if lease['ip-address'] not in kea_active_ip_set:
+            kea_active_ip_set.add(lease['ip-address'])
+
+
+    for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
+        for j in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'])):
+            place_holder_ip = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['ip-address']
+            place_holder_hostname = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['hostname']
+            place_holder_mac = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['hw-address']
+            if place_holder_ip not in kea_active_ip_set:
+                place_holder_leases.append({'hostname': place_holder_hostname,'hw-address': place_holder_mac, 'ip-address':place_holder_ip})
+
+    if len(place_holder_leases) > 0:
+        for i in range(len(place_holder_leases)):
+            kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'], 'arguments': {}}
+            kea_lease4_add_data['arguments'] = place_holder_leases[i]
+            log.debug(f'http post to kea api '
+                      f'{kea_lease4_add_data}')
+            resp = kea_api('POST', '/', json=kea_lease4_add_data, headers=kea_headers)
+
+            if resp.status_code != 200 or resp.json()[0]['result'] != 0:
+                log.warning(f'Placeholder lease creation failed'
+                          f'{resp.json()[0]}')
+
 
 def write_config(cray_dhcp_kea_dhcp4):
     # write config to disk
@@ -813,5 +847,9 @@ def main():
 
     # reload kea config via api call
     reload_config()
+
+    # create placeholder leases
+    create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases)
+
 if __name__ == "__main__":
     main()
