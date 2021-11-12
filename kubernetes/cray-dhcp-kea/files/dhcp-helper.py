@@ -529,9 +529,6 @@ def compare_smd_kea_information(kea_dhcp4_leases, main_smd_ip_set):
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_alias_to_xname, sls_hardware):
 
-    #indexed_smd_data = create_index_smd_ethernet_interfaces(smd_ethernet_interfaces)
-    #sls_data_by_xname = create_index_sls_all_hardware(sls_hardware)
-
     # create dynamic set of sets
     list_of_subnet_sets = {}
 
