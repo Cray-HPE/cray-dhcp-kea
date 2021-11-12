@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.10] - 2021-11-12
+### Added
+- CASMNET-946 - add feature to dhcp-helper.py in kea to create dhcp reservations for static ips from cloud-init data
+- CASMNET-877 - automation script to update DHCP/DNS/HMS data after hardware swap
+- CASMTRIAGE-2615 - fixed scenario where time server lookup created malformed string
+- CASMNET-947 - add dhcp-helper.py feature in kea to handle multiple dhcp reservations per MAC in different subnets
+- CASMNET-706 - add global reservation duplicate checking when reading from SMD ethernet table
+- CASMNET-1006 - Kea should reserve NCN IPs (including NCNs that are added or replaced post-install)
+
+### Changed
+- CASMNET-758 - Refactor dhcp-helper and improve performance 
+- CASMNET-994 - add python logger to scripts in cray-dhcp-kea
+### Deprecated
+### Removed
+- support for shasta-1.3 that used dnsmasq
+### Fixed### Security
+
 ## [0.8.8] - 2021-10-27
 ### Added
 - CASMNET-972 - added function to rollback to last known good config if bad config was generated
