@@ -289,8 +289,10 @@ def load_static_ncn_ips(sls_hardware):
     # get ncn and ncn-bmc ip info
     resp = bss_api('GET', '/boot/v1/bootparameters?name=Global')
     bss_data = resp.json()
-    bss_host_records = bss_data[0]['cloud-init']['meta-data']['host_records']
-    log.debug(f'bss_host_records')
+    if 'cloud-init' in bss_data[0]:
+        if 'meta-data' in bss_data[0]['cloud-init']:
+            if 'host-records' in bss_data[0]['cloud-init']['meta-data']:
+                 bss_host_records = bss_data[0]['cloud-init']['meta-data']['host_records']    log.debug(f'bss_host_records')
     log.debug(f'{json.dumps(bss_host_records)}')
     ncn_data = {}
     alias_to_mac = {}
