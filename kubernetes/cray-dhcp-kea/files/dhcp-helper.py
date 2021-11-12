@@ -210,10 +210,12 @@ def get_kea_dhcp4_leases():
 
     return resp.json()
 
+
 def create_index_kea_dhcp4_lease(kea_dhcp4_leases):
     kea_dhcp4_by_mac = {}
     for entry in kea_dhcp4_leases:
         kea_dhcp4_by_mac[entry['hw-address']] = entry
+
 
 def get_sls_networks():
     # get information from SLS networks
@@ -799,19 +801,19 @@ def main():
     smd_ethernet_interfaces = {}
     all_alias_to_xname = {}
 
-    # wait for kea api to be up
+    # make sure kea api is up
     check_kea_api()
 
-    # query SLS network data
+    # query SLS for network data
     sls_networks = get_sls_networks()
 
-    # query SLS hardware data
+    # query SLS for hardware data
     sls_hardware = get_sls_hardware()
 
-    # query SMD EthernetInterfaces data
+    # query SMD for EthernetInterfaces data
     smd_ethernet_interfaces = get_smd_ethernet_interfaces()
 
-    # query Kea dhcp4 leases
+    # query Kea for dhcp4 leases
     kea_dhcp4_leases = get_kea_dhcp4_leases()
 
     # get templated base kea configs
@@ -836,7 +838,7 @@ def main():
     # check for any entries or ips kea has and update smd
     compare_smd_kea_information(kea_dhcp4_leases, main_smd_ip_set)
 
-    # load bss cloud init ncn data
+    # load bss cloud-init ncn data into SMD EthernetInterfaces
     load_static_ncn_ips(sls_hardware)
 
     # create per dhcp reservations per subnet
