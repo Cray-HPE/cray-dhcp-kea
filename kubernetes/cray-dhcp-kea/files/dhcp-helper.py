@@ -539,9 +539,6 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, n
         list_of_subnet_sets[ip_var] = set()
         list_of_subnet_sets[hostname_var] = set()
         list_of_subnet_sets[mac_var] = set()
-        #### alternate method
-        # globals()[f"hostname_{i}"] = set()
-        # globals()[f"ip_{i}"] = set()
 
     for record in smd_ethernet_interfaces:
         #subnet_index = ''
