@@ -467,7 +467,7 @@ def load_static_ncn_ips(sls_hardware):
                         log.info(f"MAC:{post_mac}, IP:{post_ip}")
                         log.info(f"Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
                         post_data = {'MACAddress': post_mac, 'Description': post_description, 'IPAddresses': post_ip}
-                        resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=patch_data)
+                        resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=post_data)
                         log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',json={json.dumps(post_data)})")
                         log.info(f'{resp.json}')
                 # log any errors after trying to update SMD
