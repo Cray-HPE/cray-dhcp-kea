@@ -291,10 +291,10 @@ def load_static_ncn_ips(sls_hardware):
     bss_data = resp.json()
     if 'cloud-init' in bss_data[0]:
         if 'meta-data' in bss_data[0]['cloud-init']:
-            if 'host-records' in bss_data[0]['cloud-init']['meta-data']:
+            if 'host_records' in bss_data[0]['cloud-init']['meta-data']:
                 bss_host_records = bss_data[0]['cloud-init']['meta-data']['host_records']
-                log.debug(f'bss_host_records')
-                log.debug(f'{json.dumps(bss_host_records)}')
+                log.info(f'bss_host_records')
+                log.info(f'{json.dumps(bss_host_records)}')
     ncn_data = {}
     alias_to_mac = {}
     alias_set = set()
@@ -431,39 +431,51 @@ def load_static_ncn_ips(sls_hardware):
     # update smd
     for alias in ncn_data:
         update_smd = True
-        patch_ip = []
-        patch_mac = ''
+        update_ip = []
+        update_mac = ''
         patch_description = ''
         if 'ncn-m001_bmc' not in alias:
             # making sure nmn is the first entry for nodes but not bmcs
             if 'bmc' not in alias:
-                patch_ip.append({'IPAddress': ncn_data[alias]['nmn']})
+                update_ip.append({'IPAddress': ncn_data[alias]['nmn']})
             for network in ncn_data[alias]:
                 # skip nmn ip address
                 if network != 'nmn':
-                    patch_ip.append({'IPAddress': ncn_data[alias][network]})
-            patch_mac = alias_to_mac[alias]
-            if patch_mac == {}:
+                    update_ip.append({'IPAddress': ncn_data[alias][network]})
+            update_mac = alias_to_mac[alias]
+            if update_mac == {}:
                 update_smd = False
             if update_smd:
-                resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces/' + patch_mac.replace(':', '').lower())
-                log.info(f"static_mac stripped of colons {patch_mac.replace(':', '').lower()}")
+                resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces/' + update_mac.replace(':', '').lower())
+                log.info(f"static_mac stripped of colons {update_mac.replace(':', '').lower()}")
                 log.info(f'{len(resp.json())}')
                 if 'kea' not in resp.json()['Description']:
-                    if patch_mac != '' and resp.status_code == 200:
-                            patch_description = resp.json()['Description'] + ' - kea'
-                            log.info(f'Patch Data:')
-                            log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
-                            log.info(
-                                f"Patch URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
-                            patch_data = {'MACAddress':patch_mac,'Description': patch_description, 'IPAddresses': patch_ip}
-                            resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + patch_mac.replace(':', ''),json=patch_data)
-                            log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac.replace(':', '')},json={json.dumps(patch_data)})")
-                            log.info(f'{resp.json}')
-                    else:
-                            log.warning(f'Tried to update IP for alias:{alias}, patch_ip: {patch_ip} MAC:{patch_mac}')
-                            log.warning(f"Entry already had IP: {resp.json()['IPAddress']}")
-                    log.info(f'Patch data: alias:{alias}, patch_ip: {patch_ip} MAC:{patch_mac}, description: {patch_description}')
+                    if update_mac != '' and resp.status_code == 200:
+                        patch_mac = update_mac
+                        patch_description = resp.json()['Description'] + ' - kea'
+                        log.info(f'Patch Data:')
+                        log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
+                        log.info(f"Patch URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
+                        patch_data = {'MACAddress':patch_mac,'Description': patch_description, 'IPAddresses': patch_ip}
+                        resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + patch_mac.replace(':', ''),json=patch_data)
+                        log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac.replace(':', '')},json={json.dumps(patch_data)})")
+                        log.info(f'{resp.json}')
+                    if update_mac != '' and resp.status_code == 404:
+                        post_mac = update_mac
+                        post_description = 'Bond0 - kea'
+                        log.info(f'Post Data:')
+                        log.info(f"MAC:{post_mac}, IP:{post_ip}")
+                        log.info(f"Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
+                        post_data = {'MACAddress': post_mac, 'Description': post_description, 'IPAddresses': post_ip}
+                        resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=patch_data)
+                        log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',json={json.dumps(post_data)})")
+                        log.info(f'{resp.json}')
+                # log any errors after trying to update SMD
+                # if status code is not 200 after the patch or post, update did not work
+                if resp.status_code != 200:
+                    log.error(f"Error trying to update SMD with {update_mac}")
+
+
 
 def compare_smd_kea_information(kea_dhcp4_leases, main_smd_ip_set):
 
@@ -531,7 +543,6 @@ def compare_smd_kea_information(kea_dhcp4_leases, main_smd_ip_set):
 
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_alias_to_xname, sls_hardware):
-
 
     # create dynamic set of sets
     list_of_subnet_sets = {}
