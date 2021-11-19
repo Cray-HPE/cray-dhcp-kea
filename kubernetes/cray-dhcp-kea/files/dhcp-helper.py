@@ -448,31 +448,33 @@ def load_static_ncn_ips(sls_hardware):
             if update_smd:
                 resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces/' + update_mac.replace(':', '').lower())
                 log.info(f"static_mac stripped of colons {update_mac.replace(':', '').lower()}")
-                log.info(f'{len(resp.json())}')
-                if 'kea' not in resp.json()['Description']:
-                    if update_mac != '' and resp.status_code == 200:
-                        patch_mac = update_mac
-                        patch_description = resp.json()['Description'] + ' - kea'
-                        log.info(f'Patch Data:')
-                        log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
-                        log.info(f"Patch URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
-                        patch_data = {'MACAddress':patch_mac,'Description': patch_description, 'IPAddresses': patch_ip}
-                        resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + patch_mac.replace(':', ''),json=patch_data)
-                        log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac.replace(':', '')},json={json.dumps(patch_data)})")
-                        log.info(f'{resp.json}')
-                    if update_mac != '' and resp.status_code == 404:
-                        post_mac = update_mac
-                        post_description = 'Bond0 - kea'
-                        log.info(f'Post Data:')
-                        log.info(f"MAC:{post_mac}, IP:{post_ip}")
-                        log.info(f"Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
-                        post_data = {'MACAddress': post_mac, 'Description': post_description, 'IPAddresses': post_ip}
-                        resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=patch_data)
-                        log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',json={json.dumps(post_data)})")
-                        log.info(f'{resp.json}')
+                if 'Description' in resp.json() and resp.status_code == 200:
+                    if 'kea' not in resp.json()['Description']:
+                        if update_mac != '':
+                            patch_mac = update_mac
+                            patch_ip = update_ip
+                            patch_description = resp.json()['Description'] + 'bond0 - kea'
+                            log.info(f'Patch Data:')
+                            log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
+                            log.info(f"Patch URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
+                            patch_data = {'MACAddress':patch_mac,'Description': patch_description, 'IPAddresses': patch_ip}
+                            resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + patch_mac.replace(':', ''),json=patch_data)
+                            log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac.replace(':', '')},json={json.dumps(patch_data)})")
+                            log.info(f'{resp.json}')
+                if update_mac != '' and resp.status_code == 404:
+                    post_mac = update_mac
+                    post_ip = update_ip
+                    post_description = 'bond0 - kea'
+                    log.info(f'Post Data:')
+                    log.info(f"MAC:{post_mac}, IP:{post_ip}")
+                    log.info(f"Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
+                    post_data = {'MACAddress': post_mac, 'Description': post_description, 'IPAddresses': post_ip}
+                    resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=post_data)
+                    log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',json={json.dumps(post_data)})")
+                    log.info(f'{resp.json}')
                 # log any errors after trying to update SMD
                 # if status code is not 200 after the patch or post, update did not work
-                if resp.status_code != 200:
+                if update_mac != '' and resp.status_code != 200 and resp.status_code != 201:
                     log.error(f"Error trying to update SMD with {update_mac}")
 
 
@@ -496,7 +498,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, main_smd_ip_set):
                 resp = smd_api('POST','/hsm/v2/Inventory/EthernetInterfaces',json=post_data)
                 log.info(f'Added {post_data}')
 
-                if resp.status_code != 200:
+                if resp.status_code != 200 and resp.status_code != 201:
                     log.error(f'Post to SMD EthernetInterfaces did not succeed')
                     log.error(f'status_code: {resp.status_code}')
                     log.error(f'{resp.json}')
