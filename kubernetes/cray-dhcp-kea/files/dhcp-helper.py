@@ -378,12 +378,12 @@ def load_static_ncn_ips(sls_hardware):
                                         log.debug(f'{param}')
                                         temp_string = param.split(':', 1)
                                         static_mac = temp_string[1]
-                                        log.debug(f'{bond0_first_interface_mac}')
+                                        alias_to_mac[alias] = static_mac
                                         log.info(f'the data for NMN alias:{alias}, xname:{xname}, MAC:{static_mac}')
                                         break
                                 # csm-1.2 and if we didn't find the first mac of bond0
                                 # we assume the interface name is mgmt0
-                                if bond0_first_interface == '' and static_mac == '':
+                                if static_mac == '':
                                     for param in bss_params:
                                         log.debug(f'param loop for first bond interface csm-1.2+')
                                         if 'ifname=mgmt0' in param:
@@ -772,7 +772,7 @@ def reload_config():
 
 # globbals
 log = logging.getLogger(__name__)
-log.setLevel(logging.WARNING)
+log.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)

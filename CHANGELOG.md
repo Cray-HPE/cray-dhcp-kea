@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.12] - 2021-11-30
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMNET-1052 - fix csm-1.0 bss data support
+### Security
+
 ## [0.9.11] - 2021-11-22
 ### Added
 ### Changed
@@ -12,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMNET-1037 - Update dhcp-helper detect PATCH or POST to SMD when updating data for NCNs
 ### Deprecated
 ### Removed
-### Fixed### Security
+### Fixed
+### Security
 
 ## [0.9.10] - 2021-11-12
 ### Added
@@ -29,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 - support for shasta-1.3 that used dnsmasq
-### Fixed### Security
+### Fixed
+### Security
 
 
 ## [0.9.8] - 2021-10-27
