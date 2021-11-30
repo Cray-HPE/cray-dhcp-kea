@@ -453,7 +453,7 @@ def load_static_ncn_ips(sls_hardware):
                         if update_mac != '':
                             patch_mac = update_mac
                             patch_ip = update_ip
-                            patch_description = resp.json()['Description'] + 'bond0 - kea'
+                            patch_description = resp.json()['Description'] + '- kea'
                             log.info(f'Patch Data:')
                             log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
                             log.info(f"Patch URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
@@ -464,7 +464,7 @@ def load_static_ncn_ips(sls_hardware):
                 if update_mac != '' and resp.status_code == 404:
                     post_mac = update_mac
                     post_ip = update_ip
-                    post_description = 'bond0 - kea'
+                    post_description = '- kea'
                     log.info(f'Post Data:')
                     log.info(f"MAC:{post_mac}, IP:{post_ip}")
                     log.info(f"Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
