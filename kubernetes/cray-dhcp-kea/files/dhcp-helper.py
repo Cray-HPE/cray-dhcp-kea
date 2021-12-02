@@ -604,13 +604,16 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, n
                                       f"kea_hostname: {kea_hostname}, kea_mac: {kea_mac}, kea_hostname: {kea_hostname}")
 
                         if kea_hostname in list_of_subnet_sets['hostname_' + str(i)]:
+                            node_alias = ''
+                            node_xname = ''
                             log.warning(f'Possible node move or replacement.  Attempting automated repair')
                             dupe_hostname = True
                             repair_data = {}
                             # make sure we use an xname when correcting SMD data
                             if 'x' not in kea_hostname[0].lower():
-                                temp = all_xname_to_alias.get(kea_hostname,kea_hostname)
-                                kea_hostname = temp
+                                node_alias = kea_hostname
+                                node_xname = all_xname_to_alias.get(kea_hostname,kea_hostname)
+                                kea_hostname = node_xname
                             if 'x' in kea_hostname[0].lower():
                                 log.info(f"URL: http://cray-smd/hsm/v1/Inventory/EthernetInterfaces?ComponentID={kea_hostname}")
                                 resp = smd_api('GET', 'hsm/v1/Inventory/EthernetInterfaces?ComponentID=' + kea_hostname)
@@ -694,8 +697,9 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, n
                                         cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['ip-address'] = repair_ip
                                         break
                                 log.info(f'Automated repair successful')
+                                if node_xname != '':
+                                    kea_hostname = node_xname
                                 dupe_hostname = False
-
 
                         if kea_ip in list_of_subnet_sets['ip_' + str(i)]:
                             log.error(
