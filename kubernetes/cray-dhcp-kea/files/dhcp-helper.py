@@ -697,8 +697,8 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, n
                                         cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['ip-address'] = repair_ip
                                         break
                                 log.info(f'Automated repair successful')
-                                if node_xname != '':
-                                    kea_hostname = node_xname
+                                if node_alias != '':
+                                    kea_hostname = node_alias
                                 dupe_hostname = False
 
                         if kea_ip in list_of_subnet_sets['ip_' + str(i)]:
