@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13] - 2021-12-2
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMNET-1053 - error handling when query bss data if data is returned that is not expected
+- CASMNET-1054 - make sure dhcp-helper does not patch in an IP when there is already an IP outside of loading BSS data
+- CASMNET-1055 - make sure xname is used when trying to repair SMD data after node move
+### Security
+
 ## [0.7.12] - 2021-11-30
 ### Added
 ### Changed
