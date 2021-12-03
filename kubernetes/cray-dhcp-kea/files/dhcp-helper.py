@@ -378,12 +378,12 @@ def load_static_ncn_ips(sls_hardware):
                                         log.debug(f'{param}')
                                         temp_string = param.split(':', 1)
                                         static_mac = temp_string[1]
-                                        log.debug(f'{bond0_first_interface_mac}')
+                                        alias_to_mac[alias] = static_mac
                                         log.info(f'the data for NMN alias:{alias}, xname:{xname}, MAC:{static_mac}')
                                         break
                                 # csm-1.2 and if we didn't find the first mac of bond0
                                 # we assume the interface name is mgmt0
-                                if bond0_first_interface == '' and static_mac == '':
+                                if static_mac == '':
                                     for param in bss_params:
                                         log.debug(f'param loop for first bond interface csm-1.2+')
                                         if 'ifname=mgmt0' in param:
@@ -453,7 +453,7 @@ def load_static_ncn_ips(sls_hardware):
                         if update_mac != '':
                             patch_mac = update_mac
                             patch_ip = update_ip
-                            patch_description = resp.json()['Description'] + 'bond0 - kea'
+                            patch_description = resp.json()['Description'] + '- kea'
                             log.info(f'Patch Data:')
                             log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
                             log.info(f"Patch URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
@@ -464,7 +464,7 @@ def load_static_ncn_ips(sls_hardware):
                 if update_mac != '' and resp.status_code == 404:
                     post_mac = update_mac
                     post_ip = update_ip
-                    post_description = 'bond0 - kea'
+                    post_description = '- kea'
                     log.info(f'Post Data:')
                     log.info(f"MAC:{post_mac}, IP:{post_ip}")
                     log.info(f"Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
@@ -772,7 +772,7 @@ def reload_config():
 
 # globbals
 log = logging.getLogger(__name__)
-log.setLevel(logging.WARNING)
+log.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
