@@ -83,4 +83,5 @@ chart-gen-docs:
 	    helm-docs --chart-search-root=$(CHARTDIR)
 
 clean:
+	$(RM) ${CHARTDIR}/${NAME}/Chart.lock
 	$(RM) -r ${CHARTDIR}/.packaged .helm
