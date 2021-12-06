@@ -13,6 +13,6 @@ jobs:
     with:
       lint-charts: ${{ github.event_name == 'pull_request' }}
       test-charts: false
-      scan-chart-snyk-args: "--severity-threshold=high"
+      scan-chart-snyk-args: "--severity-threshold=high --policy-path=kubernetes/.snyk"
     secrets:
       snyk-token: ${{ secrets.SNYK_TOKEN }}
