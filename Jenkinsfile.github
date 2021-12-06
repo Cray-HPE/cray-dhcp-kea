@@ -25,6 +25,7 @@ pipeline {
                 stage('Image') {
                     steps {
                         script {
+                            sh "printenv"
                             sh "make image"
                         }
                     }
