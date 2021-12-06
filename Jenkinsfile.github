@@ -33,7 +33,7 @@ pipeline {
                 stage('Chart') {
                     steps {
                         script {
-                            if (!env.STABLE) { IMAGE = "artifactory.algol60.net/csm-docker/unstable/${env.NAME}" }
+                            if (env.IS_STABLE != "true") { env.IMAGE = "artifactory.algol60.net/csm-docker/unstable/${env.NAME}" }
                             sh "printenv"
                             sh "docker version"
                             sh "make chart"
