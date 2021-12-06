@@ -17,7 +17,6 @@ pipeline {
         VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
         DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION)
         CHART_VERSION = getChartVersion(version: env.VERSION)
-        STABLE_STR = env.IS_STABLE ? "stable" : "unstable"
     }
 
     stages {
@@ -25,18 +24,20 @@ pipeline {
             parallel {
                 stage('Image') {
                     steps {
-                        sh "make image"
+                        script {
+                            sh "make image"
+                        }
                     }
                 }
 
                 stage('Chart') {
-                    environment {
-                        IMAGE = "artifactory.algol60.net/csm-docker/${env.STABLE_STR}/${env.NAME}"
-                    }
                     steps {
-                        sh "printenv"
-                        sh "docker version"
-                        sh "make chart"
+                        script {
+                            if (!env.STABLE) { IMAGE = "artifactory.algol60.net/csm-docker/unstable/${env.NAME}" }
+                            sh "printenv"
+                            sh "docker version"
+                            sh "make chart"
+                        }
                     }
                 }
             }
