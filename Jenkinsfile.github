@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label "metal-gcp-builder"
+        label "metal-gcp-builder-dev"
     }
 
     options {
