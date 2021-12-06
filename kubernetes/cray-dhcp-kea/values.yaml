@@ -10,40 +10,40 @@ nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
 cray-service:
-  priorityClassName: "csm-high-priority-service"
+  priorityClassName: csm-high-priority-service
   type: Deployment
   nameOverride: cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
   containers:
     cray-dhcp-kea:
-      name: "cray-dhcp-kea"
+      name: cray-dhcp-kea
       image:
-        repository: "cray/cray-dhcp-kea"
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
       command:
-        - "sh"
-        - "-c"
-        - "/srv/kea/startup-dhcp.sh"
+        - sh
+        - -c
+        - /srv/kea/startup-dhcp.sh
       resources:
         limits:
           cpu: "6"
-          memory: "3Gi"
+          memory: 3Gi
         requests:
           cpu: "2"
-          memory: "1Gi"
+          memory: 1Gi
       env:
         - name: TFTP_SERVER_NMN
-          value: "10.92.100.60"
+          value: 10.92.100.60
         - name: TFTP_SERVER_HMN
-          value: "10.94.100.60"
+          value: 10.94.100.60
         - name: UNBOUND_SERVER_NMN
-          value: "10.92.100.225"
+          value: 10.92.100.225
         - name: UNBOUND_SERVER_HMN
-          value: "10.94.100.225"
+          value: 10.94.100.225
         - name: NMN_LOADBALANCER_IP
-          value: "10.92.100.222"
+          value: 10.92.100.222
         - name: HMN_LOADBALANCER_IP
-          value: "10.94.100.222"
+          value: 10.94.100.222
         - name: DHCP_HELPER_INTERVAL_SECONDS
           value: "120"
       ports:
@@ -77,16 +77,16 @@ cray-service:
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
     cray-dhcp-kea-ctrl-agent:
-      name: "cray-dhcp-kea-ctrl-agent"
+      name: cray-dhcp-kea-ctrl-agent
       image:
-        repository: "cray/cray-dhcp-kea"
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
       command:
-        - "sh"
-        - "-c"
-        - "/srv/kea/startup-dhcp-ctrl-agent.sh"
+        - sh
+        - -c
+        - /srv/kea/startup-dhcp-ctrl-agent.sh
       env:
         - name: DHCP_CAHOST
-          value: "0.0.0.0"
+          value: 0.0.0.0
         - name: DHCP_CAPORT
           value: "8000"
       ports:
@@ -138,3 +138,8 @@ crayDhcpKeaCtrlAgentConfig:
         output_options:
           - output: stdout
         severity: ERROR
+global:
+  chart:
+    name: cray-dhcp-kea
+    version: 0.10.0
+  appVersion: 0.10.0
