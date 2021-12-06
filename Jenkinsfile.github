@@ -17,6 +17,7 @@ pipeline {
         VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
         DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION)
         CHART_VERSION = getChartVersion(version: env.VERSION)
+        STABLE_STR = env.IS_STABLE ? "stable" : "unstable"
     }
 
     stages {
@@ -30,7 +31,7 @@ pipeline {
 
                 stage('Chart') {
                     environment {
-                        IMAGE = "artifactory.algol60.net/csm-docker/${env.IS_STABLE ? "stable" : "unstable"}/${env.NAME}"
+                        IMAGE = "artifactory.algol60.net/csm-docker/${env.STABLE_STR}/${env.NAME}"
                     }
                     steps {
                         sh "printenv"
