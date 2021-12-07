@@ -15,7 +15,38 @@ from urllib.parse import urljoin
 import logging
 import datetime
 
+# globbals
+log = logging.getLogger(__name__)
+log.setLevel(logging.WARNING)
 
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+log.addHandler(handler)
+
+# variables from env
+tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
+tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
+unbound_servers = {}
+unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
+unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
+hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
+nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
+
+# setup kea configs
+kea_path = '/usr/local/kea'
+kea_headers = {'Content-Type': 'application/json'}
+
+# setup api urls
+kea_api = APIRequest('http://cray-dhcp-kea-api:8000')
+smd_api = APIRequest('http://cray-smd')
+sls_api = APIRequest('http://cray-sls')
+bss_api = APIRequest('http://cray-bss')
+
+# Primary interface of bond0
+primary_bond_interface = 'ifname=mgmt0'
+secondary_bond_interface = 'ifname=mgmt1'
 
 
 class APIRequest(object):
@@ -373,41 +404,33 @@ def load_static_ncn_ips(sls_hardware):
                                 break
                             log.debug(f'bss_params:')
                             log.debug(f'{bss_params}')
+                            # we assume the interface name is mgmt0
                             for param in bss_params:
-                                log.debug(f'param loop for first bond interface csm-1.0')
-                                # csm-1.0
-                                if 'bond=bond0' in param:
+                                log.debug(f'param loop for first bond interface csm-1.2+')
+                                if primary_bond_interface in param:
                                     log.debug(f'param: {param}')
-                                    bond0_interfaces = param.split(':')
-                                    log.debug(f'bond0_interfaces: {bond0_interfaces}')
-                                    bond0_interfaces_split = bond0_interfaces[1].split(',')
-                                    bond0_first_interface = bond0_interfaces_split[0]
-                                    log.debug(f'bond0_first_interface:{bond0_first_interface}')
-                            for param in bss_params:
-                                log.debug(f'param loop for first bond interface MAC')
-                                if 'ifname=' + bond0_first_interface in param:
-                                        log.debug(f'{param}')
-                                        temp_string = param.split(':', 1)
-                                        static_mac = temp_string[1]
-                                        alias_to_mac[alias] = static_mac
-                                        log.info(f'the data for NMN alias:{alias}, xname:{xname}, MAC:{static_mac}')
-                                        break
-                                # csm-1.2 and if we didn't find the first mac of bond0
-                                # we assume the interface name is mgmt0
-                                if static_mac == '':
-                                    for param in bss_params:
-                                        log.debug(f'param loop for first bond interface csm-1.2+')
-                                        if 'ifname=mgmt0' in param:
-                                            log.debug(f'param: {param}')
-                                            interface_mgmt0 = param.split(':', 1)
-                                            log.debug(f'bond0_interfaces: {interface_mgmt0}')
-                                            bond0_first_interface_mac = interface_mgmt0[1]
-                                            log.debug(f'bond0_first_interface_mac:{bond0_first_interface_mac}')
-                                            static_mac = bond0_first_interface_mac
-                                            log.info(f'found MAC:{static_mac} for alias:{alias}, xname:{xname}')
-                                            alias_to_mac[alias] = static_mac
-                                            break
-            log.info(f'the data for NMN query_bss:{query_bss}alias:{alias}, xname:{xname}, MAC:{static_mac}')
+                                    interface_mgmt0 = param.split(':', 1)
+                                    log.debug(f'bond0_interfaces: {interface_mgmt0}')
+                                    bond0_first_interface_mac = interface_mgmt0[1]
+                                    log.debug(f'bond0_first_interface_mac:{bond0_first_interface_mac}')
+                                    static_mac = bond0_first_interface_mac
+                                    log.info(f'found MAC:{static_mac} for alias:{alias}, xname:{xname}')
+                                    alias_to_mac[alias] = static_mac
+                                    log.info(f'primary_bond_interface')
+                                    log.info(
+                                        f'the data for NMN query_bss:{query_bss}alias:{alias}, xname:{xname}, MAC:{static_mac}')
+                                if secondary_bond_interface in param:
+                                    log.debug(f'param: {param}')
+                                    interface_mgmt1 = param.split(':', 1)
+                                    log.debug(f'bond0_interfaces: {interface_mgmt1}')
+                                    bond0_second_interface_mac = interface_mgmt1[1]
+                                    log.debug(f'bond0_first_interface_mac:{bond0_second_interface_mac}')
+                                    static_mac = bond0_second_interface_mac
+                                    log.info(f'found MAC:{static_mac} for alias:{alias}, xname:{xname}')
+                                    alias_to_mac[alias] = static_mac
+                                    log.info(f'secondary_bond_interface')
+                                    log.info(
+                                        f'the data for NMN query_bss:{query_bss}alias:{alias}, xname:{xname}, MAC:{static_mac}')
         # skipping bmc for ncm-m001 due to not being on the shasta csm management network
         if 'bmc' in alias and 'ncn-m001' not in alias:
             # get xname from alias
@@ -790,35 +813,6 @@ def reload_config():
         # create backup copy of last known good kea config
         shutil.copyfile(kea_path + '/cray-dhcp-kea-dhcp4.conf', kea_path + '/cray-dhcp-kea-dhcp4.conf.bak')
 
-
-# globbals
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
-
-# variables from env
-tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
-tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
-unbound_servers = {}
-unbound_servers['NMN'] = os.environ['UNBOUND_SERVER_NMN']
-unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
-hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
-nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
-
-# setup kea configs
-kea_path = '/usr/local/kea'
-kea_headers = {'Content-Type': 'application/json'}
-
-# setup api urls
-kea_api = APIRequest('http://cray-dhcp-kea-api:8000')
-smd_api = APIRequest('http://cray-smd')
-sls_api = APIRequest('http://cray-sls')
-bss_api = APIRequest('http://cray-bss')
 
 
 def main():
