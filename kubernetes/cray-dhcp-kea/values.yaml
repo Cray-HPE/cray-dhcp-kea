@@ -120,7 +120,7 @@ cray-service:
     cray-dhcp-kea-jobs:
       name: cray-dhcp-kea-jobs
       configMap:
-        defaultMode: 777
+        defaultMode: 0777
         name: cray-dhcp-kea-jobs
   service:
     # service definitions for this chart defined manually
