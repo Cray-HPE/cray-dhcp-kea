@@ -18,6 +18,10 @@ cray-service:
   containers:
     cray-dhcp-kea:
       name: cray-dhcp-kea
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
       command:

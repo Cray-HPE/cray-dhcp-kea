@@ -52,7 +52,7 @@ RUN apk --no-cache add \
 COPY --from=builder /usr/local /usr/local/
 
 
-#RUN addgroup -S kea && adduser -S kea -G kea
+RUN addgroup -S kea && adduser -S kea -G kea
 
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
@@ -61,10 +61,10 @@ RUN mkdir -p /srv/kea && \
     mkdir /cray-dhcp-kea-socket && \
     mkdir -p /usr/local/kea
 
-RUN chown -R nobody /srv/kea && \
-    chown -R nobody /usr/local/kea && \
-    chown -R nobody /cray-dhcp-kea-socket && \
-    chown -R nobody /usr/local/var/run/kea
+RUN chown -R kea /srv/kea && \
+    chown -R kea /usr/local/kea && \
+    chown -R kea /cray-dhcp-kea-socket && \
+    chown -R kea /usr/local/var/run/kea
 
 COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 
@@ -77,4 +77,4 @@ EXPOSE 6068/udp
 EXPOSE 6068/tcp
 EXPOSE 8000/tcp
 EXPOSE 9091/tcp
-USER nobody
+USER kea
