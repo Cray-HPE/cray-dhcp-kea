@@ -82,6 +82,10 @@ cray-service:
           mountPath: /srv/kea
     cray-dhcp-kea-ctrl-agent:
       name: cray-dhcp-kea-ctrl-agent
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
       command:
