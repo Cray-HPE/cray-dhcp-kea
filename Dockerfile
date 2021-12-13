@@ -59,7 +59,8 @@ ENV DHCP_HELPER_INTERVAL_SECONDS=180
 
 RUN mkdir -p /srv/kea && \
     mkdir /cray-dhcp-kea-socket && \
-    mkdir -p /usr/local/kea
+    mkdir -p /usr/local/kea && \
+    mkdir -p /usr/local/var/run/kea
 
 RUN chown -R kea /srv/kea && \
     chown -R kea /usr/local/kea && \
