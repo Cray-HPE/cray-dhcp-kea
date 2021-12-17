@@ -16,3 +16,4 @@ annotations:
     - name: cray-dhcp-kea
       image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.10.0
   artifacthub.io/license: MIT
+
