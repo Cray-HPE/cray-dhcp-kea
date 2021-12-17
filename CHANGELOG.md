@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.9.13] - 2021-12-2
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMNET-1053 - error handling when query bss data if data is returned that is not expected
+- CASMNET-1054 - make sure dhcp-helper does not patch in an IP when there is already an IP outside of loading BSS data
+- CASMNET-1055 - make sure xname is used when trying to repair SMD data after node move
+### Security
+
+
+## [0.9.12] - 2021-11-30
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMNET-1052 - fix csm-1.0 bss data support
+### Security
+
+## [0.9.11] - 2021-11-22
+### Added
+### Changed
+- CASMTRIAGE-2729 - remove debug log in dhcp-helper due to not always being valid
+- CASMNET-1037 - Update dhcp-helper detect PATCH or POST to SMD when updating data for NCNs
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.9.10] - 2021-11-12
 ### Added
 - CASMNET-946 - add feature to dhcp-helper.py in kea to create dhcp reservations for static ips from cloud-init data
@@ -20,9 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 - support for shasta-1.3 that used dnsmasq
-### Fixed### Security
+### Fixed
+### Security
 
-## [0.8.8] - 2021-10-27
+
+## [0.9.8] - 2021-10-27
 ### Added
 - CASMNET-972 - added function to rollback to last known good config if bad config was generated
 ### Changed
