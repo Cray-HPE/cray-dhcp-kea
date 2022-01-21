@@ -94,8 +94,26 @@ def check_kea_api():
     """
     Checking kea api on startup and waiting till kea api is online
     """
-    kea_request_data = '{ "command": "status-get",  "service": [ "dhcp4" ] }'
-    kea_api('POST','/', headers=kea_headers, json=kea_request_data)
+    kea_api_online = False
+    kea_request_lease_data = '{ "command": "lease4-get-all",  "service": [ "dhcp4" ] }'
+    kea_reload_config = '{ "command": "config-reload",  "service": [ "dhcp4" ] }'
+
+    while not kea_api_online and counter <= 3:
+        resp = kea_api('POST', '/', headers=kea_headers, json=kea_request_lease_data)
+        if resp[0]['result'] != 0:
+            resp = kea_api('POST','/', headers=kea_headers, json=kea_reload_config)
+            counter += 1
+            sleep 5
+        else:
+            kea_api_online = True
+
+    if not kea_api_online and counter >= 3:
+        log.error('Kea API is not working as expected.')
+        exit(1)
+
+
+    log.info('Kea API is working as expected.')
+
 
 def import_base_config():
     """
@@ -603,6 +621,8 @@ def load_static_ncn_ips(sls_hardware):
         update_ip = []
         update_mac = ''
         update_component_id = ''
+        post_component_id = ''
+        patch_component_id = ''
         patch_description = ''
         if 'ncn-m001_bmc' not in alias:
             # making sure nmn is the first entry for nodes but not bmcs
@@ -623,7 +643,7 @@ def load_static_ncn_ips(sls_hardware):
                 if 'Description' in resp.json() and resp.status_code == 200:
                     if 'kea' not in resp.json()['Description']:
                         if update_mac != '':
-                            patch_mac = update_mac
+                            patch_mac = update_mac.replace(':', '')
                             patch_ip = update_ip
                             patch_component_id = update_component_id
                             patch_description = resp.json()['Description'] \
@@ -631,13 +651,14 @@ def load_static_ncn_ips(sls_hardware):
                             log.info('Patch Data:')
                             log.info(f"MAC:{patch_mac}, IP:{patch_ip}, ComponentID:{patch_component_id}")
                             log.info(f"Patch URL: "
-                                     f"cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac.replace(':', '')}")
+                                     f"cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac}")
                             patch_data = \
                                 {'MACAddress':patch_mac,'Description':
                                     patch_description, 'IPAddresses': patch_ip, 'ComponentID': patch_component_id}
                             resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/'
-                                           + patch_mac.replace(':', ''),json=patch_data)
-                            log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac.replace(':', '')},json={json.dumps(patch_data)})")
+                                           + patch_mac,json=patch_data)
+                            log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac},"
+                                     f"json={json.dumps(patch_data)})")
                             log.info(f'{resp.json}')
                 if update_mac != '' and resp.status_code == 404:
                     post_mac = update_mac
@@ -648,7 +669,7 @@ def load_static_ncn_ips(sls_hardware):
                     log.info(f"MAC:{post_mac}, IP:{post_ip}, ComponentID:{post_component_id}")
                     log.info("Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
                     post_data = {'MACAddress': post_mac, 'Description': post_description,
-                                 'IPAddresses': post_ip, 'ComponentID':{post_component_id}}
+                                 'IPAddresses': post_ip, 'ComponentID':post_component_id}
                     resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=post_data)
                     log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',"
                              f"json={json.dumps(post_data)})")
@@ -697,8 +718,8 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                 resp = smd_api('POST','/hsm/v2/Inventory/EthernetInterfaces',json=post_data)
                 log.info(f'Added {post_data}')
 
-                #if resp.status_code != 200 and resp.status_code != 201:
-                if resp.satus_code not in (200,201):
+                if resp.status_code != 200 and resp.status_code != 201:
+                #if resp.satus_code not in (200,201):
                     log.error('Post to SMD EthernetInterfaces did not succeed')
                     log.error(f'status_code: {resp.status_code}')
                     log.error(f'{resp.json}')
