@@ -646,15 +646,14 @@ def load_static_ncn_ips(sls_hardware):
                             patch_mac = update_mac.replace(':', '')
                             patch_ip = update_ip
                             patch_component_id = update_component_id
-                            patch_description = resp.json()['Description'] \
-                                                + '- kea'
+                            patch_description = resp.json()['Description'] + '- kea'
                             log.info('Patch Data:')
                             log.info(f"MAC:{patch_mac}, IP:{patch_ip}, ComponentID:{patch_component_id}")
                             log.info(f"Patch URL: "
                                      f"cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac}")
                             patch_data = \
                                 {'MACAddress':patch_mac,'Description':
-                                    patch_description, 'IPAddresses': patch_ip, 'ComponentID': patch_component_id}
+                                    patch_description, 'IPAddresses': patch_ip}
                             resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/'
                                            + patch_mac,json=patch_data)
                             log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac},"
@@ -669,7 +668,7 @@ def load_static_ncn_ips(sls_hardware):
                     log.info(f"MAC:{post_mac}, IP:{post_ip}, ComponentID:{post_component_id}")
                     log.info("Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
                     post_data = {'MACAddress': post_mac, 'Description': post_description,
-                                 'IPAddresses': post_ip, 'ComponentID':post_component_id}
+                                 'IPAddresses': post_ip}
                     resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=post_data)
                     log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',"
                              f"json={json.dumps(post_data)})")
