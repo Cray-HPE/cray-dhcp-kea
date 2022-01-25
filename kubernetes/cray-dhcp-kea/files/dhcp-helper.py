@@ -214,7 +214,7 @@ def get_black_list_cidr(sls_networks, black_list_network_names):
 
     for i in range(len(sls_networks)):
         if any(n in sls_networks[i]['Name']
-               for n in ('NMN','HMN','MTL','CAN', 'CHN', 'CMN')):
+               for n in ('MTL','CAN', 'CHN', 'CMN')):
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and \
                     sls_networks[i]['ExtraProperties']['Subnets']:
                 for system in sls_networks[i]['ExtraProperties']['Subnets']:
@@ -348,7 +348,7 @@ def create_index_sls_all_hardware(sls_hardware):
     return sls_data_by_xname
 
 
-def get_smd_ethernet_interfaces(black_list_cidr):
+def get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr):
     """
     Get SMD EthernetInterface table data.
     :param black_list_cidr:
@@ -358,6 +358,8 @@ def get_smd_ethernet_interfaces(black_list_cidr):
     smd_ethernet_interfaces = resp.json()
 
     for i in range(len(smd_ethernet_interfaces)):
+        # We are specifically looking for at SMD entries first IP address if populated.
+        # Static and dynamic IPAddress in SMD entries must have an NMN or HMN IP as the first IP address.
         if 'IPAddress' in smd_ethernet_interfaces[i]['IPAddresses'] \
                 and smd_ethernet_interfaces[i]['IPAddresses'][0] != '':
             smd_ip = smd_ethernet_interfaces[i]['IPAddresses'][0]['IPAddress']
@@ -592,7 +594,6 @@ def load_static_ncn_ips(sls_hardware):
                     if 'Aliases' in sls_record['ExtraProperties'] \
                             and sls_record['ExtraProperties']['Aliases'][0] == alias.strip('_bmc'):
                         xname_bmc = sls_record['Parent']
-                        ncn_data[alias]['xname'] = xname_bmc
                         resp = smd_api('GET', 'hsm/v1/Inventory/EthernetInterfaces?ComponentID='
                                        + xname_bmc)
                         smd_query = resp.json()
@@ -610,8 +611,7 @@ def load_static_ncn_ips(sls_hardware):
                                 hex_to_int = int(entry['ID'][-2:], 16)
                                 if max_int == hex_to_int:
                                     static_mac = entry['MACAddress']
-                                    log.info(f'found MAC:{static_mac} for alias:{alias},'
-                                             f' xname:{xname_bmc}')
+                                    log.info(f'found MAC:{static_mac} for alias:{alias}')
                                     alias_to_mac[alias] = static_mac
             log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
 
@@ -624,9 +624,6 @@ def load_static_ncn_ips(sls_hardware):
         update_smd = True
         update_ip = []
         update_mac = ''
-        update_component_id = ''
-        post_component_id = ''
-        patch_component_id = ''
         patch_description = ''
         if 'ncn-m001_bmc' not in alias:
             # making sure nmn is the first entry for nodes but not bmcs
@@ -699,6 +696,8 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
         query_smd = True
         smd_entry = ''
 
+        # checking for active leases in kea and making sure
+        # they are not in the interface blacklist
         if record['ip-address'] not in main_smd_ip_set \
                 and record['hw-address'].lower() not in interface_black_list:
             smd_id = record['hw-address'].replace(':','').lower()
@@ -767,6 +766,8 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                     log.warning(f'Already an IP for SMD entry')
                     log.warning(f'{smd_entry}')
                     log.warning(f'Failed patch data {patch_mac} with {patch_data}')
+            if record['ip-address'] not in main_smd_ip_set and record['hw-address'].lower() in interface_black_list:
+                log.warning(f"Interface {record['hw-address']} {record['ip-address']} via dynamic dhcp reservation and was on interface blacklist")
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_xname_to_alias, all_alias_to_xname, sls_hardware):
     """
@@ -1119,7 +1120,7 @@ def main():
 
     # query SMD for EthernetInterfaces data
     # clean up SMD EthernetInterfaces IP data
-    smd_ethernet_interfaces = get_smd_ethernet_interfaces(black_list_cidr)
+    smd_ethernet_interfaces = get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr)
 
     # query Kea for dhcp4 leases
     kea_dhcp4_leases = get_kea_dhcp4_leases()
