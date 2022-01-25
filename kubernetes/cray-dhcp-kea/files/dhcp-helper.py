@@ -14,6 +14,7 @@ import datetime
 import ipaddress
 import json
 import os
+import time
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -95,21 +96,25 @@ def check_kea_api():
     Checking kea api on startup and waiting till kea api is online
     """
     kea_api_online = False
-    kea_request_lease_data = '{ "command": "lease4-get-all",  "service": [ "dhcp4" ] }'
-    kea_reload_config = '{ "command": "config-reload",  "service": [ "dhcp4" ] }'
+    counter = 0
+    kea_request_lease_data = { "command": "lease4-get-all",  "service": [ "dhcp4" ] }
+    kea_reload_config = { "command": "config-reload",  "service": [ "dhcp4" ] }
 
     while not kea_api_online and counter <= 3:
         resp = kea_api('POST', '/', headers=kea_headers, json=kea_request_lease_data)
-        if resp[0]['result'] != 0:
-            resp = kea_api('POST','/', headers=kea_headers, json=kea_reload_config)
-            counter += 1
-            sleep 5
-        else:
+        kea_api_resp = resp.json()[0]['result']
+        if kea_api_resp == 0 or kea_api_resp == 3:
             kea_api_online = True
+        else:
+            resp = kea_api('POST','/', headers=kea_headers, json=kea_reload_config)
+            log.debug('Kea config reload during API check response is:'
+                      f'{resp.json()}')
+            counter += 1
+            time.sleep (5)
 
     if not kea_api_online and counter >= 3:
         log.error('Kea API is not working as expected.')
-        exit(1)
+        sys.exit(1)
 
 
     log.info('Kea API is working as expected.')
@@ -496,7 +501,7 @@ def load_static_ncn_ips(sls_hardware):
         log.debug('for record in bss_host_records.')
         log.debug(f'Record is: {record}')
         if any(n in record['aliases'][0] for n in
-               ('-mgmt','.nmn', '.mtl', '.can', 'hmn','.cmn', '.chn')):
+               ('-mgmt','.nmn', '.mtl', 'hmn','.cmn', '.chn')):
             split_aliases = ''
             log.debug(f'Record is: {record}')
             log.debug(f"record.split: {record['aliases'][0].split('.', 1)}")
@@ -543,7 +548,6 @@ def load_static_ncn_ips(sls_hardware):
                     if 'Aliases' in sls_record['ExtraProperties'] \
                             and sls_record['ExtraProperties']['Aliases'][0] == alias:
                         xname = sls_record['Xname']
-                        ncn_data[alias]['xname'] = xname
                         log.debug(f'Alias to xname found {alias} and {xname}')
                         # check description to see if kea has already loaded the data for NCN
                         resp = smd_api('GET'
@@ -633,7 +637,6 @@ def load_static_ncn_ips(sls_hardware):
                 if network != 'nmn':
                     update_ip.append({'IPAddress': ncn_data[alias][network]})
             update_mac = alias_to_mac[alias]
-            update_component_id = ncn_data[alias]['xname']
             if update_mac == {}:
                 update_smd = False
             if update_smd:
@@ -645,10 +648,9 @@ def load_static_ncn_ips(sls_hardware):
                         if update_mac != '':
                             patch_mac = update_mac.replace(':', '')
                             patch_ip = update_ip
-                            patch_component_id = update_component_id
                             patch_description = resp.json()['Description'] + '- kea'
                             log.info('Patch Data:')
-                            log.info(f"MAC:{patch_mac}, IP:{patch_ip}, ComponentID:{patch_component_id}")
+                            log.info(f"MAC:{patch_mac}, IP:{patch_ip}")
                             log.info(f"Patch URL: "
                                      f"cray-smd/hsm/v2/Inventory/EthernetInterfaces/{patch_mac}")
                             patch_data = \
@@ -662,10 +664,9 @@ def load_static_ncn_ips(sls_hardware):
                 if update_mac != '' and resp.status_code == 404:
                     post_mac = update_mac
                     post_ip = update_ip
-                    post_component_id = patch_component_id
                     post_description = '- kea'
                     log.info('Post Data:')
-                    log.info(f"MAC:{post_mac}, IP:{post_ip}, ComponentID:{post_component_id}")
+                    log.info(f"MAC:{post_mac}, IP:{post_ip}")
                     log.info("Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
                     post_data = {'MACAddress': post_mac, 'Description': post_description,
                                  'IPAddresses': post_ip}
