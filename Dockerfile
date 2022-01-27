@@ -8,7 +8,7 @@ ARG LOG4_CPLUS_VERSION=2.0.6
 RUN apk add --no-cache --virtual .build-deps \
         alpine-sdk \
         bash \
-        boost-dev \
+        boost-dev@1.720-r6 \
         bzip2-dev \
         file \
         libressl-dev \
