@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.10.1] - 2022-1-26
+### Added
+### Changed
+- CASMNET-1113 - improve kea api check in dhcp-helper
+### Deprecated
+### Removed
+### Fixed
+- CASMNET-1104 - dhcp-helper is putting IPs on the wrong interface on bonds
+- CASMNET-1103 - dhcp-helper crash when missing alias for compute node
+- CASMNET-1108 - NCN bond interface dhcp'ing and getting dhcp reservation
+### Security
+
+## [0.10.0] - 2021-12-16
+### Added
+### Changed
+- update to helm v2 api
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.9.13] - 2021-12-2
 ### Added
 ### Changed

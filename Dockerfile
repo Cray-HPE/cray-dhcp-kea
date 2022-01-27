@@ -1,8 +1,8 @@
 # Pinned to alpine:3.13 because alpine:3.14+ requires Docker 20.10.0 or newer,
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
-FROM artifactory.algol60.net/docker.io/library/alpine:3.13 as builder
+FROM artifactory.algol60.net/docker.io/library/alpine:3.15 as builder
 
-ARG KEA_DHCP_VERSION=1.8.2
+ARG KEA_DHCP_VERSION=2.0.1
 ARG LOG4_CPLUS_VERSION=2.0.6
 
 RUN apk add --no-cache --virtual .build-deps \
@@ -30,7 +30,7 @@ RUN apk add --no-cache --virtual .build-deps \
     apk del --purge .build-deps && \
     rm -rf /tmp/*
 
-FROM artifactory.algol60.net/docker.io/library/alpine:3.13
+FROM artifactory.algol60.net/docker.io/library/alpine:3.15
 
 
 RUN apk --no-cache add \
@@ -46,7 +46,7 @@ RUN apk --no-cache add \
         jq \
         tcpdump \
         python3 &&\
-        pip3 install requests ipaddress nslookup kea-exporter
+        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi
 
 
 COPY --from=builder /usr/local /usr/local/
