@@ -12,5 +12,7 @@ cp /srv/kea/startup-config-dhcp4.conf /usr/local/kea/cray-dhcp-kea-dhcp4.conf.ba
 cat /usr/local/kea/cray-dhcp-kea-dhcp4.conf
 # what we use to run Cray DHCP Kea server
 nohup /usr/local/sbin/kea-dhcp4 -p 6067 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf &
+# kea exporter for prometheus
+kea-exporter --address ${KEA_EXPORTER_ADDRESS} --port ${KEA_EXPORTER_PORT} ${KEA_SOCKET} &
 # we will need to tune this
 while true; do /srv/kea/dhcp-helper.py; sleep ${DHCP_HELPER_INTERVAL_SECONDS}; done
