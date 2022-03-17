@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.3] - 2022-3-17
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMTRIAGE-3111 - Duplicate DNS entries for NCN xnames
+- CASMNET-1128 - dhcp-helper:/srv/kea/dhcp-helper.py:61: DeprecationWarning: Using 'method_whitelist' with Retry is deprecated and will be removed in v2.0. Use 'allowed_methods' instead
+### Security
 
 ## [0.10.1] - 2022-1-26
 ### Added
