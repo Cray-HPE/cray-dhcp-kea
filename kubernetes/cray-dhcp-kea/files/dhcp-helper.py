@@ -62,7 +62,7 @@ class APIRequest(object):
             total=10,
             backoff_factor=0.1,
             status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["PATCH", "DELETE", "POST","HEAD", "GET", "OPTIONS"]
+            allowed_methods=["PATCH", "DELETE", "POST","HEAD", "GET", "OPTIONS"]
         )
 
         adapter = HTTPAdapter(max_retries=retry_strategy)
@@ -357,29 +357,48 @@ def get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr):
     resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces')
     smd_ethernet_interfaces = resp.json()
 
-    for i in range(len(smd_ethernet_interfaces)):
+    interface_removal_list = []
+
+    for interface in smd_ethernet_interfaces:
         # We are specifically looking for at SMD entries first IP address if populated.
         # Static and dynamic IPAddress in SMD entries must have an NMN or HMN IP as the first IP address.
-        if 'IPAddress' in smd_ethernet_interfaces[i]['IPAddresses'] \
-                and smd_ethernet_interfaces[i]['IPAddresses'][0] != '':
-            smd_ip = smd_ethernet_interfaces[i]['IPAddresses'][0]['IPAddress']
-            for cidr in black_list_cidr:
-                if ipaddress.IPv4Address(smd_ip) in ipaddress.IPv4Network(cidr, strict=False):
-                    del smd_ethernet_interfaces[i]
-                    patch_id = smd_ethernet_interfaces[i]['ID']
-                    patch_mac = smd_ethernet_interfaces[i]['MACAddress']
-                    patch_data = {'ID': patch_id, "MACAddress": patch_mac, 'IPAddresses': []}
-                    resp = smd_api(
-                        'PATCH', '/hsm/v2/Inventory/EthernetInterfaces/'
-                                 + patch_id, json=patch_data)
-                    log.warning(f'Found an IP in SMD EthernetInterfaces that should not be there.'
-                                f'MAC:{patch_mac}, IP: {smd_ip}')
-                    if resp.status_code != '200' or resp.status_code != '201':
-                        log.error(f'Update to SMD failed for MAC:{patch_mac}, IP: {smd_ip}'
-                                  f'{resp.reason}'
-                                  f'{resp.json()}')
+        # Skip checking any interfaces that have kea in description due to being a static interface
+        # Checking only on len to be specific to 1 to exclude bonded interfaces
+        if 'kea' not in interface['Description'] and interface['ComponentID'] != '':
+            if interface['IPAddresses'] and len(interface['IPAddresses']) == 1:
+                if 'IPAddress' in interface['IPAddresses'][0]:
+                    smd_ip = interface['IPAddresses'][0]['IPAddress']
+                else:
+                    smd_ip = ''
+                if smd_ip != '':
+                    for cidr in black_list_cidr:
+                        if ipaddress.IPv4Address(smd_ip) in ipaddress.IPv4Network(cidr, strict=False):
+                            interface_removal_list.append(interface)
+                            patch_id = interface['ID']
+                            patch_mac = interface['MACAddress']
+                            patch_data = {'ID': patch_id, 'MACAddress': patch_mac, 'IPAddresses': []}
+                            resp = smd_api(
+                                'PATCH', '/hsm/v2/Inventory/EthernetInterfaces/'
+                                         + patch_id, json=patch_data)
+                            log.warning(f'Found an IP in SMD EthernetInterfaces that should not be there.'
+                                        f'MAC:{patch_mac}, IP: {smd_ip}')
+                            if resp.status_code != 200 and resp.status_code != 201:
+                                log.error(f'Update to SMD failed for MAC:{patch_mac}, IP: {smd_ip}'
+                                          f' resp.status_code: {resp.status_code}'
+                                          f' resp.json {resp.json()}')
+
+    # clean up in memory copy of smd Ethernet Interfaces
+    for interface in interface_removal_list:
+        for i in range(len(smd_ethernet_interfaces)):
+            if interface == smd_ethernet_interfaces[i]:
+                del smd_ethernet_interfaces[i]
+                log.warning(f'Removing '
+                            f'{interface} '
+                            f'from in memory copy of SMD Ethernet Interfaces')
+                break
 
     return smd_ethernet_interfaces
+
 
 def create_index_smd_ethernet_interfaces(smd_ethernet_interfaces):
     """
@@ -463,13 +482,10 @@ def create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname):
 
     for interface in smd_ethernet_interfaces:
         if interface['ComponentID'] in xname_list:
-            mac = interface['ComponentID'].lower()
-            if ':' in mac:
-                mac_colons = mac
-                mac_no_colons = mac.replace(':','')
-            else:
-                mac_colons = ':'.join(mac[i:i + 2] for i in range(0, 12, 2))
-                mac_no_colons = mac
+            # using SMD ID since that is always MAC without colons
+            mac = interface['ID'].lower()
+            mac_colons = ':'.join(mac[i:i + 2] for i in range(0, 12, 2))
+            mac_no_colons = mac
             interface_blacklist.append(mac_colons)
             interface_blacklist.append(mac_no_colons)
 
@@ -678,7 +694,7 @@ def load_static_ncn_ips(sls_hardware):
 
 
 
-def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list):
+def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr):
     """
     Compare SMD EthernetInterface data with Kea active lease data.
     Update SMD EthernetInterface table with IPs for dynamic dhcp reservation
@@ -695,79 +711,89 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
         entry_exist = False
         query_smd = True
         smd_entry = ''
+        valid_ip = True
 
         # checking for active leases in kea and making sure
-        # they are not in the interface blacklist
-        if record['ip-address'] not in main_smd_ip_set \
-                and record['hw-address'].lower() not in interface_black_list:
-            smd_id = record['hw-address'].replace(':','').lower()
-            for smd_entry in smd_ethernet_interfaces:
-                if smd_id == smd_entry['ID']:
-                    entry_exist = True
-                    query_smd = False
-            if query_smd:
-                resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces/' + smd_id)
-                smd_entry = resp.json()
-                if resp.status_code == 200:
-                    entry_exist = True
-            if not entry_exist and smd_id != '':
-                post_ip = [{'IPAddress': record['ip-address']}]
-                post_mac = smd_id
-                post_data = {'MACAddress': post_mac, 'IPAddresses': post_ip}
-                resp = smd_api('POST','/hsm/v2/Inventory/EthernetInterfaces',json=post_data)
-                log.info(f'Added {post_data}')
+        # they are not in the interface blacklist and cidr black list
+        if record['ip-address'] not in main_smd_ip_set and record['hw-address'].lower() not in interface_black_list:
+            for cidr in black_list_cidr:
+                if ipaddress.IPv4Address(record['ip-address']) in ipaddress.IPv4Network(cidr, strict=False):
+                    valid_ip = False
+            if valid_ip:
+                smd_id = record['hw-address'].replace(':','').lower()
+                for smd_entry in smd_ethernet_interfaces:
+                    if smd_id == smd_entry['ID']:
+                        entry_exist = True
+                        query_smd = False
+                if query_smd:
+                    resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces/' + smd_id)
+                    smd_entry = resp.json()
+                    if resp.status_code == 200:
+                        entry_exist = True
+                if not entry_exist and smd_id != '':
+                    post_ip = [{'IPAddress': record['ip-address']}]
+                    post_mac = smd_id
+                    post_data = {'MACAddress': post_mac, 'IPAddresses': post_ip}
+                    resp = smd_api('POST','/hsm/v2/Inventory/EthernetInterfaces',json=post_data)
+                    log.info(f'Added {post_data}')
 
-                if resp.status_code != 200 and resp.status_code != 201:
-                #if resp.satus_code not in (200,201):
-                    log.error('Post to SMD EthernetInterfaces did not succeed')
-                    log.error(f'status_code: {resp.status_code}')
-                    log.error(f'{resp.json}')
-
-            if entry_exist and smd_id != '':
-                valid_patch_entry = True
-                if 'IPAddresses' in smd_entry:
-                    patch_ip = smd_entry['IPAddresses']
-                else:
-                    patch_ip = []
-                patch_ip.append({'IPAddress': record['ip-address']})
-                # check for any blank ips kv pairs
-                for i in range(len(patch_ip)-1):
-                    if 'IPAddress' in patch_ip[i] and patch_ip[i]['IPAddress'] == '':
-                        del patch_ip[i]
-                patch_mac = smd_id
-                patch_data = {'IPAddresses': patch_ip}
-                if smd_entry['Type'] == 'NodeBMC' and len(patch_ip) > 1:
-                    valid_patch_entry = False
-                    # working around known issue with BMCs set to static still DHCP
-                    if len(patch_ip) > 1:
-                        # delete active lease in kea
-                        for i in range(len(patch_ip)-1):
-                            if i != 0:
-                                ip_delete = patch_ip[i]['IPAddress']
-                                kea_lease4_delete = {'command': 'lease4-del', 'service': ['dhcp4'],
-                                                     'arguments': {'ip-address': ip_delete}}
-                                resp = kea_api('POST', '/', json=kea_lease4_delete, headers=kea_headers)
-                                del patch_ip[i]
-                        log.info(f'Attempting automated repair by removing empty IPAddress entries')
-                        valid_patch_entry = True
-                if not valid_patch_entry or len(patch_ip) > 1:
-                    log.error(f'Patch scenario is not correct.  Manual review recommended:'
-                              f'{patch_mac} with {patch_data}')
-                    valid_patch_entry = False
-                if valid_patch_entry:
-                    resp = smd_api('PATCH', '/hsm/v2/Inventory/EthernetInterfaces/' + patch_mac, json=patch_data)
-                    log.info(f'Updated {patch_mac} with {patch_data}')
-
-                    if resp.status_code != 200:
-                        log.error(f'Patch to SMD EthernetInterfaces did not succeed')
+                    if resp.status_code != 200 and resp.status_code != 201:
+                    #if resp.satus_code not in (200,201):
+                        log.error('Post to SMD EthernetInterfaces did not succeed')
                         log.error(f'status_code: {resp.status_code}')
                         log.error(f'{resp.json}')
-                if valid_patch_entry and len(smd_entry['IPAddresses']) > 0:
-                    log.warning(f'Already an IP for SMD entry')
-                    log.warning(f'{smd_entry}')
-                    log.warning(f'Failed patch data {patch_mac} with {patch_data}')
-            if record['ip-address'] not in main_smd_ip_set and record['hw-address'].lower() in interface_black_list:
-                log.warning(f"Interface {record['hw-address']} {record['ip-address']} via dynamic dhcp reservation and was on interface blacklist")
+
+                if entry_exist and smd_id != '':
+                    valid_patch_entry = True
+                    if 'IPAddresses' in smd_entry:
+                        patch_ip = smd_entry['IPAddresses']
+                    else:
+                        patch_ip = []
+                    patch_ip.append({'IPAddress': record['ip-address']})
+                    # check for any blank ips kv pairs
+                    for i in range(len(patch_ip)-1):
+                        if 'IPAddress' in patch_ip[i] and patch_ip[i]['IPAddress'] == '':
+                            del patch_ip[i]
+                    patch_mac = smd_id
+                    patch_data = {'IPAddresses': patch_ip}
+                    if smd_entry['Type'] == 'NodeBMC' and len(patch_ip) > 1:
+                        valid_patch_entry = False
+                        # working around known issue with BMCs set to static still DHCP
+                        if len(patch_ip) > 1:
+                            # delete active lease in kea
+                            for i in range(len(patch_ip)-1):
+                                if i != 0:
+                                    ip_delete = patch_ip[i]['IPAddress']
+                                    kea_lease4_delete = {'command': 'lease4-del', 'service': ['dhcp4'],
+                                                         'arguments': {'ip-address': ip_delete}}
+                                    resp = kea_api('POST', '/', json=kea_lease4_delete, headers=kea_headers)
+                                    del patch_ip[i]
+                            log.info(f'Attempting automated repair by removing empty IPAddress entries')
+                            valid_patch_entry = True
+                    if not valid_patch_entry or len(patch_ip) > 1:
+                        log.error(f'Patch scenario is not correct.  Manual review recommended:'
+                                  f'{patch_mac} with {patch_data}')
+                        valid_patch_entry = False
+                    if valid_patch_entry:
+                        resp = smd_api('PATCH', '/hsm/v2/Inventory/EthernetInterfaces/' + patch_mac, json=patch_data)
+                        log.info(f'Updated {patch_mac} with {patch_data}')
+
+                        if resp.status_code != 200:
+                            log.error(f'Patch to SMD EthernetInterfaces did not succeed')
+                            log.error(f'status_code: {resp.status_code}')
+                            log.error(f'{resp.json}')
+                    if valid_patch_entry and len(smd_entry['IPAddresses']) > 0:
+                        log.warning(f'Already an IP for SMD entry')
+                        log.warning(f'{smd_entry}')
+                        log.warning(f'Failed patch data {patch_mac} with {patch_data}')
+        if record['ip-address'] not in main_smd_ip_set and record['hw-address'].lower() in interface_black_list:
+            log.warning(f"Interface {record['hw-address']} {record['ip-address']} "
+                        f"via dynamic dhcp reservation and was on interface blacklist "
+                        f"Will remove lease from kea")
+            kea_lease4_delete = {'command': 'lease4-del', 'service': ['dhcp4'],
+                                 'arguments': {'ip-address': record['ip-address']}}
+            resp = kea_api('POST', '/', json=kea_lease4_delete, headers=kea_headers)
+
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_xname_to_alias, all_alias_to_xname, sls_hardware):
     """
@@ -1150,7 +1176,7 @@ def main():
 
     # check for any entries or ips kea has and update smd
     compare_smd_kea_information(
-        kea_dhcp4_leases,smd_ethernet_interfaces, main_smd_ip_set, interface_black_list)
+        kea_dhcp4_leases,smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr)
 
     # load bss cloud-init ncn data into SMD EthernetInterfaces
     load_static_ncn_ips(sls_hardware)
