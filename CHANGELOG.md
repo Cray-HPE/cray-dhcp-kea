@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMNET-1128 - dhcp-helper:/srv/kea/dhcp-helper.py:61: DeprecationWarning: Using 'method_whitelist' with Retry is deprecated and will be removed in v2.0. Use 'allowed_methods' instead
 ### Security
 
+
 ## [0.10.1] - 2022-1-26
 ### Added
 ### Changed
