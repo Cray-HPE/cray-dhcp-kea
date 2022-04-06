@@ -2,6 +2,7 @@
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3 as builder
 
+
 ARG KEA_DHCP_VERSION=2.0.1
 ARG LOG4_CPLUS_VERSION=2.0.6
 
@@ -31,6 +32,7 @@ RUN apk add --no-cache --virtual .build-deps \
     rm -rf /tmp/*
 
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
+
 
 
 RUN apk --no-cache add \
