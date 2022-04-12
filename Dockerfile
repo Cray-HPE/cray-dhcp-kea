@@ -46,13 +46,15 @@ RUN apk --no-cache add \
         jq \
         tcpdump \
         python3 &&\
-        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi
+        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi mac-vendor-lookup manuf
 
 
 COPY --from=builder /usr/local /usr/local/
 
 
 RUN addgroup -S kea && adduser -S kea -G kea
+
+RUN curl https://standards-oui.ieee.org/oui/oui.txt > /usr/home/kea/oui.txt
 
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
