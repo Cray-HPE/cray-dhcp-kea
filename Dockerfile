@@ -55,8 +55,6 @@ COPY --from=builder /usr/local /usr/local/
 
 RUN addgroup -S kea && adduser -S kea -G kea
 
-RUN curl https://gitlab.com/wireshark/wireshark/-/raw/master/manuf > /home/kea/manuf
-
 ENV DHCP_HELPER_DEBUG=false
 ENV DHCP_HELPER_INTERVAL_SECONDS=180
 
