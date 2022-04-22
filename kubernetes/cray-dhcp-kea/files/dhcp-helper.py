@@ -482,7 +482,10 @@ def create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname):
             xname_list.append(all_alias_to_xname[alias])
 
     for interface in smd_ethernet_interfaces:
-        if interface['ComponentID'] in xname_list:
+        # adding to conditions to blacklist an interface from having kea update the ip address in SMD
+        # first scenario is all xnames that are linked to an ncn
+        # second scenario are times when we flag kea to not update an ip address in SMD EthernetInterface table like an ncn add/remove/move
+        if interface['ComponentID'] in xname_list or 'kea' in interface['Description']:
             # using SMD ID since that is always MAC without colons
             mac = interface['ID'].lower()
             mac_colons = ':'.join(mac[i:i + 2] for i in range(0, 12, 2))
