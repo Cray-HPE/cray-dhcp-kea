@@ -20,6 +20,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from manuf import manuf
 
+
 class APIRequest(object):
     """
         Example use:
@@ -192,6 +193,16 @@ def get_nmn_cidr(sls_networks):
     """
 
     nmn_cidr = []
+
+def get_nmn_cidr(sls_networks):
+    """
+    Collect all the NMN network cidrs
+    :param sls_networks:
+    :return:
+    """
+
+    nmn_cidr = []
+
 
     for i in range(len(sls_networks)):
         if any(n in sls_networks[i]['Name'] for n in ('NMN','HMN','MTL','CAN', 'CHN', 'CMN')):
@@ -486,6 +497,7 @@ def create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname):
         # first scenario is all xnames that are linked to an ncn
         # second scenario are times when we flag kea to not update an ip address in SMD EthernetInterface table like an ncn add/remove/move
         if interface['ComponentID'] in xname_list or 'kea' in interface['Description']:
+
             # using SMD ID since that is always MAC without colons
             mac = interface['ID'].lower()
             mac_colons = ':'.join(mac[i:i + 2] for i in range(0, 12, 2))
@@ -620,11 +632,13 @@ def load_static_ncn_ips(sls_hardware):
                         max_int = 0
                         min_int = 0
                         mac_vendor = ''
+
                         for i in range(len(smd_query)):
                             if 'kea' in smd_query[i]['Description']:
                                 update_smd = False
                         if update_smd:
                             mac_lookup = manuf.MacParser()
+
                             for entry in smd_query:
                                 if 'usb' not in entry['Description'].lower():
                                     hex_to_int = int(entry['ID'][-2:], 16)
@@ -647,6 +661,7 @@ def load_static_ncn_ips(sls_hardware):
                                         static_mac = entry['MACAddress']
                                         log.info(f'found MAC:{static_mac} for alias:{alias}')
                                         alias_to_mac[alias] = static_mac
+
             log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
 
     log.info('data from BSS sorted into two dictionaries:')
@@ -813,6 +828,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                 kea_lease4_delete = {'command': 'lease4-del', 'service': ['dhcp4'],
                                      'arguments': {'ip-address': record['ip-address']}}
                 resp = kea_api('POST', '/', json=kea_lease4_delete, headers=kea_headers)
+
 
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_xname_to_alias, all_alias_to_xname, sls_hardware):
@@ -1050,6 +1066,7 @@ def create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases):
                      'hw-address': place_holder_mac,
                      'ip-address':place_holder_ip,
                      'valid-lft': 600})
+
 
     if len(place_holder_leases) > 0:
         for i in range(len(place_holder_leases)):

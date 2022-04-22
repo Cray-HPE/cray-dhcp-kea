@@ -2,6 +2,7 @@
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3 as builder
 
+
 ARG KEA_DHCP_VERSION=2.0.1
 ARG LOG4_CPLUS_VERSION=2.0.6
 
@@ -33,6 +34,7 @@ RUN apk add --no-cache --virtual .build-deps \
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 
+
 RUN apk --no-cache add \
         bash \
         boost \
@@ -48,6 +50,7 @@ RUN apk --no-cache add \
         python3 \
         py3-pip &&\
         pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf
+
 
 
 COPY --from=builder /usr/local /usr/local/
