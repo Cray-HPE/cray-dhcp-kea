@@ -621,7 +621,7 @@ def load_static_ncn_ips(sls_hardware):
                         min_int = 0
                         mac_vendor = ''
                         for i in range(len(smd_query)):
-                            if 'kea' in smd_query[i]['Description']:
+                            if 'kea' in smd_query[i]['Description'].lower() or 'usb' in smd_query[i]['Description'].lower():
                                 update_smd = False
                         if update_smd:
                             mac_lookup = manuf.MacParser()
@@ -636,18 +636,19 @@ def load_static_ncn_ips(sls_hardware):
                                 hex_to_int = int(entry['ID'][-2:], 16)
                                 mac_vendor = mac_lookup.get_manuf(entry['MACAddress']).lower()
                                 # intel bmc mac use the higher mac for dedicated bmc port
-                                if 'intel' in mac_vendor:
-                                    if max_int == hex_to_int:
-                                        static_mac = entry['MACAddress']
-                                        log.info(f'found MAC:{static_mac} for alias:{alias}')
-                                        alias_to_mac[alias] = static_mac
-                                # HPE and Gigabyte use the lower mac for dedicated bmc port
-                                else:
-                                    if min_int == hex_to_int:
-                                        static_mac = entry['MACAddress']
-                                        log.info(f'found MAC:{static_mac} for alias:{alias}')
-                                        alias_to_mac[alias] = static_mac
-            log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
+                                if mac_vendor != '':
+                                    if 'intel' in mac_vendor and mac_vendor != '':
+                                        if max_int == hex_to_int:
+                                            static_mac = entry['MACAddress']
+                                            log.info(f'found MAC:{static_mac} for alias:{alias}')
+                                            alias_to_mac[alias] = static_mac
+                                    # HPE and Gigabyte use the lower mac for dedicated bmc port
+                                    else:
+                                        if min_int == hex_to_int:
+                                            static_mac = entry['MACAddress']
+                                            log.info(f'found MAC:{static_mac} for alias:{alias}')
+                                            alias_to_mac[alias] = static_mac
+                    log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
 
     log.info('data from BSS sorted into two dictionaries:')
     log.info(f'{json.dumps(ncn_data)}')
