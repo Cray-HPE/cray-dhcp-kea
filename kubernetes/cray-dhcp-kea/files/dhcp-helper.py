@@ -13,6 +13,7 @@ import logging
 import datetime
 import ipaddress
 import json
+import yaml
 import os
 import time
 import requests
@@ -120,6 +121,30 @@ def check_kea_api():
 
     log.info('Kea API is working as expected.')
 
+
+def get_ipxe_boot_filename(ipxe_settings_file):
+    '''
+    Get ipxe boot file name from cray-ipxe-settings configmap data
+    :return:
+    '''
+
+    ipxe_filename = ''
+    ipxe_settings = {}
+    settings_file_exist = True
+
+    try:
+        with open(ipxe_settings_file, "r") as file:
+            ipxe_settings = yaml.safe_load(file)
+    except IOError:
+        settings_file_exist = False
+        log.error (f'Not able to load {ipxe_settings_file}')
+
+    ipxe_filename = ipxe_settings.get('filename','')
+
+    if not settings_file_exist or ipxe_filename = ''
+        ipxe_filename = os.environ['IPXE_DEFAULT_FILENAME']
+
+    return ipxe_filename
 
 def import_base_config():
     """
@@ -1115,6 +1140,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 
 # variables from env
+ipxe_settings_file = os.environ['IPXE_SETTINGS_FILE']
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
 unbound_servers = {}
@@ -1154,6 +1180,8 @@ def main():
     # make sure kea api is up
     check_kea_api()
 
+    # get boot file name
+    ipxe_boot_filename = get_ipxe_boot_filename(ipxe_settings_file)
     # query SLS for network data
     sls_networks = get_sls_networks()
 
