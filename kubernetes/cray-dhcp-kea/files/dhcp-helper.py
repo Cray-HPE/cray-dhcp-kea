@@ -648,7 +648,7 @@ def load_static_ncn_ips(sls_hardware):
                                             static_mac = entry['MACAddress']
                                             log.info(f'found MAC:{static_mac} for alias:{alias}')
                                             alias_to_mac[alias] = static_mac
-            log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
+                    log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
 
     log.info('data from BSS sorted into two dictionaries:')
     log.info(f'{json.dumps(ncn_data)}')
