@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+- CASMTRIAGE-3275 - manuf network interface vendor lookup doesn't always return a string, enforce string return
+### Security
+
+## [0.10.6] - 2022-4-28
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 - CASMTRIAGE-3269 - add a way to skip none network card entries like usb ports in SMD during mac vendor lookup logic
 ### Security
 
