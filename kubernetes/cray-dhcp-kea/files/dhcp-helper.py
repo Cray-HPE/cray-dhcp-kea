@@ -634,7 +634,7 @@ def load_static_ncn_ips(sls_hardware):
                                         min_int = hex_to_int
                             for entry in smd_query:
                                 hex_to_int = int(entry['ID'][-2:], 16)
-                                mac_vendor = mac_lookup.get_manuf(entry['MACAddress']).lower()
+                                mac_vendor = str(mac_lookup.get_manuf(entry['MACAddress'])).lower()
                                 # intel bmc mac use the higher mac for dedicated bmc port
                                 if mac_vendor != '':
                                     if 'intel' in mac_vendor and mac_vendor != '':
