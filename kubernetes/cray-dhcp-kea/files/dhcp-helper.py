@@ -139,7 +139,7 @@ def get_ipxe_boot_filename(ipxe_settings_file):
         settings_file_exist = False
         log.error (f'Not able to load {ipxe_settings_file}')
 
-    ipxe_filename = ipxe_settings.get('filename','')
+    ipxe_filename = ipxe_settings.get('cray_ipxe_binary_name','')
 
     if not settings_file_exist or ipxe_filename = ''
         ipxe_filename = os.environ['IPXE_DEFAULT_FILENAME']

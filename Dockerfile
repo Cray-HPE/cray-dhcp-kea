@@ -47,7 +47,7 @@ RUN apk --no-cache add \
         tcpdump \
         python3 \
         py3-pip &&\
-        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf
+        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf yaml
 
 
 COPY --from=builder /usr/local /usr/local/
