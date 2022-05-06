@@ -251,7 +251,7 @@ def get_black_list_cidr(sls_networks, black_list_network_names):
                                 black_list_cidr.append(system['CIDR'])
     return black_list_cidr
 
-def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn):
+def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn, ipxe_boot_filename):
     """
     Load network data from SLS
     :param cray_dhcp_kea_dhcp4:
@@ -287,7 +287,7 @@ def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, ti
                         subnet4_subnet['subnet'] = system['CIDR']
                         subnet4_subnet['option-data'].append({'name': 'routers',
                                                               'data': system['Gateway']})
-                        subnet4_subnet['boot-file-name'] = 'ipxe.efi'
+                        subnet4_subnet['boot-file-name'] = ipxe_boot_filename
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
@@ -1210,7 +1210,7 @@ def main():
 
     # load SLS network data in Kea config
     cray_dhcp_kea_dhcp4 = load_network_configs(
-        cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn)
+        cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn, ipxe_boot_filename)
 
     # get all ips in SMD
     main_smd_ip_set = all_ips_in_smd(smd_ethernet_interfaces)
