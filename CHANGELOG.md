@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.8] - 2022-5-09
+### Added
+- CASMINST-4526 - Update cray-dhcp-kea to load dynamic boot file name for pxe booting
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.10.7] - 2022-4-29
 ### Added
 ### Changed
