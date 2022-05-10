@@ -11,7 +11,7 @@ dependencies:
     repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
 maintainers:
   - name: dle-hpe
-appVersion: 0.10.7
+appVersion: 0.10.8
 annotations:
   artifacthub.io/images: |
     - name: cray-dhcp-kea
