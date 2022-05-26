@@ -16,10 +16,10 @@ import json
 import os
 import time
 import requests
+import yaml
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from manuf import manuf
-
 
 class APIRequest(object):
     """
@@ -122,6 +122,30 @@ def check_kea_api():
     log.info('Kea API is working as expected.')
 
 
+def get_ipxe_boot_filename(ipxe_settings_file):
+    '''
+    Get ipxe boot file name from cray-ipxe-settings configmap data
+    :return:
+    '''
+
+    ipxe_filename = ''
+    ipxe_settings = {}
+    settings_file_exist = True
+
+    try:
+        with open(ipxe_settings_file, "r") as file:
+            ipxe_settings = yaml.safe_load(file)
+    except IOError:
+        settings_file_exist = False
+        log.error (f'Not able to load {ipxe_settings_file}')
+
+    ipxe_filename = ipxe_settings.get('cray_ipxe_binary_name','')
+
+    if not settings_file_exist or ipxe_filename == '':
+        ipxe_filename = os.environ['IPXE_DEFAULT_FILENAME']
+
+    return ipxe_filename
+
 def import_base_config():
     """
     importing kea config template and setting lease-database and default lease time
@@ -194,16 +218,6 @@ def get_nmn_cidr(sls_networks):
 
     nmn_cidr = []
 
-def get_nmn_cidr(sls_networks):
-    """
-    Collect all the NMN network cidrs
-    :param sls_networks:
-    :return:
-    """
-
-    nmn_cidr = []
-
-
     for i in range(len(sls_networks)):
         if any(n in sls_networks[i]['Name'] for n in ('NMN','HMN','MTL','CAN', 'CHN', 'CMN')):
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and \
@@ -237,7 +251,7 @@ def get_black_list_cidr(sls_networks, black_list_network_names):
                                 black_list_cidr.append(system['CIDR'])
     return black_list_cidr
 
-def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn):
+def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn, ipxe_boot_filename):
     """
     Load network data from SLS
     :param cray_dhcp_kea_dhcp4:
@@ -273,7 +287,7 @@ def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, ti
                         subnet4_subnet['subnet'] = system['CIDR']
                         subnet4_subnet['option-data'].append({'name': 'routers',
                                                               'data': system['Gateway']})
-                        subnet4_subnet['boot-file-name'] = 'ipxe.efi'
+                        subnet4_subnet['boot-file-name'] = ipxe_boot_filename
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
@@ -497,7 +511,6 @@ def create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname):
         # first scenario is all xnames that are linked to an ncn
         # second scenario are times when we flag kea to not update an ip address in SMD EthernetInterface table like an ncn add/remove/move
         if interface['ComponentID'] in xname_list or 'kea' in interface['Description']:
-
             # using SMD ID since that is always MAC without colons
             mac = interface['ID'].lower()
             mac_colons = ':'.join(mac[i:i + 2] for i in range(0, 12, 2))
@@ -632,13 +645,11 @@ def load_static_ncn_ips(sls_hardware):
                         max_int = 0
                         min_int = 0
                         mac_vendor = ''
-
                         for i in range(len(smd_query)):
-                            if 'kea' in smd_query[i]['Description']:
+                            if 'kea' in smd_query[i]['Description'].lower() or 'usb' in smd_query[i]['Description'].lower():
                                 update_smd = False
                         if update_smd:
                             mac_lookup = manuf.MacParser()
-
                             for entry in smd_query:
                                 if 'usb' not in entry['Description'].lower():
                                     hex_to_int = int(entry['ID'][-2:], 16)
@@ -648,21 +659,21 @@ def load_static_ncn_ips(sls_hardware):
                                         min_int = hex_to_int
                             for entry in smd_query:
                                 hex_to_int = int(entry['ID'][-2:], 16)
-                                mac_vendor = mac_lookup.get_manuf(entry['MACAddress']).lower()
+                                mac_vendor = str(mac_lookup.get_manuf(entry['MACAddress'])).lower()
                                 # intel bmc mac use the higher mac for dedicated bmc port
-                                if 'intel' in mac_vendor:
-                                    if max_int == hex_to_int:
-                                        static_mac = entry['MACAddress']
-                                        log.info(f'found MAC:{static_mac} for alias:{alias}')
-                                        alias_to_mac[alias] = static_mac
-                                # HPE and Gigabyte use the lower mac for dedicated bmc port
-                                else:
-                                    if min_int == hex_to_int:
-                                        static_mac = entry['MACAddress']
-                                        log.info(f'found MAC:{static_mac} for alias:{alias}')
-                                        alias_to_mac[alias] = static_mac
-
-            log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
+                                if mac_vendor != '':
+                                    if 'intel' in mac_vendor and mac_vendor != '':
+                                        if max_int == hex_to_int:
+                                            static_mac = entry['MACAddress']
+                                            log.info(f'found MAC:{static_mac} for alias:{alias}')
+                                            alias_to_mac[alias] = static_mac
+                                    # HPE and Gigabyte use the lower mac for dedicated bmc port
+                                    else:
+                                        if min_int == hex_to_int:
+                                            static_mac = entry['MACAddress']
+                                            log.info(f'found MAC:{static_mac} for alias:{alias}')
+                                            alias_to_mac[alias] = static_mac
+                    log.info(f'the data for BMC alias:{alias}, xname:{xname_bmc}, MAC:{static_mac}')
 
     log.info('data from BSS sorted into two dictionaries:')
     log.info(f'{json.dumps(ncn_data)}')
@@ -828,7 +839,6 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                 kea_lease4_delete = {'command': 'lease4-del', 'service': ['dhcp4'],
                                      'arguments': {'ip-address': record['ip-address']}}
                 resp = kea_api('POST', '/', json=kea_lease4_delete, headers=kea_headers)
-
 
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4,smd_ethernet_interfaces, nmn_cidr, all_xname_to_alias, all_alias_to_xname, sls_hardware):
@@ -1067,7 +1077,6 @@ def create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases):
                      'ip-address':place_holder_ip,
                      'valid-lft': 600})
 
-
     if len(place_holder_leases) > 0:
         for i in range(len(place_holder_leases)):
             kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'], 'arguments': {}}
@@ -1131,6 +1140,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 
 # variables from env
+ipxe_settings_file = os.environ['IPXE_SETTINGS_FILE']
 tftp_server_nmn = os.environ['TFTP_SERVER_NMN']
 tftp_server_hmn = os.environ['TFTP_SERVER_HMN']
 unbound_servers = {}
@@ -1170,6 +1180,8 @@ def main():
     # make sure kea api is up
     check_kea_api()
 
+    # get boot file name
+    ipxe_boot_filename = get_ipxe_boot_filename(ipxe_settings_file)
     # query SLS for network data
     sls_networks = get_sls_networks()
 
@@ -1198,7 +1210,7 @@ def main():
 
     # load SLS network data in Kea config
     cray_dhcp_kea_dhcp4 = load_network_configs(
-        cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn)
+        cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn, ipxe_boot_filename)
 
     # get all ips in SMD
     main_smd_ip_set = all_ips_in_smd(smd_ethernet_interfaces)

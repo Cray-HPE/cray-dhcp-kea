@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.8=9] - 2022-5-26
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMINST-4706 - fix type-o in volume mount
+### Security
+
+## [0.10.8] - 2022-5-09
+### Added
+- CASMINST-4526 - Update cray-dhcp-kea to load dynamic boot file name for pxe booting
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [0.10.7] - 2022-4-29
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMTRIAGE-3275 - manuf network interface vendor lookup doesn't always return a string, enforce string return
+### Security
+
+## [0.10.6] - 2022-4-28
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- CASMTRIAGE-3269 - add a way to skip none network card entries like usb ports in SMD during mac vendor lookup logic
+### Security
 
 ## [0.10.5] - 2022-4-22
 ### Added
@@ -23,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 ### Security
+
 
 ## [0.10.3] - 2022-3-17
 ### Added
