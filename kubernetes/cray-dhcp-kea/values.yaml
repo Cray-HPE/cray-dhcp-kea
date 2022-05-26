@@ -143,7 +143,7 @@ cray-service:
         defaultMode: 0777
         name: cray-dhcp-kea-jobs
     cray-ipxe-settings:
-      name: cray-dhcp-kea-jobs
+      name: cray-ipxe-settings
       configMap:
         name: cray-ipxe-settings
   service:
@@ -165,5 +165,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.8
-  appVersion: 0.10.8
+    version: 0.10.9
+  appVersion: 0.10.9
