@@ -1,0 +1,16 @@
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cray-dhcp-kea
+  labels:
+    app.kubernetes.io/name: cray-dhcp-kea
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
