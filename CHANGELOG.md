@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.10.8=9] - 2022-5-26
+## [0.10.10] - 2022-06-06
+### Added
+### Changed
+### Deprecated
+### Removed
+- removed dynamic tftp filename load, will add back for csm-1.2.6
+### Fixed
+- CASMTRIAGE-3436 - fix SMD patch logic for dhcp-helper.py
+### Security
+
+## [0.10.9] - 2022-5-26
 ### Added
 ### Changed
 ### Deprecated
