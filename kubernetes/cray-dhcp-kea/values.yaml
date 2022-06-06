@@ -56,10 +56,6 @@ cray-service:
           value: "0.0.0.0"
         - name: KEA_EXPORTER_PORT
           value: "8080"
-        - name: IPXE_SETTINGS_FILE
-          value: "/srv/ipxe/settings.yaml"
-        - name: IPXE_DEFAULT_FILENAME
-          value: "ipxe.efi"
       ports:
         - name: kea-server-udp
           containerPort: 6067
@@ -90,8 +86,6 @@ cray-service:
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
-        - name: cray-ipxe-settings
-          mountPath: /srv/ipxe
     cray-dhcp-kea-ctrl-agent:
       name: cray-dhcp-kea-ctrl-agent
       securityContext:
@@ -142,10 +136,6 @@ cray-service:
       configMap:
         defaultMode: 0777
         name: cray-dhcp-kea-jobs
-    cray-ipxe-settings:
-      name: cray-ipxe-settings
-      configMap:
-        name: cray-ipxe-settings
   service:
     # service definitions for this chart defined manually
     enabled: false
@@ -165,5 +155,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.9
-  appVersion: 0.10.9
+    version: 0.10.10
+  appVersion: 0.10.10
