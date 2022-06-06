@@ -790,13 +790,14 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                             patch_ip = smd_query['IPAddresses']
                         else:
                             patch_ip = []
+                        patch_ip.append({'IPAddress':record['ip-address']})
                         # check for any blank ips kv pairs
                         for i in range(len(patch_ip) - 1):
                             if 'IPAddress' in patch_ip[i] and patch_ip[i]['IPAddress'] == '':
                                 del patch_ip[i]
                         patch_mac = smd_id
                         patch_data = {'IPAddresses': patch_ip}
-                        if smd_entry['Type'] == 'NodeBMC' and len(patch_ip) > 1:
+                        if smd_query['Type'] == 'NodeBMC' and len(patch_ip) > 1:
                             valid_patch_entry = False
                             # working around known issue with BMCs set to static still DHCP
                             if len(patch_ip) > 1:
@@ -827,7 +828,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                                 log.error('Patch to SMD EthernetInterfaces did not succeed')
                                 log.error(f'status_code: {resp.status_code}')
                                 log.error(f'{resp.json}')
-                        if valid_patch_entry and len(smd_entry['IPAddresses']) > 0:
+                        if valid_patch_entry and len(smd_query['IPAddresses']) > 1:
                             log.warning(f'Already an IP for SMD entry')
                             log.warning(f'{smd_entry}')
                             log.warning(f'Failed patch data {patch_mac} with {patch_data}')
