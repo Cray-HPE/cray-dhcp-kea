@@ -20,14 +20,6 @@ subjects:
 - kind: ServiceAccount
   name: {{ template "cray-dhcp-kea.fullname" . }}
   namespace: {{ .Release.Namespace }}
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ template "cray-dhcp-kea.fullname" . }}
-  labels:
-    {{- include "cray-dhcp-kea.labels" . | indent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
