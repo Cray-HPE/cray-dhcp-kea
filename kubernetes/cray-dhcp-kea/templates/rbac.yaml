@@ -1,0 +1,64 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "cray-dhcp-kea.fullname" . }}
+  labels:
+    {{- include "cray-dhcp-kea.labels" . | indent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "cray-dhcp-kea.fullname" . }}-role-binding
+  labels:
+    {{- include "cray-dhcp-kea.labels" . | indent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: {{ template "cray-dhcp-kea.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "cray-dhcp-kea.fullname" . }}
+  labels:
+    {{- include "cray-dhcp-kea.labels" . | indent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "cray-dhcp-kea.fullname" . }}
+  labels:
+    {{- include "cray-dhcp-kea.labels" . | indent 4 }}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+{{- range $key, $val := index .Values "cray-service" "containers" "cray-dhcp-kea" "env" }}
+  {{- if eq $val.name "IPXE_SETTINGS_CM" }}
+  resourceNames: [{{  $val.value | quote }}]
+    {{- end}}
+{{- end }}
+  verbs: ["get", "patch"]
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - restricted-transition-net-raw
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "cray-dhcp-kea.fullname" . }}-psp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: restricted-transition-net-raw-psp
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "cray-dhcp-kea.fullname" . }}
+    namespace: services

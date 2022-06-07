@@ -9,6 +9,7 @@
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
+
 cray-service:
   priorityClassName: csm-high-priority-service
   type: Deployment
@@ -56,6 +57,10 @@ cray-service:
           value: "0.0.0.0"
         - name: KEA_EXPORTER_PORT
           value: "8080"
+        - name: IPXE_SETTINGS_CM
+          value: "cray-ipxe-settings"
+        - name: IPXE_DEFAULT_FILENAME
+          value: "ipxe.efi"
       ports:
         - name: kea-server-udp
           containerPort: 6067
@@ -155,5 +160,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.10
-  appVersion: 0.10.10
+    version: 0.10.11
+  appVersion: 0.10.11
