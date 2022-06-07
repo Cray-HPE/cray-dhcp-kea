@@ -14,6 +14,7 @@ cray-service:
   priorityClassName: csm-high-priority-service
   type: Deployment
   nameOverride: cray-dhcp-kea
+  serviceAccountName: cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
   containers:
