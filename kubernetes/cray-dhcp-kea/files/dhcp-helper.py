@@ -122,7 +122,7 @@ def check_kea_api():
     log.info('Kea API is working as expected.')
 
 
-def get_ipxe_boot_filename():
+def get_ipxe_boot_filename(ipxe_settings_file):
     '''
     Get ipxe boot file name from cray-ipxe-settings configmap data
     :return:
