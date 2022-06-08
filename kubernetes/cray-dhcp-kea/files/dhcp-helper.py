@@ -128,6 +128,7 @@ def get_ipxe_boot_filename():
     :return:
     '''
 
+    ipxe_configmap_name = os.environ['IPXE_SETTINGS_CM']
     ipxe_filename_default = os.environ['IPXE_DEFAULT_FILENAME']
     ipxe_filename = ''
 
@@ -138,7 +139,7 @@ def get_ipxe_boot_filename():
     kube_api = client.CoreV1Api()
 
     try:
-        resp = kube_api.read_namespaced_config_map('cray-ipxe-settings', 'services')
+        resp = kube_api.read_namespaced_config_map(ipxe_configmap_name, 'services')
         ipxe_settings = yaml.safe_load(resp.data['settings.yaml'])
         # for backwards compatibility to work with cray-ipxe that does not support
         # dynamic ipxe filename
