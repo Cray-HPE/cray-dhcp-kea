@@ -20,6 +20,7 @@ import yaml
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from manuf import manuf
+from kubernetes import client, config
 
 class APIRequest(object):
     """
@@ -119,6 +120,41 @@ def check_kea_api():
         sys.exit(1)
 
     log.info('Kea API is working as expected.')
+
+
+def get_ipxe_boot_filename():
+    '''
+    Get ipxe boot file name from cray-ipxe-settings configmap data
+    :return:
+    '''
+
+    ipxe_filename_default = os.environ['IPXE_DEFAULT_FILENAME']
+    ipxe_filename = ''
+
+    # load kube api configs and token
+    config.load_incluster_config()
+
+    # kubernetes api object
+    kube_api = client.CoreV1Api()
+
+    try:
+        resp = kube_api.read_namespaced_config_map('cray-ipxe-settings', 'services')
+        ipxe_settings = yaml.safe_load(resp.data['settings.yaml'])
+        # for backwards compatibility to work with cray-ipxe that does not support
+        # dynamic ipxe filename
+        ipxe_filename = ipxe_settings.get('cray_ipxe_binary_name', ipxe_filename_default)
+    except Exception as e:
+        #
+        print ('Not able to load data from cray-ipxe-settings configmap.'
+               'Using default ipxe filename.')
+        print (e)
+        ipxe_filename = ipxe_filename_default
+
+    # set to default filename if cray-ipxe cray-ipxe-settings configmap not available
+    if ipxe_filename == '':
+        ipxe_filename = ipxe_filename_default
+
+    return ipxe_filename
 
 
 def import_base_config():
@@ -229,7 +265,7 @@ def get_black_list_cidr(sls_networks, black_list_network_names):
     return black_list_cidr
 
 
-def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn):
+def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn, ipxe_boot_filename):
     """
     Load network data from SLS
     :param cray_dhcp_kea_dhcp4:
@@ -265,7 +301,7 @@ def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, ti
                         subnet4_subnet['subnet'] = system['CIDR']
                         subnet4_subnet['option-data'].append({'name': 'routers',
                                                               'data': system['Gateway']})
-                        subnet4_subnet['boot-file-name'] = 'ipxe.efi'
+                        subnet4_subnet['boot-file-name'] = ipxe_boot_filename
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
@@ -1194,6 +1230,9 @@ def main():
     # make sure kea api is up
     check_kea_api()
 
+    # get boot file name
+    ipxe_boot_filename = get_ipxe_boot_filename()
+
     # query SLS for network data
     sls_networks = get_sls_networks()
 
@@ -1222,7 +1261,7 @@ def main():
 
     # load SLS network data in Kea config
     cray_dhcp_kea_dhcp4 = load_network_configs(
-        cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn)
+        cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, time_servers_hmn, ipxe_boot_filename)
 
     # get all ips in SMD
     main_smd_ip_set = all_ips_in_smd(smd_ethernet_interfaces)
