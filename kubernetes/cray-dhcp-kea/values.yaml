@@ -146,7 +146,7 @@ cray-service:
       name: cray-ipxe-settings
       configMap:
         name: cray-ipxe-settings
-      optional: true
+        optional: true
   service:
     # service definitions for this chart defined manually
     enabled: false
