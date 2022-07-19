@@ -168,4 +168,3 @@ global:
     name: cray-dhcp-kea
     version: 0.10.12
   appVersion: 0.10.12
-
