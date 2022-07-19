@@ -166,10 +166,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-<<<<<<< HEAD
-    version: 0.10.11
-  appVersion: 0.10.11
-=======
-    version: 0.10.10
-  appVersion: 0.10.10
->>>>>>> f337ad1 (CASMINST-5005,CASMNET-1713,CASMNET-1551,CASMNET-1677 - update dhcp-helper to use SMD/HSM v2 api, fix auto repair bug, gracefully handle empty cray-bss data)
+    version: 0.10.12
+  appVersion: 0.10.12
