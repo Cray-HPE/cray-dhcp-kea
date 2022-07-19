@@ -3,7 +3,6 @@ apiVersion: v2
 name: cray-dhcp-kea
 version: 0.10.11
 
-
 description: Kubernetes resources for cray-dhcp-kea
 home: https://github.com/Cray-HPE/cray-dhcp-kea
 dependencies:
