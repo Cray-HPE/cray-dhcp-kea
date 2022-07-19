@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.12] - 2022-07-18
+### Added
+- CASMNET-1677 - dhcp-helper.py should fail gracefully if BSS metadata is missing
+### Changed
+- CASMNET-1551 - update cray-dhcp-kea to use HSM V2 API
+### Deprecated
+### Removed
+### Fixed
+- CASMNET-1713 - auto repair logic in dhcp-helper.py not consistently working
+### Security
+
 ## [0.10.11] - 2022-06-08
 ### Added
 - Added back dynamic boot file name loading and made volume mount optional 
