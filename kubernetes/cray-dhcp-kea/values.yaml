@@ -165,5 +165,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.9
-  appVersion: 0.10.9
+    version: 0.10.10
+  appVersion: 0.10.10
