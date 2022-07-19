@@ -11,17 +11,9 @@ dependencies:
     repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
 maintainers:
   - name: dle-hpe
-<<<<<<< HEAD
 appVersion: 0.10.12
 annotations:
   artifacthub.io/images: |
     - name: cray-dhcp-kea
       image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.10.12
-=======
-appVersion: 0.10.10
-annotations:
-  artifacthub.io/images: |
-    - name: cray-dhcp-kea
-      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.10.10
->>>>>>> f337ad19a356160cbe53c0af3fafdd8877fd931c
   artifacthub.io/license: MIT
