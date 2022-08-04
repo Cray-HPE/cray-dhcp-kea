@@ -807,13 +807,9 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                             patch_ip = []
                         patch_ip.append({'IPAddress': record['ip-address']})
                         # check for any blank ips kv pairs
-                        j = 0
-                        while j < len(repair_data):
-                            if repair_data[j]['IPAddresses'] == []:
-                                print('repair_data: Deleting entry with no ip')
-                                del repair_data[j]
-                            else:
-                                j += 1
+                        for i in range(len(patch_ip) - 1):
+                            if 'IPAddress' in patch_ip[i] and patch_ip[i]['IPAddress'] == '':
+                                del patch_ip[i]
                         patch_mac = smd_id
                         patch_data = {'IPAddresses': patch_ip}
                         if smd_entry['Type'] == 'NodeBMC' and len(patch_ip) > 1:
@@ -948,10 +944,13 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                             resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces?ComponentID='
                                            + kea_hostname)
                             repair_data = resp.json()
-                            for j in range(len(repair_data) - 1):
+                            j = 0
+                            while j < len(repair_data):
                                 if repair_data[j]['IPAddresses'] == []:
                                     print('repair_data: Deleting entry with no ip')
                                     del repair_data[j]
+                                else:
+                                    j += 1
                             print(repair_data)
                             # if length of repair data is not 2, we are unable to automatically fix the SMD data
                             if len(repair_data) != 2:
