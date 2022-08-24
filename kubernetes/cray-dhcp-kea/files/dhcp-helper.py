@@ -766,6 +766,10 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
         query_smd = True
         smd_entry = ''
         valid_ip = True
+        patch_ip = []
+        patch_mac = ''
+        post_mac = ''
+        post_ip = []
 
         # checking for active leases in kea and making sure
         # they are not in the interface blacklist and cidr black list
