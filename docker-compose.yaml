@@ -3,59 +3,34 @@ version: '3'
 services:
   cray-dhcp-kea:
     #build: .
-    image: cray-dhcp-kea:latest
+    image: artifactory.algol60.net/csm-docker/unstable/cray-dhcp-kea:0.10.16-20220831203426_be11ef8
     container_name: cray-dhcp-kea
     volumes:
-      - ./cray-dhcp-kea-dhcp4.conf:/cray-dhcp-kea-dhcp4.conf
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
-    network_mode: host
+#    network_mode: host
     environment:
-    #    ports:
-    #      - 67:67/udp
-    #      - 67:67/tcp
-    #      - 68:68/udp
-    #      - 68:68/tcp
+    ports:
+          - 67:6067/udp
+          - 67:6067/tcp
+#          - 68:6068/udp
+#          - 68:6068/tcp
     environment:
       DHCP_CAHOST: 127.0.0.1 # KEA Control agent host
       DHCP_CAPORT: 8000 # KEA Control agent port
-      DHCP_DBHOST: localhost
-      DHCP_DBNAME: dhcpdb
-      DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
-      DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
-    depends_on:
-      - cray-dhcp-kea-db
     restart: always
-    #entrypoint: "tail -f"
-    environment:
-      DHCP_DBNAME: dhcpdb # keep in sync with POSTGRES_PASSWORD
-      DHCP_DBHOST: localhost
-      DHCP_DBUSER: postgres # keep in sync with POSTGRES_USER
-      DHCP_DBPASS: dhcpdb # keep in sync with POSTGRES_DB
+    entrypoint: "/srv/kea/external_startup_dhcp.sh"
   cray-dhcp-kea-ctrl-agent:
-    image: cray-dhcp-kea:latest
-    container_name: cray-dhcp-kea-ctrl-agent
+    image: artifactory.algol60.net/csm-docker/unstable/cray-dhcp-kea:0.10.16-20220831203426_be11ef8
+    container_name: cray-dhcp-api
     privileged: true
     volumes:
-      - ./cray-dhcp-kea-ctrl-agent.conf:/cray-dhcp-kea-ctrl-agent.conf
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
     ports:
       - 8000:8000
     restart: always
-    #entrypoint: "tail -f"
+    entrypoint: "/srv/kea/external_startup_dhcp_ctrl_agent.sh"
     environment:
       DHCP_CAHOST: 0.0.0.0 # KEA Control agent host
       DHCP_CAPORT: 8000 # KEA Control agent port
-  cray-dhcp-kea-db:
-    image: postgres
-    container_name: cray-dhcp-kea-db
-    ports:
-      - 5432:5432
-    volumes:
-      - ./postgres:/docker-entrypoint-initdb.d
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: dhcpdb
-      POSTGRES_PASSWORD: dhcpdb
-    restart: always
 volumes:
   cray-dhcp-kea-socket:
