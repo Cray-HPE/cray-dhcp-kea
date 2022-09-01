@@ -7,6 +7,7 @@ services:
     container_name: cray-dhcp-kea
     volumes:
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
+#      - /root/.kube:/home/kea/.kube
 #    network_mode: host
     environment:
     ports:
@@ -19,9 +20,12 @@ services:
       DHCP_CAPORT: 8000 # KEA Control agent port
     restart: always
     entrypoint: "/srv/kea/external_startup_dhcp.sh"
-  cray-dhcp-kea-ctrl-agent:
+    networks:
+      - kea
+
+  cray-dhcp-kea-api:
     image: cray-dhcp-kea:latest
-    container_name: cray-dhcp-api
+    container_name: cray-dhcp-kea-api
     privileged: true
     volumes:
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
@@ -34,5 +38,9 @@ services:
       DHCP_CAPORT: 8000 # KEA Control agent port
     depends_on:
       - cray-dhcp-kea
+    networks:
+      - kea
 volumes:
   cray-dhcp-kea-socket:
+networks:
+  kea: {}
