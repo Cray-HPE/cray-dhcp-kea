@@ -1210,8 +1210,8 @@ log.addHandler(handler)
 
 # variables from env
 ipxe_settings_file = os.environ.get('IPXE_SETTINGS_FILE', 'ipxe.efi')
-tftp_server_nmn = os.environ.get('TFTP_SERVER_NMN','10.92.100.60')
-tftp_server_hmn = os.environ.get('TFTP_SERVER_HMN','10.94.100.60')
+tftp_server_nmn = os.environ.get('TFTP_SERVER_NMN', '10.92.100.60')
+tftp_server_hmn = os.environ.get('TFTP_SERVER_HMN', '10.94.100.60')
 unbound_servers = {}
 unbound_servers['NMN'] = os.environ.get('UNBOUND_SERVER_NMN', '10.92.100.225')
 unbound_servers['HMN'] = os.environ.get('UNBOUND_SERVER_HMN', '10.94.100.225')

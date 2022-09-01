@@ -2,8 +2,8 @@ version: '3'
 
 services:
   cray-dhcp-kea:
-    #build: .
-    image: artifactory.algol60.net/csm-docker/unstable/cray-dhcp-kea:0.10.16-20220831203426_be11ef8
+    build: .
+    image: cray-dhcp-kea:latest
     container_name: cray-dhcp-kea
     volumes:
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
@@ -20,7 +20,7 @@ services:
     restart: always
     entrypoint: "/srv/kea/external_startup_dhcp.sh"
   cray-dhcp-kea-ctrl-agent:
-    image: artifactory.algol60.net/csm-docker/unstable/cray-dhcp-kea:0.10.16-20220831203426_be11ef8
+    image: cray-dhcp-kea:latest
     container_name: cray-dhcp-api
     privileged: true
     volumes:
@@ -32,5 +32,7 @@ services:
     environment:
       DHCP_CAHOST: 0.0.0.0 # KEA Control agent host
       DHCP_CAPORT: 8000 # KEA Control agent port
+    depends_on:
+      - cray-dhcp-kea
 volumes:
   cray-dhcp-kea-socket:
