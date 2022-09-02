@@ -94,7 +94,7 @@ class APIRequest(object):
 
         return response
 
-def bearer_token():
+def get_bearer_token():
     # setup kubernetes client
     config.load_kube_config()
     v1 = client.CoreV1Api()
@@ -167,7 +167,7 @@ def get_ipxe_boot_filename(ipxe_settings_file):
     ipxe_filename = ipxe_settings.get('cray_ipxe_binary_name', '')
 
     if not settings_file_exist or ipxe_filename == '':
-        ipxe_filename = os.environ['IPXE_DEFAULT_FILENAME']
+        ipxe_filename = os.environ.get('IPXE_DEFAULT_FILENAME', "ipxe.efi")
 
     return ipxe_filename
 
@@ -210,7 +210,7 @@ def get_time_servers(network):
             # this will only be used if querying unbound failed
             if not lookup_in_unbound:
                 alias = 'ncn-w00' + str(i)
-                resp = sls_api('GET', '/v1/networks/' + network.upper())
+                resp = sls_api('GET', '/v1/networks/' + network.upper(),headers=resp_header)
                 network_data = resp.json()
                 if 'Subnets' in network_data['ExtraProperties'] and \
                         len(network_data['ExtraProperties']['Subnets']) > 0:
@@ -375,7 +375,8 @@ def get_sls_networks():
     Get network information from SLS
     :return:
     """
-    resp = sls_api('GET', '/v1/networks')
+
+    resp = sls_api('GET', '/v1/networks', headers=resp_headers)
 
     return resp.json()
 
@@ -385,7 +386,8 @@ def get_sls_hardware():
     Get hardawre information from SLS
     :return:
     """
-    resp = sls_api('GET', '/v1/hardware')
+
+    resp = sls_api('GET', '/v1/hardware', headers=resp_headers)
 
     return resp.json()
 
@@ -409,7 +411,8 @@ def get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr):
     :param black_list_cidr:
     :return:
     """
-    resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces')
+
+    resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces', headers=resp_headers)
     smd_ethernet_interfaces = resp.json()
 
     interface_removal_list = []
@@ -434,7 +437,7 @@ def get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr):
                             patch_data = {'ID': patch_id, 'MACAddress': patch_mac, 'IPAddresses': []}
                             resp = smd_api(
                                 'PATCH', '/hsm/v2/Inventory/EthernetInterfaces/'
-                                         + patch_id, json=patch_data)
+                                         + patch_id, json=patch_data,headers=resp_header)
                             log.warning(f'Found an IP in SMD EthernetInterfaces that should not be there.'
                                         f'MAC:{patch_mac}, IP: {smd_ip}')
                             if resp.status_code != 200 and resp.status_code != 201:
@@ -563,7 +566,7 @@ def load_static_ncn_ips(sls_hardware):
     bss_host_records = {}
 
     # get ncn and ncn-bmc ip info
-    resp = bss_api('GET', '/boot/v1/bootparameters?name=Global')
+    resp = bss_api('GET', '/boot/v1/bootparameters?name=Global', headers=resp_headers)
     bss_data = resp.json()
     if 'cloud-init' in bss_data[0]:
         if 'meta-data' in bss_data[0]['cloud-init']:
@@ -633,14 +636,14 @@ def load_static_ncn_ips(sls_hardware):
                             # check description to see if kea has already loaded the data for NCN
                             resp = smd_api('GET'
                                            , '/hsm/v2/Inventory/EthernetInterfaces?ComponentID='
-                                           + xname)
+                                           + xname, headers=resp_header)
                             smd_query = resp.json()
                             for i in range(len(smd_query)):
                                 if 'kea' in smd_query[i]['Description']:
                                     query_bss = False
                                     update_smd = False
                             if query_bss:
-                                resp = bss_api('GET', '/boot/v1/bootparameters?name=' + xname)
+                                resp = bss_api('GET', '/boot/v1/bootparameters?name=' + xname,headers=resp_header)
                                 if resp.status_code != 404 and 'params' in resp.json()[0]:
                                     bss_params = resp.json()[0]['params'].split()
                                 else:
@@ -674,7 +677,7 @@ def load_static_ncn_ips(sls_hardware):
                                 and sls_record['ExtraProperties']['Aliases'][0] == alias.strip('_bmc'):
                             xname_bmc = sls_record['Parent']
                             resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces?ComponentID='
-                                           + xname_bmc)
+                                           + xname_bmc, headers=resp_header)
                             smd_query = resp.json()
                             max_int = 0
                             min_int = 0
@@ -732,7 +735,7 @@ def load_static_ncn_ips(sls_hardware):
                     update_smd = False
                 if update_smd:
                     resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces/'
-                                   + update_mac.replace(':', '').lower())
+                                   + update_mac.replace(':', '').lower(), headers=resp_header)
                     log.info(f"static_mac stripped of colons {update_mac.replace(':', '').lower()}")
                     if 'Description' in resp.json() and resp.status_code == 200:
                         if 'kea' not in resp.json()['Description']:
@@ -748,7 +751,7 @@ def load_static_ncn_ips(sls_hardware):
                                     {'MACAddress': patch_mac, 'Description':
                                         patch_description, 'IPAddresses': patch_ip}
                                 resp = smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/'
-                                               + patch_mac, json=patch_data)
+                                               + patch_mac, json=patch_data, headers=resp_header)
                                 log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/' + {patch_mac},"
                                          f"json={json.dumps(patch_data)})")
                                 log.info(f'{resp.json}')
@@ -761,7 +764,7 @@ def load_static_ncn_ips(sls_hardware):
                         log.info("Post URL: cray-smd/hsm/v2/Inventory/EthernetInterfaces")
                         post_data = {'MACAddress': post_mac, 'Description': post_description,
                                      'IPAddresses': post_ip}
-                        resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=post_data)
+                        resp = smd_api('POST', 'hsm/v2/Inventory/EthernetInterfaces', json=post_data, headers=resp_header)
                         log.info(f"smd_api('PATCH', 'hsm/v2/Inventory/EthernetInterfaces/',"
                                  f"json={json.dumps(post_data)})")
                         log.info(f'{resp.json}')
@@ -811,7 +814,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                             entry_exist = True
                             query_smd = False
                     if query_smd:
-                        resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces/' + smd_id)
+                        resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces/' + smd_id, headers=resp_header)
                         smd_entry = resp.json()
                         if resp.status_code == 200:
                             entry_exist = True
@@ -819,7 +822,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                         post_ip = [{'IPAddress': record['ip-address']}]
                         post_mac = smd_id
                         post_data = {'MACAddress': post_mac, 'IPAddresses': post_ip}
-                        resp = smd_api('POST', '/hsm/v2/Inventory/EthernetInterfaces', json=post_data)
+                        resp = smd_api('POST', '/hsm/v2/Inventory/EthernetInterfaces', json=post_data, headers=resp_header)
                         log.info(f'Added {post_data}')
 
                         if resp.status_code != 200 and resp.status_code != 201:
@@ -861,7 +864,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                             valid_patch_entry = False
                         if valid_patch_entry:
                             resp = smd_api('PATCH', '/hsm/v2/Inventory/EthernetInterfaces/' + patch_mac,
-                                           json=patch_data)
+                                           json=patch_data, headers=resp_header)
                             log.info(f'Updated {patch_mac} with {patch_data}')
 
                             if resp.status_code != 200:
@@ -971,7 +974,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                             log.info(
                                 f"URL: http://cray-smd/hsm/v2/Inventory/EthernetInterfaces?ComponentID={kea_hostname}")
                             resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces?ComponentID='
-                                           + kea_hostname)
+                                           + kea_hostname, headers=resp_header)
                             repair_data = resp.json()
                             j = 0
                             while j < len(repair_data):
@@ -1004,7 +1007,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                     patch_data = {'MACAddress': patch_mac, 'IPAddresses': []}
                                     resp = smd_api('PATCH',
                                                    'hsm/v2/Inventory/EthernetInterfaces/'
-                                                   + repair_data[0]['ID'], json=patch_data)
+                                                   + repair_data[0]['ID'], json=patch_data, headers=resp_header)
                                     log.debug(
                                         'URL: http://cray-smd/hsm/v2/Inventory/EthernetInterfaces?ComponentID=' +
                                         repair_data[1][
@@ -1018,7 +1021,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                     patch_data = {'MACAddress': repair_mac, 'IPAddresses': [{'IPAddress': repair_ip}]}
                                     resp = smd_api('PATCH',
                                                    'hsm/v2/Inventory/EthernetInterfaces/'
-                                                   + repair_data[1]['ID'], json=patch_data)
+                                                   + repair_data[1]['ID'], json=patch_data, headers=resp_header)
 
                                 # move the old ip to the newer interface
                                 # delete the ip in the older entry
@@ -1031,7 +1034,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                     patch_data = {'MACAddress': patch_mac, 'IPAddresses': []}
                                     resp = smd_api('PATCH',
                                                    'hsm/v2/Inventory/EthernetInterfaces/' + repair_data[1]['ID'],
-                                                   json=patch_data)
+                                                   json=patch_data, headers=resp_header)
                                     log.debug(
                                         'URL: http://cray-smd/hsm/v2/Inventory/EthernetInterfaces?ComponentID=' +
                                         repair_data[0]['ID'])
@@ -1044,7 +1047,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                     patch_data = {'MACAddress': repair_mac, 'IPAddresses': [{'IPAddress': repair_ip}]}
                                     resp = smd_api('PATCH',
                                                    'hsm/v2/Inventory/EthernetInterfaces/'
-                                                   + repair_data[0]['ID'], json=patch_data)
+                                                   + repair_data[0]['ID'], json=patch_data, headers=resp_header)
 
                                 # delete active lease in kea
                                 kea_lease4_delete = {'command': 'lease4-del', 'service': ['dhcp4'],
@@ -1235,6 +1238,10 @@ smd_api = APIRequest('https://api-gw-service-nmn.local/apis/smd')
 sls_api = APIRequest('https://api-gw-service-nmn.local/apis/sls')
 bss_api = APIRequest('https://api-gw-service-nmn.local/apis/bss')
 nmn_api_gw = APIRequest('https://api-gw-service-nmn.local')
+
+# bearer token
+token = get_bearer_token()
+resp_headers = f'Authorization: Bearer {token}'
 
 def main():
     """
