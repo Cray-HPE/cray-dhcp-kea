@@ -112,10 +112,10 @@ def get_bearer_token():
     token_url = 'https://api-gw-service-nmn.local/keycloak/realms/shasta/protocol/openid-connect/token'
     try:
 #        token_resp = requests.post(url=token_url, data=token_data)
-        token_resp = nmn_api_gw('POST','/keycloak/realms/shasta/protocol/openid-connect/token', json=token_data)
+        token_resp = nmn_api_gw('POST','/keycloak/realms/shasta/protocol/openid-connect/token', data=token_data)
         token_resp.raise_for_status()
     except Exception as err:
-        on_error(err)
+        log.error(err)
     access_token = token_resp.json()['access_token']
     print(access_token)
     
@@ -1241,7 +1241,7 @@ nmn_api_gw = APIRequest('https://api-gw-service-nmn.local')
 
 # bearer token
 token = get_bearer_token()
-resp_headers = f'Authorization: Bearer {token}'
+resp_headers = {'Authorization': 'Bearer ' + token}
 
 def main():
     """

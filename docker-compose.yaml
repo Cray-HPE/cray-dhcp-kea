@@ -3,12 +3,14 @@ version: '3'
 services:
   cray-dhcp-kea-api:
     build: .
-    image: cray-dhcp-kea:latest
-    container_name: cray-dhcp-kea
+    image: cray-dhcp-kea-api:latest
+    container_name: cray-dhcp-kea-api
     privileged: true
+    dns:
+      - 10.92.100.71
     volumes:
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
-#      - /root/.kube:/home/kea/.kube
+#      - /root/.kube_kea:/home/kea/.kube
 #    network_mode: host
     environment:
     ports:
