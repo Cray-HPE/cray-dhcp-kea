@@ -5,13 +5,15 @@ services:
     build: .
     image: cray-dhcp-kea-api:latest
     container_name: cray-dhcp-kea-api
-    privileged: true
+#    privileged: true
     dns:
-      - 10.92.100.71
+      - 10.92.100.225
+    extra_hosts:
+      - "api-gw-service-nmn.local:10.92.100.71"
     volumes:
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
-#      - /root/.kube_kea:/home/kea/.kube
-#    network_mode: host
+      - /root/.kube_kea:/home/kea/.kube
+    network_mode: host
     environment:
     ports:
           - 67:6067/udp
@@ -26,4 +28,3 @@ services:
     entrypoint: "/srv/kea/external_startup.sh"
 volumes:
   cray-dhcp-kea-socket:
-

@@ -95,6 +95,10 @@ class APIRequest(object):
         return response
 
 def get_bearer_token():
+
+    token_resp = ''
+    token = ''
+
     # setup kubernetes client
     config.load_kube_config()
     v1 = client.CoreV1Api()
@@ -113,7 +117,6 @@ def get_bearer_token():
     try:
 #        token_resp = requests.post(url=token_url, data=token_data)
         token_resp = nmn_api_gw('POST','/keycloak/realms/shasta/protocol/openid-connect/token', data=token_data)
-        token_resp.raise_for_status()
     except Exception as err:
         log.error(err)
     access_token = token_resp.json()['access_token']

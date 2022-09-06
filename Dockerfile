@@ -49,6 +49,9 @@ RUN apk --no-cache add \
         py3-pip &&\
         pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml kubernetes
 
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.21.12/bin/linux/amd64/kubectl && \
+    mv kubectl /usr/bin/kubectl && \
+    chmod +x /usr/bin/kubectl
 
 COPY --from=builder /usr/local /usr/local/
 
