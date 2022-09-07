@@ -74,6 +74,7 @@ class APIRequest(object):
         http.mount("https://", adapter)
         http.mount("http://", adapter)
 
+        requests.packages.urllib3.disable_warnings()
         response = http.request(method=method, url=url, headers=headers,verify=False, **kwargs)
 
         if 'data' in kwargs:

@@ -12,8 +12,11 @@ services:
       - "api-gw-service-nmn.local:10.92.100.71"
     volumes:
       - cray-dhcp-kea-socket:/cray-dhcp-kea-socket
+      # this needs to be a copy of /root/.kube
+      # cp -rf /root/.kube /root/.kube_kea
+      # chown 100:101 -R /root/kube_kea
       - /root/.kube_kea:/home/kea/.kube
-    network_mode: host
+#    network_mode: host
     environment:
     ports:
           - 67:6067/udp
