@@ -770,6 +770,8 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
         patch_mac = ''
         post_mac = ''
         post_ip = []
+        patch_data = {}
+        smd_id = ''
 
         # checking for active leases in kea and making sure
         # they are not in the interface blacklist and cidr black list
@@ -781,11 +783,12 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                         valid_ip = False
                 if valid_ip:
                     smd_id = record['hw-address'].replace(':', '').lower()
-                    for smd_entry in smd_ethernet_interfaces:
-                        if smd_id == smd_entry['ID']:
+                    for smd_ethernet_interface in smd_ethernet_interfaces:
+                        if smd_id == smd_ethernet_interface['ID']:
                             entry_exist = True
                             query_smd = False
-                    if query_smd:
+                            smd_entry = smd_ethernet_interface
+                    if query_smd and smd_id != '':
                         resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces/' + smd_id)
                         smd_entry = resp.json()
                         if resp.status_code == 200:
@@ -805,10 +808,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
 
                     if entry_exist and smd_id != '':
                         valid_patch_entry = True
-                        if 'IPAddresses' in smd_entry:
-                            patch_ip = smd_entry['IPAddresses']
-                        else:
-                            patch_ip = []
+                        patch_ip = []
                         patch_ip.append({'IPAddress': record['ip-address']})
                         # check for any blank ips kv pairs
                         for i in range(len(patch_ip) - 1):
@@ -948,14 +948,16 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                             resp = smd_api('GET', 'hsm/v2/Inventory/EthernetInterfaces?ComponentID='
                                            + kea_hostname)
                             repair_data = resp.json()
+                            repair_data_resp_status = resp.status_code
                             j = 0
-                            while j < len(repair_data):
-                                if repair_data[j]['IPAddresses'] == []:
-                                    print('repair_data: Deleting entry with no ip')
-                                    del repair_data[j]
-                                else:
-                                    j += 1
-                            print(repair_data)
+                            if repair_data_resp_status != 400:
+                                while j < len(repair_data):
+                                    if repair_data[j]['IPAddresses'] == []:
+                                        print('repair_data: Deleting entry with no ip')
+                                        del repair_data[j]
+                                    else:
+                                        j += 1
+                                print(repair_data)
                             # if length of repair data is not 2, we are unable to automatically fix the SMD data
                             if len(repair_data) != 2:
                                 log.error('Automated repair failed')
