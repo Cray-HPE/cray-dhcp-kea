@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+- CASMNET-1880 - Fix race condition between dhcp-helper.py and MEDs
+### Security
+
+## [0.10.15] - 2022-08-24
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 - CASMTRIAGE-3966 - reset variables to not carry incorrect data
 ### Security
 

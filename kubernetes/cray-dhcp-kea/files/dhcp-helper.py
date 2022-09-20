@@ -810,10 +810,6 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                         valid_patch_entry = True
                         patch_ip = []
                         patch_ip.append({'IPAddress': record['ip-address']})
-                        # check for any blank ips kv pairs
-                        for i in range(len(patch_ip) - 1):
-                            if 'IPAddress' in patch_ip[i] and patch_ip[i]['IPAddress'] == '':
-                                del patch_ip[i]
                         patch_mac = smd_id
                         patch_data = {'IPAddresses': patch_ip}
                         if smd_entry['Type'] == 'NodeBMC' and len(patch_ip) > 1:
