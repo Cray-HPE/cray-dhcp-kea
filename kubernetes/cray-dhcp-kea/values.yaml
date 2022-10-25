@@ -82,6 +82,7 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
+        timeoutSeconds: 20
         initialDelaySeconds: 30
         periodSeconds: 60
       volumeMounts:
@@ -127,6 +128,7 @@ cray-service:
           port: 8000
         initialDelaySeconds: 30
         periodSeconds: 60
+        timeoutSeconds: 20
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
@@ -166,5 +168,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.16
-  appVersion: 0.10.16
+    version: 0.10.17
+  appVersion: 0.10.17
