@@ -128,7 +128,7 @@ cray-service:
           port: 8000
         initialDelaySeconds: 30
         periodSeconds: 60
-        timeoutSeconds: 20
+        timeoutSeconds: 5
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
