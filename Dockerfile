@@ -11,7 +11,6 @@ RUN apk add --no-cache --virtual .build-deps \
         boost-dev \
         bzip2-dev \
         file \
-#        libressl-dev \
         openssl-dev \
         postgresql-dev \
         zlib-dev && \
@@ -38,7 +37,6 @@ RUN apk --no-cache add \
         bash \
         boost \
         bzip2 \
-#        libressl \
         openssl \
         postgresql-dev \
         postgresql-client \
