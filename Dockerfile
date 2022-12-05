@@ -11,7 +11,7 @@ RUN apk add --no-cache --virtual .build-deps \
         boost-dev \
         bzip2-dev \
         file \
-        openssl-dev \
+        libressl-dev \
         postgresql-dev \
         zlib-dev && \
     curl -sL https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4_CPLUS_VERSION}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
@@ -37,7 +37,7 @@ RUN apk --no-cache add \
         bash \
         boost \
         bzip2 \
-        openssl \
+        libressl \
         postgresql-dev \
         postgresql-client \
         zlib \
