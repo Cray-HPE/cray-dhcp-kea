@@ -5,6 +5,9 @@ FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3 as bui
 ARG KEA_DHCP_VERSION=2.3.1
 ARG LOG4_CPLUS_VERSION=2.0.6
 
+RUN curl -sL https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4_CPLUS_VERSION}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
+RUN curl -sL https://ftp.isc.org/isc/kea/${KEA_DHCP_VERSION}/kea-${KEA_DHCP_VERSION}.tar.gz
+
 RUN apk add --no-cache --virtual .build-deps \
         alpine-sdk \
         bash \
