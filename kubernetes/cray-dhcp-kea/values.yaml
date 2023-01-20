@@ -41,7 +41,7 @@ cray-service:
         - name: TFTP_SERVER_HMN
           value: 10.94.100.60
         - name: UNBOUND_SERVER_NMN
-          value: 10.92.100.225
+          value: 10.92.100.225,10.92.100.224,10.92.100.223
         - name: UNBOUND_SERVER_HMN
           value: 10.94.100.225
         - name: NMN_LOADBALANCER_IP
@@ -168,5 +168,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.19
-  appVersion: 0.10.19
+    version: 0.10.20
+  appVersion: 0.10.20
