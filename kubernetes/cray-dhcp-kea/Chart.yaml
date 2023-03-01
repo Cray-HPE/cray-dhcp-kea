@@ -15,5 +15,5 @@ appVersion: 0.10.21
 annotations:
   artifacthub.io/images: |
     - name: cray-dhcp-kea
-      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.10.20
+      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.10.21
   artifacthub.io/license: MIT
