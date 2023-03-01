@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.20] - 2023-01-20
 ### Added
 ### Change
+- CASMNET-2067 - update helm-unittest tag in Makefile
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [0.10.20] - 2023-01-20
+### Added
+### Change
 - CASMNET-2024 - updates to support multiple unbound loadbalancers
 ### Deprecated
 ### Removed
