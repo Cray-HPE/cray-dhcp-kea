@@ -157,7 +157,7 @@ cray-service:
       configMap:
         name: cray-ipxe-settings
         optional: true
-    - name: cray-dhcp-kea-backup
+    cray-dhcp-kea-backup:
       configMap:
         name: cray-dhcp-kea-back
         defaultMode: 0777
