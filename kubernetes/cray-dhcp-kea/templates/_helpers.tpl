@@ -50,8 +50,5 @@ helm.sh/chart: {{ include "cray-dhcp-kea.chart" . }}
 app.kubernetes.io/name: {{ include "cray-dhcp-kea.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-<<<<<<< HEAD
 {{- end -}}
-=======
-{{- end -}}
->>>>>>> f5238ad (- CASMNET-2107 - addional comments)
+
