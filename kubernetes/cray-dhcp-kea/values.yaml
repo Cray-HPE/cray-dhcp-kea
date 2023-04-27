@@ -9,6 +9,8 @@
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
+keaBackupGzip: "H4sIAAAAAAAAA6uu5QIABrCh3QMAAAA="
+
 cray-service:
   priorityClassName: csm-high-priority-service
   type: Deployment
@@ -60,6 +62,10 @@ cray-service:
           value: "/srv/ipxe/settings.yaml"
         - name: IPXE_DEFAULT_FILENAME
           value: "ipxe.efi"
+        - name: IPXE_DEBUG_DEFAULT_FILENAME
+          value: "debug-ipxe.efi"
+        - name: LOG_LEVEL
+          value: "WARN"
       ports:
         - name: kea-server-udp
           containerPort: 6067
@@ -73,7 +79,7 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
-        initialDelaySeconds: 30
+        initialDelaySeconds: 600
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
@@ -83,7 +89,7 @@ cray-service:
             - -c
             - /srv/kea/health-check.sh
         timeoutSeconds: 20
-        initialDelaySeconds: 30
+        initialDelaySeconds: 600
         periodSeconds: 60
       volumeMounts:
         - name: cray-dhcp-kea-socket
@@ -93,6 +99,8 @@ cray-service:
           mountPath: /srv/kea
         - name: cray-ipxe-settings
           mountPath: /srv/ipxe
+        - name: cray-dhcp-kea-backup
+          mountPath: /srv/kea/backup
     cray-dhcp-kea-ctrl-agent:
       name: cray-dhcp-kea-ctrl-agent
       securityContext:
@@ -120,13 +128,13 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
-        initialDelaySeconds: 30
+        initialDelaySeconds: 600
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 8000
-        initialDelaySeconds: 30
+        initialDelaySeconds: 600
         periodSeconds: 60
         timeoutSeconds: 5
       volumeMounts:
@@ -149,6 +157,11 @@ cray-service:
       configMap:
         name: cray-ipxe-settings
         optional: true
+    - name: cray-dhcp-kea-backup
+      configMap:
+        name: cray-dhcp-kea-back
+        defaultMode: 0777
+        optional: true
   service:
     # service definitions for this chart defined manually
     enabled: false
@@ -168,5 +181,5 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.20
-  appVersion: 0.10.20
+    version: 0.10.21
+  appVersion: 0.10.21
