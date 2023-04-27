@@ -24,6 +24,7 @@ Create a fully qualified app name
 {{- end -}}
 {{- end -}}
 
+<<<<<<< HEAD
 {{/*
 Create a global for the Chart.yaml appVersion field.
 */}}
@@ -41,9 +42,16 @@ Create chart name and version as used by the chart label.
 {{/*
 A common set of labels to apply to resources.
 */}}
+=======
+
+>>>>>>> f5238ad (- CASMNET-2107 - addional comments)
 {{- define "cray-dhcp-kea.labels" }}
 helm.sh/chart: {{ include "cray-dhcp-kea.chart" . }}
 app.kubernetes.io/name: {{ include "cray-dhcp-kea.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+<<<<<<< HEAD
 {{- end -}}
+=======
+{{- end -}}
+>>>>>>> f5238ad (- CASMNET-2107 - addional comments)
