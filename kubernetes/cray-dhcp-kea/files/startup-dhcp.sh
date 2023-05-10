@@ -13,7 +13,6 @@ if [ -f "$BACKUP_CONFIG_PATH$BACKUP_CONNFIG" ]; then
     cp $BACKUP_CONFIG_PATH$BACKUP_CONNFIG .
     gunzip "${BACKUP_CONFIG_FILE%.*}"
     kea_dhcp4 -t "${BACKUP_CONFIG_FILE%.*}"
-    if
 fi
 
 # If no backup was loaded.  Run initialization of configs via dhcp-helper.py

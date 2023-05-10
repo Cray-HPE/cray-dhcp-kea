@@ -1098,7 +1098,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                 boot_file = ipxe_boot_filename['ipxe_debug']
                             # custom ipxe boot filename defined by "ipxe=$CUSTOMFILENAME"
                             if 'ipxe=' in smd_description:
-                                boot_file = smd_description.partition('=')[2].split().[0]
+                                boot_file = smd_description.partition('=')[2].split()
 
                             if kea_ip != '' and kea_hostname != '' and kea_mac != '':
                                 list_of_subnet_sets['ip_' + str(i)].add(kea_ip)
@@ -1164,7 +1164,7 @@ def write_config(cray_dhcp_kea_dhcp4):
     :return:
     '''
     # write config to disk
-    with open( TMP_PATH + 'cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
+    with open( TMP_PATH + '/' + 'cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
         json.dump(cray_dhcp_kea_dhcp4, outfile)
 
 
@@ -1203,7 +1203,7 @@ def reload_config():
 
 
 def validate_config():
-    p = subprocess.run('kea-dhcp4 -t ' + TMP_PATH + 'cray_dhcp_kea_dhcp4',
+    p = subprocess.run(['kea-dhcp4','-t',TMP_PATH + '/' + 'cray-dhcp-kea-dhcp4.conf'],
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.stdout.decode('utf-8')
     if "Syntax check failed" in output or p.returncode != 0:
@@ -1282,7 +1282,7 @@ def main():
 
     # init CLI Argument
     parser = argparse.ArgumentParser()
-    base_parser.add_argument("--init", action="store_true",
+    parser.add_argument("--init", action="store_true",
                              help="Initial run of dhcp-helper before Kea has started.")
     args = parser.parse_args()
 
@@ -1340,9 +1340,12 @@ def main():
     # create list interfaces that do get dynamic dhcp reservations
     interface_black_list = create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname)
 
-    # check for any entries or ips kea has and update smd
-    compare_smd_kea_information(
-        kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr)
+    if args.init:
+        log.info('Initial startup run of dhcp-helper.  Skipping the compare smd kea information.')
+    else:
+        # check for any entries or ips kea has and update smd
+        compare_smd_kea_information(
+            kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr)
 
     # load bss cloud-init ncn data into SMD EthernetInterfaces
     load_static_ncn_ips(sls_hardware)
