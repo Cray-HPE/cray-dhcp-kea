@@ -80,7 +80,7 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
-        initialDelaySeconds: 600
+        initialDelaySeconds: 90
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
@@ -90,7 +90,7 @@ cray-service:
             - -c
             - /srv/kea/health-check.sh
         timeoutSeconds: 20
-        initialDelaySeconds: 600
+        initialDelaySeconds: 90
         periodSeconds: 60
       volumeMounts:
         - name: cray-dhcp-kea-socket
@@ -129,13 +129,13 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
-        initialDelaySeconds: 600
+        initialDelaySeconds: 90
         periodSeconds: 60
         timeoutSeconds: 20
       readinessProbe:
         tcpSocket:
           port: 8000
-        initialDelaySeconds: 600
+        initialDelaySeconds: 90
         periodSeconds: 60
         timeoutSeconds: 5
       volumeMounts:
