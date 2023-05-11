@@ -1211,23 +1211,27 @@ def validate_config():
                   f'{output}'
                   f'Exiting and no update(s) to Kea configs')
         sys.exit(1)
+    else:
+        shutil.copyfile(TMP_PATH + '/cray-dhcp-kea-dhcp4.conf',
+                        KEA_PATH + '/cray-dhcp-kea-dhcp4.conf')
 
 def backup_config(cray_dhcp_kea_dhcp4):
 
     tmp = cray_dhcp_kea_dhcp4
 
     config_string = json.dumps(tmp).replace('"', '\"')  # String
-    config_string = codecs.encode(tmp, encoding='utf-8')  # Bytes object
-    config_string = gzip.compress(tmp)
-    config_string = codecs.encode(tmp, encoding='base64')
+    config_string = codecs.encode(config_string, encoding='utf-8')  # Bytes object
+    config_string = gzip.compress(config_string)
+    config_string = codecs.encode(config_string, encoding='base64')
     config_backup_gzip = config_string
 
-    p = subprocess.run('kubectl -n services patch configmaps cray-dhcp-kea-backup --type merge -p "{"binaryData":{"keaBackup.conf.gz":"' \
-                       + config_backup_gzip + '"}}"', stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup','--type','merge',
+                        '-p','"{"binaryData":{"keaBackup.conf.gz":"' + str(config_backup_gzip) + '"}}"'],
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.stdout.decode('utf-8')
     log.debug(output)
     if p.returncode != 0:
-        log.error('Error backing up cray-dhc-kea config'
+        log.error('Error backing up cray-dhcp-kea config'
                   f'{output}')
 
 
