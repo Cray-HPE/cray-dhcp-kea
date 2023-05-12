@@ -7,7 +7,7 @@ BACKUP_CONFIG_PATH=/srv/kea/backup/
 BACKUP_CONFIG_FILE=keaBackup.conf.gz
 KEA_COFNIG_PATH=/usr/local/kea/
 
-if [ -f "$BACKUP_CONFIG_PATH$BACKUP_CONNFIG" ]; then
+if [ -f "$BACKUP_CONFIG_PATH$BACKUP_CONFIG" ]; then
     echo "Backup exists."
     echo "Validating"
     cd /tmp
