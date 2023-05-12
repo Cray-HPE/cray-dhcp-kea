@@ -11,7 +11,7 @@ if [ -f "$BACKUP_CONFIG_PATH$BACKUP_CONNFIG" ]; then
     echo "Backup exists."
     echo "Validating"
     cd /tmp
-    cp $BACKUP_CONFIG_PATH$BACKUP_CONNFIG .
+    cp $BACKUP_CONFIG_PATH$BACKUP_CONFIG .
     gunzip "${BACKUP_CONFIG_FILE%.*}"
     kea_dhcp4 -t "${BACKUP_CONFIG_FILE%.*}"
     CONFIG_VALIDATION=$?
