@@ -24,6 +24,7 @@ import argparse
 import subprocess
 import codecs
 import gzip
+import base64
 
 
 class APIRequest(object):
@@ -1222,11 +1223,11 @@ def backup_config(cray_dhcp_kea_dhcp4):
     config_string = json.dumps(tmp).replace('"', '\"')  # String
     config_string = codecs.encode(config_string, encoding='utf-8')  # Bytes object
     config_string = gzip.compress(config_string)
-    config_string = codecs.encode(config_string, encoding='base64')
-    config_backup_gzip = config_string
+    config_string = base64.b64encode(config_string)
+    config_backup_gzip = config_string.decode()
 
     p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup','--type','merge',
-                        '-p','"{"binaryData":{"keaBackup.conf.gz":"' + str(config_backup_gzip) + '"}}"'],
+                        '-p','{"binaryData":{"keaBackup.conf.gz":"' + config_backup_gzip + '"}}'],
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.stdout.decode('utf-8')
     log.debug(output)
