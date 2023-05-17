@@ -1099,7 +1099,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                 boot_file = ipxe_boot_filename['ipxe_debug']
                             # custom ipxe boot filename defined by "ipxe=$CUSTOMFILENAME"
                             if 'ipxe=' in smd_description:
-                                boot_file = smd_description.partition('=')[2].split()
+                                boot_file = smd_description.partition('=')[2].split()[0]
 
                             if kea_ip != '' and kea_hostname != '' and kea_mac != '':
                                 list_of_subnet_sets['ip_' + str(i)].add(kea_ip)
