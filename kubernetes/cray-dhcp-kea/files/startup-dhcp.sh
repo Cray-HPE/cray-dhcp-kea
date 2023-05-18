@@ -13,9 +13,10 @@ if [ -f "${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE}" ]; then
     cd /tmp
     cp ${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE} .
     gunzip "${BACKUP_CONFIG_FILE}"
-    kea-dhcp4 -t "${BACKUP_CONFIG_FILE%.*}"
+    kea-dhcp4 -t "${BACKUP_CONFIG_FILE%.*}" > /dev/null
     CONFIG_VALIDATION=$?
     if [ ${CONFIG_VALIDATION} -eq 0 ]; then
+	echo "Configuration backup validated, copying into place"
         cp ${BACKUP_CONFIG_FILE%.*} ${KEA_CONFIG_PATH}cray-dhcp-kea-dhcp4.conf
     fi
 fi
