@@ -22,3 +22,4 @@ else
   curl -s -X POST -H "Content-Type: application/json" -d '{ "command": "lease4-get-all",  "service": [ "dhcp4" ] }' localhost:8000 | jq
   echo "**********************"
   exit 1
+fi
