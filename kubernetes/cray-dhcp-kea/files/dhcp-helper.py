@@ -146,27 +146,48 @@ def get_ipxe_boot_filename(ipxe_settings_file):
 
     ipxe_filename['ipxe'] = ipxe_settings.get('cray_ipxe_binary_name', '')
     ipxe_filename['ipxe_debug'] = ipxe_settings.get('cray_ipxe_debug_binary_name', '')
+    ipxe_filename['ipxe_aarch64'] = ipxe_settings.get('cray_ipxe_aarch64_binary_name', '')
+    ipxe_filename['ipxe_aarch64_debug'] = ipxe_settings.get('cray_ipxe_aarch64_debug_binary_name', '')
 
     # fall back to default ipxe filename if no ipxe filename provided
     if not settings_file_exist or ipxe_filename == '':
         ipxe_filename['ipxe'] = os.environ['IPXE_DEFAULT_FILENAME']
         ipxe_filename['ipxe_debug'] = os.environ['IPXE_DEBUG_DEFAULT_FILENAME']
 
-
     return ipxe_filename
 
 
-def import_base_config():
+def import_base_config(ipxe_settings_file):
     """
     importing kea config template and setting lease-database and default lease time
     :return:
     """
+    ipxe_filename = get_ipxe_boot_filename(ipxe_settings_file)
+
     with open('/srv/kea/cray-dhcp-kea-dhcp4.conf.template', encoding="utf-8") as file:
         cray_dhcp_kea_dhcp4 = json.loads(file.read())
+
     cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
         {"type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases",
          "lfc-interval": 122}
+
     cray_dhcp_kea_dhcp4['Dhcp4']['valid-lifetime'] = 3600
+
+    client_classes = { "client-classes": [
+        {
+         'name': 'ipxe_x86_64_efi',
+         'test': 'option[93].hex == 0x0007',
+         'boot-file-name': ipxe_filename['ipxe'],
+        },
+        {
+         'name': 'ipxe_arm64_efi',
+         'test': 'option[93].hex == 0x000b',
+         'boot-file-name': ipxe_filename['ipxe_aarch64'],
+        },
+      ]
+    }
+    cray_dhcp_kea_dhcp4['Dhcp4']['client-classes'] = client_classes['client-classes']
+
     return cray_dhcp_kea_dhcp4
 
 
@@ -304,7 +325,6 @@ def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, ti
                         subnet4_subnet['subnet'] = system['CIDR']
                         subnet4_subnet['option-data'].append({'name': 'routers',
                                                               'data': system['Gateway']})
-                        subnet4_subnet['boot-file-name'] = ipxe_boot_filename['ipxe']
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
@@ -1109,8 +1129,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(
                                     {'hostname': kea_hostname,
                                      'hw-address': kea_mac,
-                                     'ip-address': kea_ip,
-                                     'boot-file-name': boot_file
+                                     'ip-address': kea_ip
                                      })
 
     return cray_dhcp_kea_dhcp4
@@ -1323,7 +1342,7 @@ def main():
         kea_dhcp4_leases = get_kea_dhcp4_leases()
 
     # get templated base kea configs
-    cray_dhcp_kea_dhcp4 = import_base_config()
+    cray_dhcp_kea_dhcp4 = import_base_config(ipxe_settings_file)
 
     # get time servers
     time_servers_nmn = get_time_servers('nmn')
