@@ -9,10 +9,13 @@
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
+keaBackupGzip: "H4sIAAAAAAAAA6uu5QIABrCh3QMAAAA="
+
 cray-service:
   priorityClassName: csm-high-priority-service
   type: Deployment
   nameOverride: cray-dhcp-kea
+  serviceAccountName: cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
   containers:
@@ -60,6 +63,10 @@ cray-service:
           value: "/srv/ipxe/settings.yaml"
         - name: IPXE_DEFAULT_FILENAME
           value: "ipxe.efi"
+        - name: IPXE_DEBUG_DEFAULT_FILENAME
+          value: "debug-ipxe.efi"
+        - name: LOG_LEVEL
+          value: "WARN"
       ports:
         - name: kea-server-udp
           containerPort: 6067
@@ -73,9 +80,11 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 20
+        successThreshold: 1
+        failureThreshold: 5
       readinessProbe:
         exec:
           command:
@@ -83,8 +92,10 @@ cray-service:
             - -c
             - /srv/kea/health-check.sh
         timeoutSeconds: 20
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 60
+        successThreshold: 3
+        failureThreshold: 3
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
@@ -93,6 +104,8 @@ cray-service:
           mountPath: /srv/kea
         - name: cray-ipxe-settings
           mountPath: /srv/ipxe
+        - name: cray-dhcp-kea-backup
+          mountPath: /srv/kea/backup
     cray-dhcp-kea-ctrl-agent:
       name: cray-dhcp-kea-ctrl-agent
       securityContext:
@@ -120,15 +133,19 @@ cray-service:
             - /bin/sh
             - -c
             - /srv/kea/health-check.sh
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 20
+        successThreshold: 1
+        failureThreshold: 3
       readinessProbe:
         tcpSocket:
           port: 8000
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 5
+        successThreshold: 3
+        failureThreshold: 3
       volumeMounts:
         - name: cray-dhcp-kea-socket
           mountPath: /cray-dhcp-kea-socket
@@ -149,6 +166,12 @@ cray-service:
       configMap:
         name: cray-ipxe-settings
         optional: true
+    cray-dhcp-kea-backup:
+      name: cray-dhcp-kea-backup
+      configMap:
+        name: cray-dhcp-kea-backup
+        defaultMode: 0777
+        optional: true
   service:
     # service definitions for this chart defined manually
     enabled: false
@@ -168,5 +191,6 @@ crayDhcpKeaCtrlAgentConfig:
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.10.21
-  appVersion: 0.10.21
+    version: 0.10.22
+  appVersion: 0.10.22
+

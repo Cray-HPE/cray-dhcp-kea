@@ -20,6 +20,11 @@ import yaml
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from manuf import manuf
+import argparse
+import subprocess
+import codecs
+import gzip
+import base64
 
 
 class APIRequest(object):
@@ -128,7 +133,7 @@ def get_ipxe_boot_filename(ipxe_settings_file):
     :return:
     '''
 
-    ipxe_filename = ''
+    ipxe_filename = {}
     ipxe_settings = {}
     settings_file_exist = True
 
@@ -139,10 +144,14 @@ def get_ipxe_boot_filename(ipxe_settings_file):
         settings_file_exist = False
         log.error(f'Not able to load {ipxe_settings_file}')
 
-    ipxe_filename = ipxe_settings.get('cray_ipxe_binary_name', '')
+    ipxe_filename['ipxe'] = ipxe_settings.get('cray_ipxe_binary_name', '')
+    ipxe_filename['ipxe_debug'] = ipxe_settings.get('cray_ipxe_debug_binary_name', '')
 
+    # fall back to default ipxe filename if no ipxe filename provided
     if not settings_file_exist or ipxe_filename == '':
-        ipxe_filename = os.environ['IPXE_DEFAULT_FILENAME']
+        ipxe_filename['ipxe'] = os.environ['IPXE_DEFAULT_FILENAME']
+        ipxe_filename['ipxe_debug'] = os.environ['IPXE_DEBUG_DEFAULT_FILENAME']
+
 
     return ipxe_filename
 
@@ -172,6 +181,7 @@ def get_time_servers(network):
     time_servers = ''
 
     # picking ncn-w00[1-3] to set as time servers
+    # ncn-w00[1-3] is used since that is the smallest number of workers we support for a system
     for i in range(1, 4):
         lookup_in_unbound = True
         try:
@@ -183,6 +193,7 @@ def get_time_servers(network):
                         f'Going to try looking for info in SLS')
             lookup_in_unbound = False
             # this will only be used if querying unbound failed
+            # get information from SLS /v1/networks/
             if not lookup_in_unbound:
                 alias = 'ncn-w00' + str(i)
                 resp = sls_api('GET', '/v1/networks/' + network.upper())
@@ -220,6 +231,7 @@ def get_nmn_cidr(sls_networks):
 
     nmn_cidr = []
 
+    # dynamically collecting NMN CIDRS since we have special handling for computes and UANs
     for i in range(len(sls_networks)):
         if any(n in sls_networks[i]['Name'] for n in ('NMN', 'HMN', 'MTL', 'CAN', 'CHN', 'CMN')):
             if 'Subnets' in sls_networks[i]['ExtraProperties'] and \
@@ -241,6 +253,7 @@ def get_black_list_cidr(sls_networks, black_list_network_names):
     """
     black_list_cidr = []
 
+    # primarly the list of interfaces for NCNs and potentially other interfaces we want to set static IPs to
     for i in range(len(sls_networks)):
         if any(n in sls_networks[i]['Name']
                for n in ('MTL', 'CAN', 'CHN', 'CMN')):
@@ -291,7 +304,7 @@ def load_network_configs(cray_dhcp_kea_dhcp4, sls_networks, time_servers_nmn, ti
                         subnet4_subnet['subnet'] = system['CIDR']
                         subnet4_subnet['option-data'].append({'name': 'routers',
                                                               'data': system['Gateway']})
-                        subnet4_subnet['boot-file-name'] = ipxe_boot_filename
+                        subnet4_subnet['boot-file-name'] = ipxe_boot_filename['ipxe']
                         subnet4_subnet['id'] = system['VlanID']
                         subnet4_subnet['reservation-mode'] = 'all'
                         subnet4_subnet['reservations'] = []
@@ -401,6 +414,8 @@ def get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr):
                 else:
                     smd_ip = ''
                 if smd_ip != '':
+                    # check if an interface has A DHCP IP when it should be static or no IP
+                    # add to list for clean loop
                     for cidr in black_list_cidr:
                         if ipaddress.IPv4Address(smd_ip) in ipaddress.IPv4Network(cidr, strict=False):
                             interface_removal_list.append(interface)
@@ -500,7 +515,7 @@ def alias_to_xname_dict(xname_to_alias):
 
 def create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname):
     """
-    Create a list of interfaces we do not want to assign dyanmic dhcp reservations to
+    Create a list of interfaces we do not want to assign dynamic dhcp reservations to
     :param smd_ethernet_interfaces:
     :param all_alias_to_xname:
     :return:
@@ -530,14 +545,14 @@ def create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname):
 
 def load_static_ncn_ips(sls_hardware):
     """
-    Load static IP data and update SMD EthernetInterfaces table
+    Load static IP data from BSS and update SMD EthernetInterfaces table
     :param sls_hardware:
     :return:
     """
 
     bss_host_records = {}
 
-    # get ncn and ncn-bmc ip info
+    # get ncn and ncn-bmc ip info from BSS
     resp = bss_api('GET', '/boot/v1/bootparameters?name=Global')
     bss_data = resp.json()
     if 'cloud-init' in bss_data[0]:
@@ -688,7 +703,7 @@ def load_static_ncn_ips(sls_hardware):
         log.info(f'{json.dumps(ncn_data)}')
         log.info(f'{json.dumps(alias_to_mac)}')
 
-        # update smd
+        # update smd EthernetInterface table with NCN and NCN BMC data
         for alias in ncn_data:
             update_smd = True
             update_ip = []
@@ -773,8 +788,10 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
         patch_data = {}
         smd_id = ''
 
-        # checking for active leases in kea and making sure
-        # they are not in the interface blacklist and cidr black list
+        # checking for active leases in kea and comparing to SMD EthernetInterfaces
+        # Also validating they are not in the interface blacklist and IP in cidr black list
+        # valid-lft = 600 are place holder leases to speed up DNS hostname creation
+        # and Slingshot switch bug with their DHCP client(see SSHOTPLAT-1151 for details)
         if record['valid-lft'] != 600:
             if record['ip-address'] not in main_smd_ip_set and \
                     record['hw-address'].lower() not in interface_black_list:
@@ -783,6 +800,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                         valid_ip = False
                 if valid_ip:
                     smd_id = record['hw-address'].replace(':', '').lower()
+                    # check to see if we need to do a POST or PATCH
                     for smd_ethernet_interface in smd_ethernet_interfaces:
                         if smd_id == smd_ethernet_interface['ID']:
                             entry_exist = True
@@ -793,6 +811,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                         smd_entry = resp.json()
                         if resp.status_code == 200:
                             entry_exist = True
+                    # valid POST update to SMD EthernetInterface for interface
                     if not entry_exist and smd_id != '':
                         post_ip = [{'IPAddress': record['ip-address']}]
                         post_mac = smd_id
@@ -805,7 +824,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                             log.error('Post to SMD EthernetInterfaces did not succeed')
                             log.error(f'status_code: {resp.status_code}')
                             log.error(f'{resp.json}')
-
+                    # validate PATCH update SMD EthernetInterface for interface
                     if entry_exist and smd_id != '':
                         valid_patch_entry = True
                         patch_ip = []
@@ -843,6 +862,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
                             log.warning(f'Already an IP for SMD entry')
                             log.warning(f'{smd_entry}')
                             log.warning(f'Failed patch data {patch_mac} with {patch_data}')
+            # Clean up data if blacklist data found in SMD EthernetInterfaces
             if record['ip-address'] not in main_smd_ip_set and record['hw-address'].lower() in interface_black_list:
                 log.warning(f"Interface {record['hw-address']} {record['ip-address']} "
                             f"via dynamic dhcp reservation and was on interface blacklist "
@@ -853,7 +873,7 @@ def compare_smd_kea_information(kea_dhcp4_leases, smd_ethernet_interfaces, main_
 
 
 def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, nmn_cidr, all_xname_to_alias,
-                                  all_alias_to_xname, sls_hardware):
+                                  all_alias_to_xname, sls_hardware, ipxe_boot_filename):
     """
     Create per subnet reservation configurations for Kea config.
     :param cray_dhcp_kea_dhcp4:
@@ -868,6 +888,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
     # create dynamic set of sets
     list_of_subnet_sets = {}
 
+    # dynamic list of sets to keep track of information per subnet
     for i in range(len(cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'])):
         ip_var = 'ip_' + str(i)
         hostname_var = 'hostname_' + str(i)
@@ -879,6 +900,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
         list_of_subnet_sets[mac_var] = set()
         list_of_subnet_sets[alias_var] = set()
 
+    # create DHCP reservations
     for record in smd_ethernet_interfaces:
         dupe_ip = False
         dupe_hostname = False
@@ -890,7 +912,8 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
         kea_ips = record.get('IPAddresses', [])
         kea_hostname = record.get('ComponentID', '')
         kea_mac = record.get('MACAddress', '')
-        log.info(f'kea_ip:{kea_ips},kea_hostname:{kea_hostname},kea_mac:{kea_mac}')
+        smd_description = record.get('Description', '')
+        log.info(f'kea_ip:{kea_ips},kea_hostname:{kea_hostname},kea_mac:{kea_mac}, smd_description:{smd_description}')
         # check kea_mac format
         if kea_mac != '' and ':' not in kea_mac:
             kea_mac = ':'.join(kea_mac[i:i + 2] for i in range(0, 12, 2))
@@ -903,7 +926,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                 kea_hostname = temp
                 cray_dhcp_kea_dhcp4['Dhcp4']['reservations'].append(
                     {'hostname': kea_hostname, 'hw-address': kea_mac})
-
+        # validate possible DHCP reservation creation
         if kea_ips != [] and kea_hostname != '' and kea_mac != '':
             for ip in kea_ips:
                 kea_ip = ip['IPAddress']
@@ -929,7 +952,8 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                         if 'x' in kea_hostname[0].lower():
                             node_alias = all_alias_to_xname.get(kea_hostname, kea_hostname)
                             node_xname = kea_hostname
-
+                        # Detect and attempt to automate updating SMD when a node has been replaced or moved
+                        # in the same rack.  Usually computes and UANs
                         if kea_hostname in list_of_subnet_sets['hostname_' + str(i)] or kea_hostname in \
                                 list_of_subnet_sets['alias_' + str(i)]:
                             repair_component_id = ''
@@ -1068,6 +1092,15 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                         kea_hostname = all_xname_to_alias[kea_hostname]
 
                         if not dupe_ip and not dupe_hostname and not dupe_mac:
+                            # standard ipxe filename
+                            boot_file = ipxe_boot_filename['ipxe']
+                            # debug ipxe boot filename
+                            if 'debug' in smd_description:
+                                boot_file = ipxe_boot_filename['ipxe_debug']
+                            # custom ipxe boot filename defined by "ipxe=$CUSTOMFILENAME"
+                            if 'ipxe=' in smd_description:
+                                boot_file = smd_description.partition('=')[2].split()[0]
+
                             if kea_ip != '' and kea_hostname != '' and kea_mac != '':
                                 list_of_subnet_sets['ip_' + str(i)].add(kea_ip)
                                 list_of_subnet_sets['hostname_' + str(i)].add(node_xname)
@@ -1076,7 +1109,9 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                 cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(
                                     {'hostname': kea_hostname,
                                      'hw-address': kea_mac,
-                                     'ip-address': kea_ip})
+                                     'ip-address': kea_ip,
+                                     'boot-file-name': boot_file
+                                     })
 
     return cray_dhcp_kea_dhcp4
 
@@ -1102,12 +1137,14 @@ def create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases):
             place_holder_hostname = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['hostname']
             place_holder_mac = cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'][j]['hw-address']
             if place_holder_ip not in kea_active_ip_set:
+                # valid-lft = 600 are place holder leases to speed up DNS hostname creation
+                # and Slingshot switch bug with their DHCP client(see SSHOTPLAT-1151 for details)
                 place_holder_leases.append(
                     {'hostname': place_holder_hostname,
                      'hw-address': place_holder_mac,
                      'ip-address': place_holder_ip,
                      'valid-lft': 600})
-
+    # Send requests to create DHCP leases via Kea API
     if len(place_holder_leases) > 0:
         for i in range(len(place_holder_leases)):
             kea_lease4_add_data = {'command': 'lease4-add', 'service': ['dhcp4'], 'arguments': {}}
@@ -1128,7 +1165,7 @@ def write_config(cray_dhcp_kea_dhcp4):
     :return:
     '''
     # write config to disk
-    with open('/usr/local/kea/cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
+    with open( TMP_PATH + '/' + 'cray-dhcp-kea-dhcp4.conf', 'w') as outfile:
         json.dump(cray_dhcp_kea_dhcp4, outfile)
 
 
@@ -1139,6 +1176,11 @@ def reload_config():
     If reload is not success, try to load last known good config.
     :return:
     """
+
+    # copy validated config from temp location
+    shutil.copyfile( TMP_PATH + '/cray-dhcp-kea-dhcp4.conf',
+                    KEA_PATH + '/cray-dhcp-kea-dhcp4.conf')
+
     # reload config in kea from conf file written
     kea_request_data = {'command': 'config-reload', 'service': ['dhcp4']}
     resp = kea_api('POST', '/', json=kea_request_data, headers=kea_headers)
@@ -1157,12 +1199,46 @@ def reload_config():
                   f'{resp.json()}')
     else:
         # create backup copy of last known good kea config
-        shutil.copyfile(KEA_PATH + '/cray-dhcp-kea-dhcp4.conf', KEA_PATH + '/cray-dhcp-kea-dhcp4.conf.bak')
+        shutil.copyfile(KEA_PATH + '/cray-dhcp-kea-dhcp4.conf',
+                        KEA_PATH + '/cray-dhcp-kea-dhcp4.conf.bak')
 
 
-# globbals
+def validate_config():
+    p = subprocess.run(['kea-dhcp4','-t',TMP_PATH + '/' + 'cray-dhcp-kea-dhcp4.conf'],
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = p.stdout.decode('utf-8')
+    if "Syntax check failed" in output or p.returncode != 0:
+        log.error('Error with Kea Config Validation.'
+                  f'{output}'
+                  f'Exiting and no update(s) to Kea configs')
+        sys.exit(1)
+    else:
+        shutil.copyfile(TMP_PATH + '/cray-dhcp-kea-dhcp4.conf',
+                        KEA_PATH + '/cray-dhcp-kea-dhcp4.conf')
+
+def backup_config(cray_dhcp_kea_dhcp4):
+
+    tmp = cray_dhcp_kea_dhcp4
+
+    config_string = json.dumps(tmp).replace('"', '\"')  # String
+    config_string = codecs.encode(config_string, encoding='utf-8')  # Bytes object
+    config_string = gzip.compress(config_string)
+    config_string = base64.b64encode(config_string)
+    config_backup_gzip = config_string.decode()
+
+    p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup','--type','merge',
+                        '-p','{"binaryData":{"keaBackup.conf.gz":"' + config_backup_gzip + '"}}'],
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = p.stdout.decode('utf-8')
+    log.debug(output)
+    if p.returncode != 0:
+        log.error('Error backing up cray-dhcp-kea config'
+                  f'{output}')
+
+
+# globals
 log = logging.getLogger(__name__)
-log.setLevel(logging.WARN)
+log.setLevel(level = os.environ['LOG_LEVEL'])
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -1183,6 +1259,7 @@ black_list_network_names = {'MTL', 'CAN', 'CMN', 'CHN'}
 
 # setup kea configs
 KEA_PATH = '/usr/local/kea'
+TMP_PATH = '/tmp'
 kea_headers = {'Content-Type': 'application/json'}
 
 # setup api urls
@@ -1208,8 +1285,17 @@ def main():
     smd_ethernet_interfaces = {}
     all_xname_to_alias = {}
 
-    # make sure kea api is up
-    check_kea_api()
+    # init CLI Argument
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--init", action="store_true",
+                             help="Initial run of dhcp-helper before Kea has started.")
+    args = parser.parse_args()
+
+    if args.init:
+        log.info(f'Initial startup run of dhcp-helper.  Skipping the Kea API check')
+    else:
+        # make sure kea api is up
+        check_kea_api()
 
     # get boot file name
     ipxe_boot_filename = get_ipxe_boot_filename(ipxe_settings_file)
@@ -1229,8 +1315,12 @@ def main():
     # clean up SMD EthernetInterfaces IP data
     smd_ethernet_interfaces = get_smd_ethernet_interfaces(black_list_cidr, nmn_cidr)
 
-    # query Kea for dhcp4 leases
-    kea_dhcp4_leases = get_kea_dhcp4_leases()
+    if args.init:
+        log.info('Initial startup run of dhcp-helper.  Skipping the load of active Kea leases.')
+        kea_dhcp4_leases = []
+    else:
+        # query Kea for dhcp4 leases
+        kea_dhcp4_leases = get_kea_dhcp4_leases()
 
     # get templated base kea configs
     cray_dhcp_kea_dhcp4 = import_base_config()
@@ -1255,9 +1345,12 @@ def main():
     # create list interfaces that do get dynamic dhcp reservations
     interface_black_list = create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname)
 
-    # check for any entries or ips kea has and update smd
-    compare_smd_kea_information(
-        kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr)
+    if args.init:
+        log.info('Initial startup run of dhcp-helper.  Skipping the compare smd kea information.')
+    else:
+        # check for any entries or ips kea has and update smd
+        compare_smd_kea_information(
+            kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr)
 
     # load bss cloud-init ncn data into SMD EthernetInterfaces
     load_static_ncn_ips(sls_hardware)
@@ -1265,16 +1358,23 @@ def main():
     # create per dhcp reservations per subnet
     cray_dhcp_kea_dhcp4 = create_per_subnet_reservation(
         cray_dhcp_kea_dhcp4, smd_ethernet_interfaces,
-        nmn_cidr, all_xname_to_alias, all_alias_to_xname, sls_hardware)
+        nmn_cidr, all_xname_to_alias, all_alias_to_xname, sls_hardware, ipxe_boot_filename)
 
     # write kea config to file
     write_config(cray_dhcp_kea_dhcp4)
 
-    # reload kea config via api call
-    reload_config()
+    # validate kea config
+    validate_config()
 
-    # create placeholder leases
-    create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases)
+    if args.init:
+        log.info('Initial startup run of dhcp-helper.  Skipping Kea config reload and creation of placeholder leases.')
+    else:
+        # reload kea config via api call
+        reload_config()
+
+        # create placeholder leases
+        create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases)
+        backup_config(cray_dhcp_kea_dhcp4)
 
 if __name__ == "__main__":
     main()

@@ -47,7 +47,7 @@ RUN apk --no-cache add \
         tcpdump \
         python3 \
         py3-pip &&\
-        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml
+        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml argparse
 
 
 COPY --from=builder /usr/local /usr/local/
@@ -72,6 +72,9 @@ COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 
 RUN chmod +x /srv/kea/startup-dhcp.sh && \
     chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
+
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+    && chmod +x /usr/bin/kubectl
 
 EXPOSE 6067/udp
 EXPOSE 6067/tcp
