@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.22] - 2023-05-31
+### Added
+### Change
+- CASMINST-6428 
+  - fix race condition querying BSS when --init of dhcp-helper is run 
+                    and bss has not been deployed yet.
+  - reduced retry tries from 10->3
+  - update time server fallback lookup from ncn-w00[1-3].[NMNN/HMN] to ncn-w00[1-3]-[NMNN/HMN]
+  - some fixes for linter
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.10.22] - 2023-05-12
 ### Added
 ### Change

@@ -67,7 +67,7 @@ class APIRequest(object):
         headers.update(self._headers)
 
         retry_strategy = Retry(
-            total=10,
+            total=3,
             backoff_factor=0.1,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["PATCH", "DELETE", "POST", "HEAD", "GET", "OPTIONS"]
@@ -185,7 +185,7 @@ def get_time_servers(network):
     for i in range(1, 4):
         lookup_in_unbound = True
         try:
-            time_servers += socket.gethostbyname('ncn-w00' + str(i) + '.' + network)
+            time_servers += socket.gethostbyname('ncn-w00' + str(i) + '-' + network)
             if i != 3:
                 time_servers += ','
         except:
@@ -1292,7 +1292,7 @@ def main():
     args = parser.parse_args()
 
     if args.init:
-        log.info(f'Initial startup run of dhcp-helper.  Skipping the Kea API check')
+        log.info('Initial startup run of dhcp-helper.  Skipping the Kea API check')
     else:
         # make sure kea api is up
         check_kea_api()
@@ -1342,18 +1342,25 @@ def main():
     # create alias to xname dictionary
     all_alias_to_xname = alias_to_xname_dict(all_xname_to_alias)
 
-    # create list interfaces that do get dynamic dhcp reservations
-    interface_black_list = create_interface_black_list(smd_ethernet_interfaces, all_alias_to_xname)
+    if args.init:
+        log.info('Initial startup run of dhcp-helper.  Skipping interface black list.')
+        interface_black_list = []
+    else:
+        # create list interfaces that do get dynamic dhcp reservations
+        interface_black_list = create_interface_black_list(smd_ethernet_interfaces,
+                                                           all_alias_to_xname)
 
     if args.init:
-        log.info('Initial startup run of dhcp-helper.  Skipping the compare smd kea information.')
+        log.info('Initial startup run of dhcp-helper.  Skipping the compare smd kea information '
+                 'and loading of static IPs.')
     else:
         # check for any entries or ips kea has and update smd
         compare_smd_kea_information(
-            kea_dhcp4_leases, smd_ethernet_interfaces, main_smd_ip_set, interface_black_list, black_list_cidr)
+            kea_dhcp4_leases, smd_ethernet_interfaces,
+            main_smd_ip_set, interface_black_list, black_list_cidr)
+        # load bss cloud-init ncn data into SMD EthernetInterfaces
+        load_static_ncn_ips(sls_hardware)
 
-    # load bss cloud-init ncn data into SMD EthernetInterfaces
-    load_static_ncn_ips(sls_hardware)
 
     # create per dhcp reservations per subnet
     cray_dhcp_kea_dhcp4 = create_per_subnet_reservation(
@@ -1367,7 +1374,8 @@ def main():
     validate_config()
 
     if args.init:
-        log.info('Initial startup run of dhcp-helper.  Skipping Kea config reload and creation of placeholder leases.')
+        log.info('Initial startup run of dhcp-helper.'
+                 'Skipping Kea config reload and creation of placeholder leases.')
     else:
         # reload kea config via api call
         reload_config()
