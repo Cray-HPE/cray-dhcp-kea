@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.24] - 2023-06-21
+### Added
+### Change
+- CASMNET-2095
+  - use a client-class and DHCP option 93 for determining architecture and handing out the correct ipxe binary
+  - set **boot-file-name** at the toplevel of the the kea config vs. setting it numerous times at the subnet level
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.10.22] - 2023-05-31
 ### Added
 ### Change
