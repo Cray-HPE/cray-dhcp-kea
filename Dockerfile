@@ -45,6 +45,7 @@ RUN apk --no-cache add \
         curl \
         jq \
         tcpdump \
+	iptables \
         python3 \
         py3-pip &&\
         pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml argparse
