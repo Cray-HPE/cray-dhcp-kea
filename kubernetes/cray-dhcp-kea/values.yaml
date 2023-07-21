@@ -19,34 +19,34 @@ cray-service:
     traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
   initContainers:
     kea-init:
-      - args:
-          - -c
-          - iptables -A INPUT -p udp --dport 6067 --sport 67 -j ACCEPT &&
-            iptables -A INPUT -p udp --dport 6067 --sport 68 -j ACCEPT &&
-            iptables -A INPUT -p udp --dport 6067 -j DROP &&
-            iptables -A INPUT -p udp --dport 6067 -j LOG &&
-            iptables -L
-        command:
-          - sh
-        image:
-          repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
-        name: kea-init
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            add:
-              - NET_ADMIN
-              - NET_RAW
-            drop:
-              - ALL
-          privileged: false
-          readOnlyRootFilesystem: false
-          runAsGroup: 0
-          runAsNonRoot: false
-          runAsUser: 0
-        volumeMounts:
-          - mountPath: /run
-            name: cray-dhcp-kea-run
+      args:
+        - -c
+        - iptables -A INPUT -p udp --dport 6067 --sport 67 -j ACCEPT &&
+          iptables -A INPUT -p udp --dport 6067 --sport 68 -j ACCEPT &&
+          iptables -A INPUT -p udp --dport 6067 -j DROP &&
+          iptables -A INPUT -p udp --dport 6067 -j LOG &&
+          iptables -L
+      command:
+        - sh
+      image:
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
+      name: kea-init
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - NET_ADMIN
+            - NET_RAW
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: false
+        runAsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
+      volumeMounts:
+        - mountPath: /run
+          name: cray-dhcp-kea-run
   containers:
     cray-dhcp-kea:
       name: cray-dhcp-kea
