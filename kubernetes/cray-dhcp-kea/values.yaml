@@ -10,7 +10,6 @@ nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
 keaBackupGzip: "H4sIAAAAAAAAA6uu5QIABrCh3QMAAAA="
-
 cray-service:
   priorityClassName: csm-high-priority-service
   type: Deployment
@@ -18,6 +17,36 @@ cray-service:
   serviceAccountName: cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
+  initContainers:
+    kea-init:
+      - args:
+          - -c
+          - iptables -A INPUT -p udp --dport 6067 --sport 67 -j ACCEPT &&
+            iptables -A INPUT -p udp --dport 6067 --sport 68 -j ACCEPT &&
+            iptables -A INPUT -p udp --dport 6067 -j DROP &&
+            iptables -A INPUT -p udp --dport 6067 -j LOG &&
+            iptables -L
+        command:
+          - sh
+        image:
+          repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
+        name: kea-init
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - NET_ADMIN
+              - NET_RAW
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /run
+            name: cray-dhcp-kea-run
   containers:
     cray-dhcp-kea:
       name: cray-dhcp-kea
@@ -156,6 +185,9 @@ cray-service:
     cray-dhcp-kea-socket:
       name: cray-dhcp-kea-socket
       emptyDir: {}
+    cray-dhcp-kea-run:
+      name: cray-dhcp-kea-run
+      emptyDir: {}
     cray-dhcp-kea-jobs:
       name: cray-dhcp-kea-jobs
       configMap:
@@ -193,4 +225,3 @@ global:
     name: cray-dhcp-kea
     version: 0.10.25
   appVersion: 0.10.25
-
