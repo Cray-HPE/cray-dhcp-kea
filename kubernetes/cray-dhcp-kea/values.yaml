@@ -23,8 +23,8 @@ cray-service:
         - -c
         - iptables -A INPUT -p udp --dport 6067 --sport 67 -j ACCEPT &&
           iptables -A INPUT -p udp --dport 6067 --sport 68 -j ACCEPT &&
-          iptables -A INPUT -p udp --dport 6067 -j DROP &&
           iptables -A INPUT -p udp --dport 6067 -j LOG &&
+          iptables -A INPUT -p udp --dport 6067 -j DROP &&
           iptables -L
       command:
         - sh
