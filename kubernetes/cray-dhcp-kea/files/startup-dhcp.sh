@@ -34,7 +34,7 @@ else
 fi
 
 # what we use to run Cray DHCP Kea server
-nohup /usr/local/sbin/kea-dhcp4 -p 6067 -P 67 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf &
+nohup /usr/local/sbin/kea-dhcp4 -p 6067 -c /usr/local/kea/cray-dhcp-kea-dhcp4.conf &
 
 # kea exporter for prometheus
 kea-exporter --address ${KEA_EXPORTER_ADDRESS} --port ${KEA_EXPORTER_PORT} ${KEA_SOCKET} &
