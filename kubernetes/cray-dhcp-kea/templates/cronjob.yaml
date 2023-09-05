@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cray-dhcp-kea-helper
+  labels:
+    app: cray-dhcp-kea-helper
+spec:
+  suspend: false
+  schedule: "*/3 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app: cray-dhcp-kea-helper
+            cronjob-name: cray-dhcp-kea-helper
+        spec:
+          serviceAccountName: cray-dhcp-kea
+          containers:
+            - name: cray-dhcp-kea-helper
+              image: {{ .Values.image.repository }}:{{ .Values.global.appVersion }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/srv/kea/dhcp-helper.py"]
+              env:
+                {{- index .Values "cray-service" "containers" "cray-dhcp-kea" "env" | toYaml | nindent 16 }}
+              securityContext:
+                runAsUser: 100
+                runAsGroup: 101
+                runAsNonRoot: true
+              volumeMounts:
+                - name: cray-dhcp-kea-jobs
+                  mountPath: /srv/kea
+                - name: cray-ipxe-settings
+                  mountPath: /srv/ipxe
+                - name: cray-dhcp-kea-backup-v2
+                  mountPath: /srv/kea/backup
+          restartPolicy: Never
+          volumes:
+            - name: cray-dhcp-kea-jobs
+              configMap:
+                defaultMode: 0777
+                name: cray-dhcp-kea-jobs
+            - name: cray-ipxe-settings
+              configMap:
+                name: cray-ipxe-settings
+                optional: true
+            - name: cray-dhcp-kea-backup-v2
+              configMap:
+                name: cray-dhcp-kea-backup-v2
+                defaultMode: 0777
+                optional: true

@@ -7,6 +7,17 @@ BACKUP_CONFIG_PATH=/srv/kea/backup/
 BACKUP_CONFIG_FILE=keaBackup.conf.gz
 KEA_CONFIG_PATH=/usr/local/kea/
 
+#  check username and passward are empty
+#  this can happen if the pod restarts
+if [ -z "$DHCP_DBUSER" ]
+then
+      DHCP_DBUSER=$(cat /secrets/postgres/dhcpdsuser/username)
+fi
+if [ -z "$DHCP_DBPASS" ]
+then
+      DHCP_DBPASS=$(cat /secrets/postgres/dhcpdsuser/password)
+fi
+
 if [ -f "${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE}" ]; then
     echo "INFO: Configuration backup exists, checking for validity."
     cd /tmp
@@ -15,7 +26,7 @@ if [ -f "${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE}" ]; then
     kea-dhcp4 -t "${BACKUP_CONFIG_FILE%.*}" > /dev/null
     CONFIG_VALIDATION=$?
     if [ ${CONFIG_VALIDATION} -eq 0 ]; then
-	echo "INFO: Configuration backup validated, copying into place"
+        echo "INFO: Configuration backup validated, copying into place"
         cp ${BACKUP_CONFIG_FILE%.*} ${KEA_CONFIG_PATH}cray-dhcp-kea-dhcp4.conf
     else
         echo "WARN: Configuration backup cannot be validated. Generating new configuration"
@@ -39,5 +50,9 @@ nohup /usr/local/sbin/kea-dhcp4 -p 6067 -c /usr/local/kea/cray-dhcp-kea-dhcp4.co
 # kea exporter for prometheus
 kea-exporter --address ${KEA_EXPORTER_ADDRESS} --port ${KEA_EXPORTER_PORT} ${KEA_SOCKET} &
 
-# we will need to tune this
-while true; do /srv/kea/dhcp-helper.py; sleep ${DHCP_HELPER_INTERVAL_SECONDS}; done
+while true; do
+    inotifywait -e modify ${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE}
+    curr_time=$(date)
+    echo "INFO: Reload Config - $curr_time"
+    curl -s -X POST http://localhost:8000/ -H "Content-Type: application/json" -d '{"command": "config-reload", "service": ["dhcp4"]}'
+done

@@ -1,0 +1,76 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cray-dhcp-kea-init-{{ .Release.Revision }}
+  labels:
+    app: cray-dhcp-kea-init
+spec:
+  template:
+    metadata:
+      labels:
+        app: cray-dhcp-kea-init
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
+      serviceAccountName: cray-dhcp-kea
+      containers:
+        - name: cray-dhcp-kea-init
+          image: {{ .Values.image.repository }}:{{ .Values.global.appVersion }}
+          command: ["/srv/kea/startup-init.sh"]
+          env:
+            {{- index .Values "cray-service" "containers" "cray-dhcp-kea" "env" | toYaml | nindent 12 }}
+          volumeMounts:
+            - name: cray-dhcp-kea-jobs
+              mountPath: /srv/kea
+            - name: cray-ipxe-settings
+              mountPath: /srv/ipxe
+            - name: cray-dhcp-kea-backup-v2
+              mountPath: /srv/kea/backup
+      initContainers:
+        - name: cray-dhcp-kea-wait-for-postgres
+          image: "{{ .Values.kubectl.image.repository }}:{{ .Values.kubectl.image.tag }}"
+          imagePullPolicy: {{ .Values.kubectl.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                JOB_CONDITION="$(kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ index .Values "cray-postgresql" "nameOverride" }}-wait-for-postgres -o jsonpath='{.items[0].status.conditions[0].type}')"
+                JOB_CONDITION_RC=$?
+                if [ $JOB_CONDITION_RC -eq 0 ]; then
+                  if [ "$JOB_CONDITION" == 'Complete' ]; then
+                    echo "Completed"
+                    break
+                  fi
+                  echo "Waiting for the {{ index .Values "cray-postgresql" "nameOverride" }}-wait-for-postgres job in the {{ .Release.Namespace }} namespace to complete, current condition is $(kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ index .Values "cray-postgresql" "nameOverride" }}-wait-for-postgres -o jsonpath='{.items[0].status}')"
+                  sleep 3
+                elif [ $JOB_CONDITION_RC -ne 1 ]; then
+                  echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , failing"
+                  exit 1
+                else
+                  echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , will retry"
+                  sleep 3
+                fi
+              done
+          securityContext:
+            runAsUser: 100
+            runAsGroup: 101
+            runAsNonRoot: true
+      volumes:
+        - name: cray-dhcp-kea-jobs
+          configMap:
+            defaultMode: 0777
+            name: cray-dhcp-kea-jobs
+        - name: cray-ipxe-settings
+          configMap:
+            name: cray-ipxe-settings
+            optional: true
+        - name: cray-dhcp-kea-backup-v2
+          configMap:
+            name: cray-dhcp-kea-backup-v2
+            defaultMode: 0777
+            optional: true

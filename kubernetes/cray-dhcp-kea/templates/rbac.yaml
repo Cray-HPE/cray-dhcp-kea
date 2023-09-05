@@ -20,7 +20,10 @@ rules:
   - get
   - patch
   resourceNames:
-  - cray-dhcp-kea-backup
+  - cray-dhcp-kea-backup-v2
+- apiGroups: ["", "batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list"]
 - apiGroups: ['policy']
   resources: ['podsecuritypolicies']
   verbs:     ['use']
