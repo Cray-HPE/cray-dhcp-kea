@@ -13,11 +13,12 @@ dependencies:
     version: "~1.0"
     repository: https://artifactory.algol60.net/artifactory/csm-helm-charts
 maintainers:
+  - name: dle-hpe
   - name: Hardware Management
     url: https://github.com/orgs/Cray-HPE/teams/hardware-management
 appVersion: 0.11.0
 annotations:
   artifacthub.io/images: |
     - name: cray-dhcp-kea
-      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.10.25
+      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.11.0
   artifacthub.io/license: MIT

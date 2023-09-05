@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2014-2022 Hewlett Packard Enterprise Development LP
+# Copyright 2014-2023 Hewlett Packard Enterprise Development LP
 """
 This is automation to coordinate data between kea, smd and sls
 """
@@ -126,9 +126,6 @@ def check_kea_api():
                 log.error('Error backing up cray-dhcp-kea config'
                           f'{output}')
 
-            # resp = kea_api('POST', '/', headers=kea_headers, json=kea_reload_config)
-            # log.debug('Kea config reload during API check response is:'
-                      # f'{resp.json()}')
             counter += 1
             time.sleep(10)
 
@@ -179,10 +176,6 @@ def import_base_config(ipxe_settings_file):
     with open('/srv/kea/cray-dhcp-kea-dhcp4.conf.template', encoding="utf-8") as file:
         cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
-    # cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
-        # {"type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases",
-         # "lfc-interval": 122}
-
     cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
         {"type": "postgresql", "name": db_name, "host": db_host,
          "user": db_user, "password": db_pass}
@@ -214,10 +207,6 @@ def import_config(config_file_name):
 
     with open(config_file_name, encoding="utf-8") as file:
         cray_dhcp_kea_dhcp4 = json.loads(file.read())
-
-    # cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
-        # {"type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases",
-         # "lfc-interval": 122}
 
     cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
         {"type": "postgresql", "name": db_name, "host": db_host,

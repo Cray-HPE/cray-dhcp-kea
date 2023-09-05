@@ -57,13 +57,9 @@ elif (( $(echo "$DB_VERSION > $KEA_DB_VERSION" | bc -l) )) ; then
     # Recreate the database
     PGPASSWORD=$DHCP_DBPASS /bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f ${KEA_PGSQL_PATH}dhcpdb_create.sql"
 fi
-# PGPASSWORD=$DHCP_DBPASS /bin/sh -c "/usr/bin/psql -h $DHCP_DBHOST -U $DHCP_DBUSER -d $DHCP_DBNAME -a -f dhcpdb_create.sql"
-
-# kea-admin db-init pgsql -u $DHCP_DBUSER -p $DHCP_DBPASS -n $DHCP_DBNAME -h $DHCP_DBHOST
 
 # Will make sure the correct postgres creds exist in existing configs
 # and will create a new config if one doesn't exist.
-# /srv/kea/dhcp-helper.py --init
 if [ -f "${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE}" ]; then
     echo "INFO: Configuration backup exists, checking for validity."
     cd /tmp
@@ -73,18 +69,12 @@ if [ -f "${BACKUP_CONFIG_PATH}${BACKUP_CONFIG_FILE}" ]; then
     CONFIG_VALIDATION=$?
     if [ ${CONFIG_VALIDATION} -eq 0 ]; then
         # Fix up the postgres credentials just incase they changed
-        # mv ${BACKUP_CONFIG_FILE%.*} ${BACKUP_CONFIG_FILE%.*}.bak
-        # jq '.Dhcp4."lease-database"={"type": "postgresql", "name": $DHCP_DBNAME, "host": $DHCP_DBHOST, "user": $DHCP_DBUSER, "password": $DHCP_DBPASS}' --arg DHCP_DBNAME $DHCP_DBNAME --arg DHCP_DBHOST $DHCP_DBHOST --arg DHCP_DBUSER $DHCP_DBUSER --arg DHCP_DBPASS $DHCP_DBPASS "${BACKUP_CONFIG_FILE%.*}.bak" > ${BACKUP_CONFIG_FILE%.*}
-        # gzip ${BACKUP_CONFIG_FILE%.*}
-        # kubectl -n services patch configmaps cray-dhcp-kea-backup --type merge -p '{"binaryData":{"keaBackup.conf.gz":"$((cat ${BACKUP_CONFIG_FILE}))"}}'
         echo "INFO: Configuration backup validated, copying into place"
         /srv/kea/dhcp-helper.py --backup /tmp/${BACKUP_CONFIG_FILE%.*}
-        # cp ${BACKUP_CONFIG_FILE%.*} ${KEA_CONFIG_PATH}cray-dhcp-kea-dhcp4.conf
     else
         echo "WARN: Configuration backup cannot be validated. Generating new configuration"
         /srv/kea/dhcp-helper.py --init
         #  we output the config file and substitute the environment variables
         /srv/kea/dhcp-helper.py --backup ${KEA_CONFIG_PATH}cray-dhcp-kea-dhcp4.conf
-        # cp ${KEA_CONFIG_PATH}cray-dhcp-kea-dhcp4.conf ${KEA_CONFIG_PATH}cray-dhcp-kea-dhcp4.conf.bak
     fi
 fi
