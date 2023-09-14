@@ -16,6 +16,8 @@ maintainers:
   - name: dle-hpe
   - name: Hardware Management
     url: https://github.com/orgs/Cray-HPE/teams/hardware-management
+  - name: Management Network
+    url: https://github.com/orgs/Cray-HPE/teams/management-network
 appVersion: 0.11.0
 annotations:
   artifacthub.io/images: |

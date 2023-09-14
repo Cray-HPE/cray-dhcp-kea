@@ -106,7 +106,6 @@ def check_kea_api():
     kea_api_online = False
     counter = 0
     kea_request_lease_data = {"command": "lease4-get-all", "service": ["dhcp4"]}
-    kea_reload_config = {"command": "config-reload", "service": ["dhcp4"]}
 
     while not kea_api_online and counter <= 3:
         resp = kea_api('POST', '/', headers=kea_headers, json=kea_request_lease_data)
@@ -114,18 +113,6 @@ def check_kea_api():
         if kea_api_resp == 0 or kea_api_resp == 3:
             kea_api_online = True
         else:
-            with open('/srv/kea/backup/keaBackup.conf.gz', encoding="utf-8") as file:
-                cray_dhcp_kea_dhcp4_backup = file.read()
-
-            p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup-v2','--type','merge',
-                                '-p','{"binaryData":{"keaBackup.conf.gz":"' + cray_dhcp_kea_dhcp4_backup + '"}}'],
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            output = p.stdout.decode('utf-8')
-            log.debug(output)
-            if p.returncode != 0:
-                log.error('Error backing up cray-dhcp-kea config'
-                          f'{output}')
-
             counter += 1
             time.sleep(10)
 
@@ -1433,7 +1420,8 @@ def main():
                  'Skipping Kea config reload and creation of placeholder leases.')
     else:
         # reload kea config via api call
-        #reload_config()
+        # Now taken care of by backing up the config
+        # reload_config()
 
         # create placeholder leases
         create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases)

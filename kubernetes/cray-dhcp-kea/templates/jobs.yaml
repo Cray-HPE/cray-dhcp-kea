@@ -30,32 +30,6 @@ spec:
               mountPath: /srv/ipxe
             - name: cray-dhcp-kea-backup-v2
               mountPath: /srv/kea/backup
-      initContainers:
-        - name: cray-dhcp-kea-wait-for-postgres
-          image: "{{ .Values.kubectl.image.repository }}:{{ .Values.kubectl.image.tag }}"
-          imagePullPolicy: {{ .Values.kubectl.image.pullPolicy }}
-          command:
-            - /bin/sh
-            - -c
-            - |
-              while true; do
-                JOB_CONDITION="$(kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ index .Values "cray-postgresql" "nameOverride" }}-wait-for-postgres -o jsonpath='{.items[0].status.conditions[0].type}')"
-                JOB_CONDITION_RC=$?
-                if [ $JOB_CONDITION_RC -eq 0 ]; then
-                  if [ "$JOB_CONDITION" == 'Complete' ]; then
-                    echo "Completed"
-                    break
-                  fi
-                  echo "Waiting for the {{ index .Values "cray-postgresql" "nameOverride" }}-wait-for-postgres job in the {{ .Release.Namespace }} namespace to complete, current condition is $(kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ index .Values "cray-postgresql" "nameOverride" }}-wait-for-postgres -o jsonpath='{.items[0].status}')"
-                  sleep 3
-                elif [ $JOB_CONDITION_RC -ne 1 ]; then
-                  echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , failing"
-                  exit 1
-                else
-                  echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , will retry"
-                  sleep 3
-                fi
-              done
           securityContext:
             runAsUser: 100
             runAsGroup: 101

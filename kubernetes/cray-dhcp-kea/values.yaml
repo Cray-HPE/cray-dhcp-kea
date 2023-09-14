@@ -33,6 +33,11 @@ cray-service:
   nameOverride: cray-dhcp-kea
   serviceAccountName: cray-dhcp-kea
   replicaCount: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 70%
+    type: RollingUpdate
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -133,7 +138,7 @@ cray-service:
         periodSeconds: 60
         timeoutSeconds: 20
         successThreshold: 1
-        failureThreshold: 5
+        failureThreshold: 3
       readinessProbe:
         exec:
           command:
@@ -143,7 +148,7 @@ cray-service:
         timeoutSeconds: 20
         initialDelaySeconds: 60
         periodSeconds: 60
-        successThreshold: 3
+        successThreshold: 1
         failureThreshold: 3
       volumeMounts:
         - name: cray-dhcp-kea-socket
@@ -193,7 +198,7 @@ cray-service:
         initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 5
-        successThreshold: 3
+        successThreshold: 1
         failureThreshold: 3
       volumeMounts:
         - name: cray-dhcp-kea-socket
@@ -221,17 +226,6 @@ cray-service:
         name: cray-dhcp-kea-backup-v2
         defaultMode: 0777
         optional: true
-  initContainers:
-    wait-for-cray-dhcp-kea-init:
-      name: "wait-for-cray-dhcp-kea-init"
-      image:
-        repository: *kubectlRepository
-        tag: *kubectlTag
-        pullPolicy: *kubectlPullPolicy
-      command:
-        - /bin/sh
-        - -c
-        - while [ "`kubectl get jobs -n services -l 'app==cray-dhcp-kea-init' -o jsonpath='{.items[0].status.conditions[0].type}'`" != "Complete" ]; do echo "Waiting for cray-dhcp-kea-init to complete"; sleep 3;  done; echo "Completed";
   service:
     # service definitions for this chart defined manually
     enabled: false
@@ -254,6 +248,7 @@ cray-postgresql:
   fullnameOverride: cray-dhcp-kea
   sqlCluster:
     enabled: true
+    waitForItJob: false
     instanceCount: 3
     tls:
       enabled: true
@@ -262,4 +257,11 @@ cray-postgresql:
     databases:
       dhcp: dhcpdsuser
     volumeSize: 10Gi
+    resources:
+      limits:
+        cpu: "6"
+        memory: 3Gi
+      requests:
+        cpu: "2"
+        memory: 1Gi
     podPriorityClassName: "csm-high-priority-service"
