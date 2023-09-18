@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2014-2022 Hewlett Packard Enterprise Development LP
+# Copyright 2014-2023 Hewlett Packard Enterprise Development LP
 """
 This is automation to coordinate data between kea, smd and sls
 """
@@ -106,7 +106,6 @@ def check_kea_api():
     kea_api_online = False
     counter = 0
     kea_request_lease_data = {"command": "lease4-get-all", "service": ["dhcp4"]}
-    kea_reload_config = {"command": "config-reload", "service": ["dhcp4"]}
 
     while not kea_api_online and counter <= 3:
         resp = kea_api('POST', '/', headers=kea_headers, json=kea_request_lease_data)
@@ -114,11 +113,8 @@ def check_kea_api():
         if kea_api_resp == 0 or kea_api_resp == 3:
             kea_api_online = True
         else:
-            resp = kea_api('POST', '/', headers=kea_headers, json=kea_reload_config)
-            log.debug('Kea config reload during API check response is:'
-                      f'{resp.json()}')
             counter += 1
-            time.sleep(5)
+            time.sleep(10)
 
     if not kea_api_online and counter >= 3:
         log.error('Kea API is not working as expected.')
@@ -168,8 +164,8 @@ def import_base_config(ipxe_settings_file):
         cray_dhcp_kea_dhcp4 = json.loads(file.read())
 
     cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
-        {"type": "memfile", "name": "/cray-dhcp-kea-socket/dhcp4.leases",
-         "lfc-interval": 122}
+        {"type": "postgresql", "name": db_name, "host": db_host,
+         "user": db_user, "password": db_pass}
 
     cray_dhcp_kea_dhcp4['Dhcp4']['valid-lifetime'] = 3600
 
@@ -187,6 +183,21 @@ def import_base_config(ipxe_settings_file):
       ]
     }
     cray_dhcp_kea_dhcp4['Dhcp4']['client-classes'] = client_classes['client-classes']
+
+    return cray_dhcp_kea_dhcp4
+
+def import_config(config_file_name):
+    """
+    importing an existing kea config file and setting lease-database
+    :return:
+    """
+
+    with open(config_file_name, encoding="utf-8") as file:
+        cray_dhcp_kea_dhcp4 = json.loads(file.read())
+
+    cray_dhcp_kea_dhcp4['Dhcp4']['lease-database'] = \
+        {"type": "postgresql", "name": db_name, "host": db_host,
+         "user": db_user, "password": db_pass}
 
     return cray_dhcp_kea_dhcp4
 
@@ -1245,7 +1256,7 @@ def backup_config(cray_dhcp_kea_dhcp4):
     config_string = base64.b64encode(config_string)
     config_backup_gzip = config_string.decode()
 
-    p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup','--type','merge',
+    p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup-v2','--type','merge',
                         '-p','{"binaryData":{"keaBackup.conf.gz":"' + config_backup_gzip + '"}}'],
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.stdout.decode('utf-8')
@@ -1275,6 +1286,10 @@ unbound_servers['HMN'] = os.environ['UNBOUND_SERVER_HMN']
 hmn_loadbalancer_ip = os.environ['HMN_LOADBALANCER_IP']
 nmn_loadbalancer_ip = os.environ['NMN_LOADBALANCER_IP']
 black_list_network_names = {'MTL', 'CAN', 'CMN', 'CHN'}
+db_name = os.environ['DHCP_DBNAME']
+db_host = os.environ['DHCP_DBHOST']
+db_user = os.environ['DHCP_DBUSER']
+db_pass = os.environ['DHCP_DBPASS']
 
 # setup kea configs
 KEA_PATH = '/usr/local/kea'
@@ -1308,7 +1323,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--init", action="store_true",
                              help="Initial run of dhcp-helper before Kea has started.")
+    parser.add_argument("--backup", help="Only backup the config.")
     args = parser.parse_args()
+
+    if args.backup != None:
+        cray_dhcp_kea_dhcp4 = import_config(args.backup)
+        write_config(cray_dhcp_kea_dhcp4)
+        validate_config()
+        backup_config(cray_dhcp_kea_dhcp4)
+        return
 
     if args.init:
         log.info('Initial startup run of dhcp-helper.  Skipping the Kea API check')
@@ -1397,7 +1420,8 @@ def main():
                  'Skipping Kea config reload and creation of placeholder leases.')
     else:
         # reload kea config via api call
-        reload_config()
+        # Now taken care of by backing up the config
+        # reload_config()
 
         # create placeholder leases
         create_placeholder_leases(cray_dhcp_kea_dhcp4, kea_dhcp4_leases)

@@ -6,6 +6,22 @@
 #   repository: ""
 #   tag: "" (default = "latest")
 #   pullPolicy: "" (default = "IfNotPresent")
+global:
+  chart:
+    name: cray-dhcp-kea
+    version: 0.11.0
+  appVersion: 0.11.0
+
+image:
+  repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
+  pullPolicy: IfNotPresent
+
+kubectl:
+  image:
+    repository: &kubectlRepository artifactory.algol60.net/csm-docker/stable/docker-kubectl
+    tag: &kubectlTag 1.19.15
+    pullPolicy: &kubectlPullPolicy IfNotPresent
+
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
@@ -16,6 +32,26 @@ cray-service:
   type: Deployment
   nameOverride: cray-dhcp-kea
   serviceAccountName: cray-dhcp-kea
+  replicaCount: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 70%
+    type: RollingUpdate
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            namespaces:
+              - services
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - cray-dhcp-kea
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "6067"
   containers:
@@ -67,6 +103,24 @@ cray-service:
           value: "debug-ipxe.efi"
         - name: LOG_LEVEL
           value: "WARN"
+        - name: DHCP_DBHOST
+          value: cray-dhcp-kea-postgres
+        - name: DHCP_DBPORT
+          value: "5432"
+        - name: DHCP_DBNAME
+          value: "dhcp"
+        - name: DHCP_DBOPTS
+          value: ""
+        - name: DHCP_DBUSER
+          valueFrom:
+            secretKeyRef:
+              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
+              key: username
+        - name: DHCP_DBPASS
+          valueFrom:
+            secretKeyRef:
+              name: dhcpdsuser.cray-dhcp-kea-postgres.credentials
+              key: password
       ports:
         - name: kea-server-udp
           containerPort: 6067
@@ -84,7 +138,7 @@ cray-service:
         periodSeconds: 60
         timeoutSeconds: 20
         successThreshold: 1
-        failureThreshold: 5
+        failureThreshold: 3
       readinessProbe:
         exec:
           command:
@@ -94,7 +148,7 @@ cray-service:
         timeoutSeconds: 20
         initialDelaySeconds: 60
         periodSeconds: 60
-        successThreshold: 3
+        successThreshold: 1
         failureThreshold: 3
       volumeMounts:
         - name: cray-dhcp-kea-socket
@@ -104,7 +158,7 @@ cray-service:
           mountPath: /srv/kea
         - name: cray-ipxe-settings
           mountPath: /srv/ipxe
-        - name: cray-dhcp-kea-backup
+        - name: cray-dhcp-kea-backup-v2
           mountPath: /srv/kea/backup
     cray-dhcp-kea-ctrl-agent:
       name: cray-dhcp-kea-ctrl-agent
@@ -144,7 +198,7 @@ cray-service:
         initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 5
-        successThreshold: 3
+        successThreshold: 1
         failureThreshold: 3
       volumeMounts:
         - name: cray-dhcp-kea-socket
@@ -166,10 +220,10 @@ cray-service:
       configMap:
         name: cray-ipxe-settings
         optional: true
-    cray-dhcp-kea-backup:
-      name: cray-dhcp-kea-backup
+    cray-dhcp-kea-backup-v2:
+      name: cray-dhcp-kea-backup-v2
       configMap:
-        name: cray-dhcp-kea-backup
+        name: cray-dhcp-kea-backup-v2
         defaultMode: 0777
         optional: true
   service:
@@ -188,9 +242,26 @@ crayDhcpKeaCtrlAgentConfig:
         output_options:
           - output: stdout
         severity: ERROR
-global:
-  chart:
-    name: cray-dhcp-kea
-    version: 0.10.25
-  appVersion: 0.10.25
 
+cray-postgresql:
+  nameOverride: cray-dhcp-kea
+  fullnameOverride: cray-dhcp-kea
+  sqlCluster:
+    enabled: true
+    waitForItJob: false
+    instanceCount: 3
+    tls:
+      enabled: true
+    users:
+      dhcpdsuser: []
+    databases:
+      dhcp: dhcpdsuser
+    volumeSize: 10Gi
+    resources:
+      limits:
+        cpu: "6"
+        memory: 3Gi
+      requests:
+        cpu: "2"
+        memory: 1Gi
+    podPriorityClassName: "csm-high-priority-service"

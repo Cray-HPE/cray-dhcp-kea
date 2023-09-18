@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2023-09-05
+### Added
+- CASMHMS-6069 - KEA Resiliency
+  - Init job to do initial database setup and KEA configuration.
+### Change
+- CASMHMS-6069 - KEA Resiliency
+  - Upgraded KEA to v2.4.0.
+  - Upgraded cray-service chart to 10.0.x.
+  - Scaled up KEA to 3 replicas.
+  - Changed KEA to use postgres.
+  - Split dhcp-helper loop off to a cron job.
+  - dhcp-helper updates the backup configmap to trigger kea config-reloads.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.10.25] - 2023-07-19
 ### Added
 ### Change

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: cray-dhcp-kea-backup
+  name: cray-dhcp-kea-backup-v2
 binaryData:
-  {{- $configmap := (lookup "v1" "ConfigMap" .Release.Namespace "cray-dhcp-kea-backup") }}
+  {{- $configmap := (lookup "v1" "ConfigMap" .Release.Namespace "cray-dhcp-kea-backup-v2") }}
   {{- if $configmap }}
   {{- $config := get $configmap.binaryData "keaBackup.conf.gz" }}
   keaBackup.conf.gz: {{ $config }}

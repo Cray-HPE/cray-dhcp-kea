@@ -1,5 +1,6 @@
 {
   "Dhcp4": {
+    "allocator": "random",
     "decline-probation-period": 3,
     "sanity-checks": {
             "lease-checks": "fix-del"
@@ -28,6 +29,11 @@
       ]
     },
     "lease-database": {},
+    "multi-threading": {
+       "enable-multi-threading": true,
+       "thread-pool-size": 8,
+       "packet-queue-size": 11
+    },
     "host-reservation-identifiers": [
       "hw-address"
     ],
