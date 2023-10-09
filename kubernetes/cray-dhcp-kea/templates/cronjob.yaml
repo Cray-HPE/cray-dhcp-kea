@@ -13,7 +13,7 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 0
-      ttlSecondsAfterFinished: 300
+      ttlSecondsAfterFinished: {{ .Values.helperJobTTL }}
       activeDeadlineSeconds: 300
       template:
         metadata:

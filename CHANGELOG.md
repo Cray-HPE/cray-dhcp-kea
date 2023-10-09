@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMTRIAGE-6116
   - cray-dhcp-kea-helper pods log a KeyError when the BSS Global metadata is missing.
 - CASMTRIAGE-6133
-  - Reduce number of retained cronjobs and clean up terminated jobs after 300 seconds.
+  - Reduce number of retained cronjobs and clean up terminated jobs after a configurable number of seconds.
 ### Deprecated
 ### Removed
 ### Fixed
