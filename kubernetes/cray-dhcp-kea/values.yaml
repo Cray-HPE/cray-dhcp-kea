@@ -9,8 +9,8 @@
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.11.0
-  appVersion: 0.11.0
+    version: 0.11.1
+  appVersion: 0.11.1
 
 image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
@@ -26,6 +26,7 @@ nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
 keaBackupGzip: "H4sIAAAAAAAAA6uu5QIABrCh3QMAAAA="
+helperJobTTL: 600
 
 cray-service:
   priorityClassName: csm-high-priority-service

@@ -8,11 +8,12 @@ spec:
   suspend: false
   schedule: "*/3 * * * *"
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 10
-  failedJobsHistoryLimit: 5
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
       backoffLimit: 0
+      ttlSecondsAfterFinished: {{ .Values.helperJobTTL }}
       activeDeadlineSeconds: 300
       template:
         metadata:
