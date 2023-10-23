@@ -27,6 +27,7 @@ hmnLoadBalancerIp: 10.94.100.222
 serverPort: 6067
 keaBackupGzip: "H4sIAAAAAAAAA6uu5QIABrCh3QMAAAA="
 helperJobTTL: 600
+initJobBackoffLimit: 10
 
 cray-service:
   priorityClassName: csm-high-priority-service

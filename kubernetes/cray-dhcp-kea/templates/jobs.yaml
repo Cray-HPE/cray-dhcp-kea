@@ -12,6 +12,7 @@ spec:
         app: cray-dhcp-kea-init
     spec:
       restartPolicy: OnFailure
+      backoffLimit: {{ .Values.initJobBackoffLimit }}
       securityContext:
         runAsUser: 100
         runAsGroup: 101
