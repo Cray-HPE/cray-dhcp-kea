@@ -6,6 +6,7 @@ metadata:
   labels:
     app: cray-dhcp-kea-init
 spec:
+  backoffLimit: {{ .Values.initJobBackoffLimit }}
   template:
     metadata:
       labels:
