@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.25] - 2023-07-19
 ### Added
 ### Change
+- CASMNET-2171
+  - Remove HA changes from CSM 1.5
+  - Upgrade Kea from 2.3.1 to 2.4.0
+  - Upgrade cray-service chart to 10.0.x
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [0.10.25] - 2023-07-19
+### Added
+### Change
 - CASMNET-2148
   - Remove -P 67 from cray-dhcp-kea startup options.
 ### Deprecated
