@@ -46,12 +46,13 @@ RUN apk --no-cache add \
         jq \
         tcpdump \
         python3 \
-        py3-pip &&\
-        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml argparse
+        py3-pip 
+
+RUN python3 -m venv /usr/local/kea_virtualenv
+RUN /usr/local/kea_virtualenv/bin/pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml argparse
 
 
 COPY --from=builder /usr/local /usr/local/
-
 
 RUN addgroup -S kea && adduser -S kea -G kea
 

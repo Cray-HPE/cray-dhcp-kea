@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /usr/local/kea_virtualenv/bin/activate
+
 # wait for istio
 until curl --head localhost:15000  ; do echo Waiting for Sidecar; sleep 3 ; counter++ ; done ; echo Sidecar available;
 
