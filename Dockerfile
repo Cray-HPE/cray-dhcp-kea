@@ -14,7 +14,7 @@ RUN apk add --no-cache --virtual .build-deps \
         openssl-dev \
         postgresql-dev \
         curl \
-        python3 \
+        python3=~3.11 \
         zlib-dev && \
     curl -sL https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4_CPLUS_VERSION}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
     cd /tmp/log4cplus-${LOG4_CPLUS_VERSION} && \
@@ -46,7 +46,7 @@ RUN apk --no-cache add \
         curl \
         jq \
         tcpdump \
-        python3 \
+        python3=~3.11 \
         py3-pip
 
 RUN python3 -m venv /usr/local/kea_virtualenv
