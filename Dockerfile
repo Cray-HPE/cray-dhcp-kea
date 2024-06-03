@@ -2,7 +2,7 @@
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3 as builder
 
-ARG KEA_DHCP_VERSION=2.4.1
+ARG KEA_DHCP_VERSION=2.6.0
 ARG LOG4_CPLUS_VERSION=2.0.6
 
 RUN apk add --no-cache --virtual .build-deps \
@@ -14,7 +14,7 @@ RUN apk add --no-cache --virtual .build-deps \
         openssl-dev \
         postgresql-dev \
         curl \
-        python3=~3.11 \
+        python3 \
         zlib-dev && \
     curl -sL https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4_CPLUS_VERSION}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
     cd /tmp/log4cplus-${LOG4_CPLUS_VERSION} && \
@@ -46,7 +46,7 @@ RUN apk --no-cache add \
         curl \
         jq \
         tcpdump \
-        python3=~3.11 \
+        python3 \
         py3-pip
 
 RUN python3 -m venv /usr/local/kea_virtualenv
