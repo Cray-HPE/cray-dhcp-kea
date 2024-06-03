@@ -14,6 +14,7 @@ RUN apk add --no-cache --virtual .build-deps \
         openssl-dev \
         postgresql-dev \
         curl \
+        python3 \
         zlib-dev && \
     curl -sL https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4_CPLUS_VERSION}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
     cd /tmp/log4cplus-${LOG4_CPLUS_VERSION} && \
