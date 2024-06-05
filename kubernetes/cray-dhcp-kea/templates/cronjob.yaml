@@ -26,7 +26,9 @@ spec:
             - name: cray-dhcp-kea-helper
               image: {{ .Values.image.repository }}:{{ .Values.global.appVersion }}
               imagePullPolicy: {{ .Values.image.pullPolicy }}
-              command: ["/srv/kea/dhcp-helper.py"]
+              command:
+                - "/usr/local/kea_virtualenv/bin/python3"
+                - "/srv/kea/dhcp-helper.py"
               env:
                 {{- index .Values "cray-service" "containers" "cray-dhcp-kea" "env" | toYaml | nindent 16 }}
               securityContext:
