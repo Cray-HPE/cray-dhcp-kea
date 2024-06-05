@@ -1,6 +1,6 @@
 # Pinned to alpine:3.13 because alpine:3.14+ requires Docker 20.10.0 or newer,
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
-FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3 as builder
+FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3.18 as builder
 
 ARG KEA_DHCP_VERSION=2.4.0
 ARG LOG4_CPLUS_VERSION=2.0.6
@@ -10,6 +10,7 @@ RUN apk add --no-cache --virtual .build-deps \
         bash \
         boost-dev \
         bzip2-dev \
+        curl \
         file \
         openssl-dev \
         postgresql-dev \
@@ -30,7 +31,7 @@ RUN apk add --no-cache --virtual .build-deps \
     apk del --purge .build-deps && \
     rm -rf /tmp/*
 
-FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
+FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3.18
 
 
 RUN apk --no-cache add \
@@ -46,12 +47,13 @@ RUN apk --no-cache add \
         jq \
         tcpdump \
         python3 \
-        py3-pip &&\
-        pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml argparse
+        py3-pip 
+
+RUN python3 -m venv /usr/local/kea_virtualenv
+RUN /usr/local/kea_virtualenv/bin/pip3 install requests ipaddress nslookup kea-exporter hvac redfish python-ipmi manuf pyyaml argparse
 
 
 COPY --from=builder /usr/local /usr/local/
-
 
 RUN addgroup -S kea && adduser -S kea -G kea
 
