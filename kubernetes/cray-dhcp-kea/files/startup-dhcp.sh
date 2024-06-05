@@ -3,7 +3,7 @@
 . /usr/local/kea_virtualenv/bin/activate
 
 # wait for istio
-until curl --head localhost:15000  ; do echo Waiting for Sidecar; sleep 3 ; counter++ ; done ; echo Sidecar available;
+until curl --head localhost:15000  ; do echo Waiting for Sidecar; sleep 3 ; done ; echo Sidecar available;
 
 BACKUP_CONFIG_PATH=/srv/kea/backup/
 BACKUP_CONFIG_FILE=keaBackup.conf.gz
