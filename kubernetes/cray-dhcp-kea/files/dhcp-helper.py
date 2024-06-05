@@ -1127,6 +1127,7 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                                         kea_hostname = all_xname_to_alias[kea_hostname]
 
                         if not dupe_ip and not dupe_hostname and not dupe_mac:
+                            boot_file_override = False
                             # standard ipxe filename
                             boot_file = ipxe_boot_filename['ipxe']
                             # debug ipxe boot filename
@@ -1135,17 +1136,27 @@ def create_per_subnet_reservation(cray_dhcp_kea_dhcp4, smd_ethernet_interfaces, 
                             # custom ipxe boot filename defined by "ipxe=$CUSTOMFILENAME"
                             if 'ipxe=' in smd_description:
                                 boot_file = smd_description.partition('=')[2].split()[0]
+                                boot_file_override = True
 
                             if kea_ip != '' and kea_hostname != '' and kea_mac != '':
                                 list_of_subnet_sets['ip_' + str(i)].add(kea_ip)
                                 list_of_subnet_sets['hostname_' + str(i)].add(node_xname)
                                 list_of_subnet_sets['mac_' + str(i)].add(kea_mac)
                                 list_of_subnet_sets['alias_' + str(i)].add(node_alias)
-                                cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(
-                                    {'hostname': kea_hostname,
-                                     'hw-address': kea_mac,
-                                     'ip-address': kea_ip
-                                     })
+                                # if the boot file was overidden in the SMD ethernetInterfaces record add it to the reservation.
+                                if boot_file_override:
+                                    cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(
+                                        {'hostname': kea_hostname,
+                                         'hw-address': kea_mac,
+                                         'ip-address': kea_ip,
+                                         'boot-file-name': boot_file
+                                         })
+                                else:
+                                    cray_dhcp_kea_dhcp4['Dhcp4']['subnet4'][i]['reservations'].append(
+                                        {'hostname': kea_hostname,
+                                         'hw-address': kea_mac,
+                                         'ip-address': kea_ip
+                                         })
 
     return cray_dhcp_kea_dhcp4
 
