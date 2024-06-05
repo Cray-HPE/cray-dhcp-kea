@@ -1,7 +1,7 @@
 # Copyright 2023 Hewlett Packard Enterprise Development LP
 apiVersion: v2
 name: cray-dhcp-kea
-version: 0.11.2
+version: 0.11.3
 
 description: Kubernetes resources for cray-dhcp-kea
 home: https://github.com/Cray-HPE/cray-dhcp-kea
@@ -18,9 +18,9 @@ maintainers:
     url: https://github.com/orgs/Cray-HPE/teams/hardware-management
   - name: Management Network
     url: https://github.com/orgs/Cray-HPE/teams/management-network
-appVersion: 0.11.2
+appVersion: 0.11.3
 annotations:
   artifacthub.io/images: |
     - name: cray-dhcp-kea
-      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.11.2
+      image: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea:0.11.3
   artifacthub.io/license: MIT
