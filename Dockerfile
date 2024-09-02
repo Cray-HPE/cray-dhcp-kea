@@ -75,7 +75,7 @@ COPY kubernetes/cray-dhcp-kea/files/* /srv/kea/
 RUN chmod +x /srv/kea/startup-dhcp.sh && \
     chmod +x /srv/kea/startup-dhcp-ctrl-agent.sh
 
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.22.13/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.24.17/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
 
 EXPOSE 6067/udp
