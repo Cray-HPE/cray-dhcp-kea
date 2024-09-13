@@ -9,18 +9,12 @@
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.11.4
-  appVersion: 0.11.4
+    version: 0.11.5
+  appVersion: 0.11.5
 
 image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
   pullPolicy: IfNotPresent
-
-kubectl:
-  image:
-    repository: &kubectlRepository artifactory.algol60.net/csm-docker/stable/docker-kubectl
-    tag: &kubectlTag 1.19.15
-    pullPolicy: &kubectlPullPolicy IfNotPresent
 
 nmnLoadBalancerIp: 10.92.100.222
 hmnLoadBalancerIp: 10.94.100.222
