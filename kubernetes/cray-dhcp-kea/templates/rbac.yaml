@@ -24,11 +24,13 @@ rules:
 - apiGroups: ["", "batch"]
   resources: ["jobs"]
   verbs: ["get", "list"]
+{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 - apiGroups: ['policy']
   resources: ['podsecuritypolicies']
   verbs:     ['use']
   resourceNames:
   - restricted-transition-net-raw
+{{- end}}
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -44,6 +46,7 @@ roleRef:
   kind: Role
   name: {{ template "cray-dhcp-kea.fullname" . }}-backup
 ---
+{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -56,3 +59,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ template "cray-dhcp-kea.fullname" . }}
     namespace: services
+{{- end}}
