@@ -9,8 +9,8 @@
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.11.6
-  appVersion: 0.11.6
+    version: 0.12.0
+  appVersion: 0.12.0
 
 image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea

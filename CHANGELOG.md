@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2025-03-25
+### Added
+### Change
+- CASMPET-7337
+  - Make PSP conditional for cray-dhcp-kea to work in both CSM 1.6.x and 1.7.x
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.11.6] - 2024-11-05
 ### Added
 ### Change
