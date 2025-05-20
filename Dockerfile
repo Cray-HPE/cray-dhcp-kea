@@ -4,6 +4,7 @@ FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3.18 as 
 
 ARG KEA_DHCP_VERSION=2.4.1
 ARG LOG4_CPLUS_VERSION=2.0.6
+ARG LOG4_CPLUS_PATH=2_0_6
 
 RUN apk add --no-cache --virtual .build-deps \
         alpine-sdk \
@@ -15,7 +16,7 @@ RUN apk add --no-cache --virtual .build-deps \
         openssl-dev \
         postgresql-dev \
         zlib-dev && \
-    curl -sL https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4_CPLUS_VERSION}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
+    curl -sL https://github.com/log4cplus/log4cplus/releases/download/REL_${LOG4_CPLUS_PATH}/log4cplus-${LOG4_CPLUS_VERSION}.tar.gz | tar -zx -C /tmp && \
     cd /tmp/log4cplus-${LOG4_CPLUS_VERSION} && \
     ./configure && \
     make -s -j$(nproc) && \
