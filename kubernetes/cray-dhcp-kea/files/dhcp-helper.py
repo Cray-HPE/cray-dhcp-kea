@@ -1,6 +1,27 @@
 #!/usr/bin/env python3
-
-# Copyright 2014-2023 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2014-2023, 2025 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
 """
 This is automation to coordinate data between kea, smd and sls
 """
@@ -617,8 +638,14 @@ def load_static_ncn_ips(sls_hardware):
                     split_char = '-'
                     count = 2
                     temp_string = record['aliases'][0].split(split_char)
-                    split_aliases = split_char.join(temp_string[:count]), \
-                                    split_char.join(temp_string[count:])
+                    # Handle case where alias ends with '-mgmt' (like fmn002-mgmt)
+                    if len(temp_string) >= 2 and temp_string[-1] == 'mgmt':
+                        # Extract base alias and set network to 'mgmt'
+                        split_aliases = split_char.join(temp_string[:-1]), 'mgmt'
+                    else:
+                        # Original logic for other mgmt patterns
+                        split_aliases = split_char.join(temp_string[:count]), \
+                                        split_char.join(temp_string[count:])
                 alias = split_aliases[0]
                 alias_network = split_aliases[1]
                 static_ip = record['ip']
@@ -631,11 +658,15 @@ def load_static_ncn_ips(sls_hardware):
                         alias_set.add(alias + 'bmc')
                     ncn_data[alias + '_bmc'][alias_network] = static_ip
                 else:
-                    if alias not in alias_set:
-                        ncn_data[alias] = {}
-                        alias_to_mac[alias] = {}
-                        alias_set.add(alias)
-                    ncn_data[alias][alias_network] = static_ip
+                    # Only process if we have a valid alias and network name
+                    if alias and alias_network:
+                        if alias not in alias_set:
+                            ncn_data[alias] = {}
+                            alias_to_mac[alias] = {}
+                            alias_set.add(alias)
+                        ncn_data[alias][alias_network] = static_ip
+                    else:
+                        log.warning(f"Skipping record with empty alias or network: alias='{alias}', network='{alias_network}', ip='{static_ip}'")
         log.info('ncn_data')
         log.info(f'{json.dumps(ncn_data)}')
 
@@ -747,7 +778,9 @@ def load_static_ncn_ips(sls_hardware):
             if 'ncn-m001_bmc' not in alias:
                 # making sure nmn is the first entry for nodes but not bmcs
                 if 'bmc' not in alias:
-                    update_ip.append({'IPAddress': ncn_data[alias]['nmn']})
+                    # Check if 'nmn' key exists before accessing it
+                    if 'nmn' in ncn_data[alias]:
+                        update_ip.append({'IPAddress': ncn_data[alias]['nmn']})
                 for network in ncn_data[alias]:
                     # skip nmn ip address
                     if network != 'nmn':
