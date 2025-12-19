@@ -9,8 +9,8 @@
 global:
   chart:
     name: cray-dhcp-kea
-    version: 0.13.1
-  appVersion: 0.13.1
+    version: 0.13.2
+  appVersion: 0.13.2
 
 image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
@@ -85,12 +85,6 @@ cray-service:
           value: 10.94.100.222
         - name: DHCP_HELPER_INTERVAL_SECONDS
           value: "120"
-        - name: KEA_SOCKET
-          value: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
-        - name: KEA_EXPORTER_ADDRESS
-          value: "0.0.0.0"
-        - name: KEA_EXPORTER_PORT
-          value: "8080"
         - name: IPXE_SETTINGS_FILE
           value: "/srv/ipxe/settings.yaml"
         - name: IPXE_DEFAULT_FILENAME
@@ -202,6 +196,56 @@ cray-service:
           subPath: cray-dhcp-kea-socket
         - name: cray-dhcp-kea-jobs
           mountPath: /srv/kea
+    kea-exporter:
+      name: kea-exporter
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
+      image:
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dhcp-kea
+      command:
+        - sh
+        - -c
+        - /srv/kea/startup-exporter.sh
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+        requests:
+          cpu: "50m"
+          memory: 128Mi
+      env:
+        - name: KEA_SOCKET
+          value: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
+        - name: KEA_EXPORTER_ADDRESS
+          value: "0.0.0.0"
+        - name: KEA_EXPORTER_PORT
+          value: "8080"
+      ports:
+        - name: kea-exporter
+          containerPort: 8080
+          protocol: TCP
+      livenessProbe:
+        tcpSocket:
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 60
+        timeoutSeconds: 20
+        successThreshold: 1
+        failureThreshold: 3
+      readinessProbe:
+        tcpSocket:
+          port: 8080
+        timeoutSeconds: 20
+        initialDelaySeconds: 60
+        periodSeconds: 60
+        successThreshold: 1
+        failureThreshold: 3
+      volumeMounts:
+        - name: cray-dhcp-kea-socket
+          mountPath: /cray-dhcp-kea-socket
+          subPath: cray-dhcp-kea-socket
   volumes:
     cray-dhcp-kea-socket:
       name: cray-dhcp-kea-socket
