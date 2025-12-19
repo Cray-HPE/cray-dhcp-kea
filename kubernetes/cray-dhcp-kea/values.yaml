@@ -210,11 +210,11 @@ cray-service:
         - /srv/kea/startup-exporter.sh
       resources:
         limits:
-          cpu: "6"
+          cpu: "1"
           memory: 1Gi
         requests:
-          cpu: "200m"
-          memory: 256Mi
+          cpu: "50m"
+          memory: 128Mi
       env:
         - name: KEA_SOCKET
           value: "/cray-dhcp-kea-socket/cray-dhcp-kea.socket"
