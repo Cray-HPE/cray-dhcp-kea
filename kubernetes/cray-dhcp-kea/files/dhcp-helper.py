@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2014-2023, 2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2014-2023, 2025-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -43,6 +43,7 @@ from requests.packages.urllib3.util.retry import Retry
 from manuf import manuf
 import argparse
 import subprocess
+import tempfile
 import codecs
 import gzip
 import base64
@@ -1304,14 +1305,26 @@ def backup_config(cray_dhcp_kea_dhcp4):
     config_string = base64.b64encode(config_string)
     config_backup_gzip = config_string.decode()
 
-    p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup-v2','--type','merge',
-                        '-p','{"binaryData":{"keaBackup.conf.gz":"' + config_backup_gzip + '"}}'],
-                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output = p.stdout.decode('utf-8')
-    log.debug(output)
-    if p.returncode != 0:
-        log.error('Error backing up cray-dhcp-kea config'
-                  f'{output}')
+    # Write patch to temporary file to avoid ARG_MAX limits (CAST-39434)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        patch_data = {"binaryData":{"keaBackup.conf.gz": config_backup_gzip}}
+        json.dump(patch_data, f)
+        patch_file = f.name
+
+    try:
+        p = subprocess.run(['kubectl','-n','services','patch','configmaps','cray-dhcp-kea-backup-v2','--type','merge',
+                            '--patch-file', patch_file],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output = p.stdout.decode('utf-8')
+        log.debug(output)
+        if p.returncode != 0:
+            log.error('Error backing up cray-dhcp-kea config'
+                      f'{output}')
+    finally:
+        try:
+            os.unlink(patch_file)
+        except OSError:
+            pass
 
 
 # globals
